@@ -1,7 +1,7 @@
 import { LogoPlaceholder } from "@/components/LogoPlaceholder";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { FaqAccordion } from "@/components/FaqAccordion";
-import { SectionNav } from "@/components/Sectionnav";
+import { SectionNav } from "@/components/SectionNav";
 
 const prepItems = [
   "logo",
