@@ -154,24 +154,7 @@ development opportunities within BKFC’s international growth framework.
         </div>
       </section>
 
-      <section
-        id="application-form"
-        className="form-section panel"
-        aria-labelledby="form-heading"
-      >
-        <div className="section-heading">
-          <p className="eyebrow">Gym information submission</p>
-          <h2 id="form-heading">Affiliate gym submission</h2>
-
-      <p className="form-confidence">
-      Information submitted through this form is reviewed confidentally by
-      BKFC International Development and used solely for Affiliate Gym Program 
-      evaluation purposes.
-    </p>
-
-        </div>
-        <RegistrationForm />
-      </section>
+      
 
       <section className="faq-section" id="faq">
         <div className="faq-container">
@@ -189,6 +172,24 @@ development opportunities within BKFC’s international growth framework.
         </div>
       </section>
 
+<section
+        id="application-form"
+        className="form-section panel"
+        aria-labelledby="form-heading"
+      >
+        <div className="section-heading">
+          <p className="eyebrow">Gym information submission</p>
+          <h2 id="form-heading">Affiliate gym submission</h2>
+
+      <p className="form-confidence">
+      Information submitted through this form is reviewed confidentally by
+      BKFC International Development and used solely for Affiliate Gym Program 
+      evaluation purposes.
+    </p>
+
+        </div>
+        <RegistrationForm />
+      </section>
       <footer className="site-footer" id="support">
   <div className="footer-inner">
     <div className="footer-brand">
