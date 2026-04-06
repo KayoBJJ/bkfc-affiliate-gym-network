@@ -376,9 +376,11 @@ h1 {
 }
 
 .footer-column {
+  min-width: 0;
   font-size: 0.95rem;
   color: var(--muted);
   line-height: 1.75;
+  text-align: left;
 }
 
 .footer-label {
@@ -447,11 +449,20 @@ h1 {
     min-width: 240px;
   }
 
+}
+
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 32px 20px 20px;
+  }
+
   .footer-inner {
     grid-template-columns: 1fr;
     gap: 24px;
   }
 
+  .footer-column,
+  .footer-brand,
   .footer-legal {
     text-align: left;
   }
