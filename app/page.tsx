@@ -87,7 +87,7 @@ development opportunities within BKFC’s international growth framework.
             </article>
 
             <article className="benefit-card">
-              <h3>Priority athlete visibility</h3>
+              <h3>Priority athlete selection</h3>
               <p>
                 Affiliated gyms receive stronger visibility within the BKFC scouting
                 and athlete development pathway, including future tryouts and selected
