@@ -81,51 +81,59 @@ development opportunities within BKFC’s international growth framework.
             <article className="benefit-card">
               <h3>Official BKFC affiliation</h3>
               <p>
-                Approved gyms become part of the BKFC Affiliate Gym Network and may
-                reference their affiliation in line with BKFC brand guidelines.
+                Be recognised as an official affiliated BKFC Gym and 
+                featured on the BKFC website, giving your gym global visability
+                and credability.
               </p>
             </article>
 
             <article className="benefit-card">
               <h3>Priority athlete selection</h3>
               <p>
-                Affiliated gyms receive stronger visibility within the BKFC scouting
-                and athlete development pathway, including future tryouts and selected
-                talent review opportunities.
+                Gain priority access for your fighters to be considered for 
+                BKFC events, ensuring your talent is seen and developed on the biggest
+                stage.
               </p>
             </article>
 
             <article className="benefit-card">
-              <h3>International brand association</h3>
+              <h3>BKFC Event & Tryout Hosting</h3>
               <p>
-                Affiliate status connects your gym with one of the fastest-growing
-                combat sports brands in the world and strengthens your position within
-                your regional market.
+                Host BKFC tryouts and official activities at your facility,
+                increasing your gym's exposure through BKFC's global channels.
               </p>
             </article>
 
             <article className="benefit-card">
-              <h3>Future activation opportunities</h3>
+              <h3>Global Media Exposure</h3>
               <p>
-                Selected affiliate gyms may be considered for future BKFC-related
-                activations, scouting events, and regional development initiatives.
+                Recieve dedicated promotion through BKFC's social media
+                platforms, content features and marketing activisations.
               </p>
             </article>
 
             <article className="benefit-card">
-              <h3>Increased credibility</h3>
+              <h3>Merchandising Opportunities</h3>
               <p>
-                Affiliation helps demonstrate operational quality, athlete
-                development focus, and alignment with BKFC standards.
+                Access BKFC merchandise at preferential rates and unlock
+                the ability to sell official BKFC products within your gym.
               </p>
             </article>
 
             <article className="benefit-card">
-              <h3>Direct support channel</h3>
+              <h3>Seminars with BKFC Athletes</h3>
               <p>
-                Affiliate applications and related questions are reviewed through
-                BKFC International Development, providing a clear communication path
-                during the onboarding process.
+                Benefit from exclusive rates for seminars and appearances
+                by BKFC fighters and personalities at your gym.
+              </p>
+            </article>
+
+            <article className="benefit-card">
+              <h3>Marketing & Promotional Support</h3>
+              <p>
+                Participate in coordinated marketing campigns and
+                activations designed to increase your gym's visability and
+                member growth. 
               </p>
             </article>
           </div>
