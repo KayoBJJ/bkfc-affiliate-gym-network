@@ -4,11 +4,11 @@ import { FaqAccordion } from "@/components/FaqAccordion";
 import { SectionNav } from "@/components/SectionNav";
 
 const prepItems = [
-  "logo",
-  "gym photos",
-  "website / Instagram",
-  "fighter list (optional)",
-  "promo video (optional)",
+  "Gym logo",
+  "Facility photos",
+  "website or primary social media profile",
+  "Active fighter roster (optional)",
+  "Promotional video (optional)",
 ];
 
 export default function HomePage() {
@@ -40,14 +40,15 @@ export default function HomePage() {
       id="overview">
         <article className="panel">
           <div className="section-heading">
-            <p className="eyebrow">Information</p>
+            <p className="eyebrow">Program Entry</p>
             <h2 id="about-heading">Purpose of this form</h2>
           </div>
           <p>
-            This intake form is intended for selected gyms to submit
-            their operational, facility, coaching, and contact information
-            for internal review as part of the BKFC Affiliate Gym Network
-            onboarding process.
+            This intake form is intended for combat sports facilities applying
+            for affiliation with the BKFC Gym Network. Submitted information
+            supports the internal review process and help determine facility
+            alignment with BKFC operational standards, coaching struture and 
+            athlete development objectives.
           </p>
         </article>
 
