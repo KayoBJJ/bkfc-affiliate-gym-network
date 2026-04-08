@@ -25,10 +25,10 @@ export default function HomePage() {
         </div>
 
         <div className="hero-copy">
-          <p className="eyebrow">Affiliate gym application</p>
+          <p className="eyebrow">Official Gym Affiliation Application</p>
           <h1>BKFC Affiliate Gym Network</h1>
           <p className="hero-subtitle">
-            Official application page for gyms interested in becoming part of the BKFC Affiliate Gym Network.
+            Official application page for combat sports facilities interested in becoming part of the BKFC Affiliate Gym Network.
           </p>
          
         </div>
