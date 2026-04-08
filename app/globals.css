@@ -680,7 +680,15 @@ h1 {
   .benefits-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .benefit-last {
+    grid-column: 1 / -1;
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+  }
 }
+
 /* ===== CTA SECTION ===== */
 
 .cta-section {

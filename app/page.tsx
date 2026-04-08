@@ -128,7 +128,7 @@ development opportunities within BKFC’s international growth framework.
               </p>
             </article>
 
-            <article className="benefit-card">
+            <article className="benefit-card benefit-last">
               <h3>Marketing & Promotional Support</h3>
               <p>
                 Participate in coordinated marketing campigns and
