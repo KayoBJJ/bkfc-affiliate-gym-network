@@ -131,9 +131,9 @@ development opportunities within BKFC’s international growth framework.
             <article className="benefit-card benefit-last">
               <h3>Marketing & Promotional Support</h3>
               <p>
-                Participate in coordinated marketing campigns and
-                activations designed to increase your gym's visability and
-                member growth. 
+                Participate in coordinated BKFC marketing
+                activations designed to increase your gym's visability,
+                membership growth and athlete exposure. 
               </p>
             </article>
           </div>
