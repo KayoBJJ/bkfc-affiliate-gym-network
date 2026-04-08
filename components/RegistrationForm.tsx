@@ -76,27 +76,27 @@ export function RegistrationForm() {
         </label>
 
         <label className="field">
-          <span>City / country</span>
+          <span>City / Country</span>
           <input name="cityCountry" type="text" required />
         </label>
 
         <label className="field">
-          <span>Contact person / Owner</span>
+          <span>Primary contact / Owner</span>
           <input name="contactPerson" type="text" required />
         </label>
 
         <label className="field">
-          <span>Email</span>
+          <span>Email address</span>
           <input name="email" type="email" required />
         </label>
 
         <label className="field">
-          <span>Phone</span>
+          <span>Phone number</span>
           <input name="phone" type="tel" required />
         </label>
 
         <label className="field">
-          <span>Website / Instagram</span>
+          <span>Website / Social media profile</span>
           <input
             name="websiteInstagram"
             type="text"
@@ -111,7 +111,7 @@ export function RegistrationForm() {
             name="disciplinesOffered"
             rows={4}
             required
-            placeholder="Boxing, Muay Thai, strength and conditioning, youth classes..."
+            placeholder="Example: Boxing, Muay Thai, MMA, strength and conditioning, youth classes..."
           />
         </label>
 
@@ -182,7 +182,7 @@ export function RegistrationForm() {
 
       <div className="submit-row">
         <button type="submit" className="submit-button" disabled={isSubmitting}>
-          {isSubmitting ? "Submitting..." : "Submit Application"}
+          {isSubmitting ? "Submitting..." : "Submit for Review"}
         </button>
         {submissionState.status !== "idle" ? (
           <p

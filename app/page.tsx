@@ -187,13 +187,15 @@ development opportunities within BKFC’s international growth framework.
         aria-labelledby="form-heading"
       >
         <div className="section-heading">
-          <p className="eyebrow">Gym information submission</p>
-          <h2 id="form-heading">Affiliate gym submission</h2>
+          <p className="eyebrow">Official Affiliation Application</p>
+          <h2 id="form-heading">Apply for BKFC Affiliate Gym Network review</h2>
 
       <p className="form-confidence">
-      Information submitted through this form is reviewed confidentally by
-      BKFC International Development and used solely for Affiliate Gym Program 
-      evaluation purposes.
+      All information submitted through this application is reviewed confidentially
+      by BKFC International Development and used solely for internal evaluation of affiliation
+      eligibility, operational fit and program alignment.
+       
+      
     </p>
 
         </div>

@@ -4,74 +4,69 @@ import { useState } from "react";
 
 const faqItems = [
   {
-    question: "What is the BKFC Affiliate Program?",
+    question: "What is the BKFC Affiliate Gym Network?",
     answer:
-      "The BKFC Affiliate Program connects approved combat sports gyms with the official BKFC international development network.",
+      "The BKFC Affiliate Gym Network is an international affiliation program that connects approved combat sports facilities to the BKFC development ecosystem, including athlete visibility, program activation opportunities, and future integration into selected BKFC initiatives.",
   },
   {
     question: "Who can apply?",
     answer:
-      "Combat sports gyms, training centers, and martial arts facilities with a professional training environment may apply.",
+      "Combat sports gyms, training centres, and martial arts facilities with an established coaching structure, suitable training environment, and a clear commitment to athlete development may apply.",
   },
   {
     question: "Is every gym automatically accepted?",
     answer:
-      "No. Submission of an application does not guarantee acceptance. Each gym is reviewed individually by BKFC International Development.",
-  },
-  {
-    question: "Is there a membership fee?",
-    answer:
-      "Yes. Current membership options are €100 per month or €250 for three months.",
-  },
-  {
-    question: "Who do I contact if I need assistance?",
-    answer:
-      "For questions regarding applications, eligibility, or affiliate benefits, contact affiliate@bkfc.com.",
-  },
-  {
-    question: "What happens after I submit the application?",
-    answer:
-      "Applications are reviewed by BKFC International Development. During evaluation, additional information may be requested if necessary. Approved gyms will be contacted directly with the next steps for onboarding into the BKFC Affiliate Gym Network.",
-  },
-  {
-    question: "Does submitting an application guarantee acceptance?",
-    answer:
-      "No. Submission of an application begins the evaluation process only. Affiliate Gym status is granted at the discretion of BKFC International Development following internal review.",
-  },
-  {
-    question: "How long does the review process take?",
-    answer:
-      "Applications are typically reviewed within 5–10 business days. In some cases, additional time may be required depending on the volume of submissions or if further information is requested.",
-  },
-  {
-    question: "Can we use BKFC branding after submitting the application?",
-    answer:
-      "No. Use of BKFC branding, affiliate status, or related representations is permitted only after formal approval by BKFC International Development.",
-  },
-  {
-    question: "What types of gyms are eligible to apply?",
-    answer:
-      "Gyms with active coaching programs, structured training environments, and a demonstrated commitment to athlete development in combat sports are encouraged to apply. Each submission is reviewed individually as part of the evaluation process.",
+      "No. Submission of an application does not guarantee acceptance. Each facility is reviewed individually by BKFC International Development based on operational standards, program fit, and brand alignment.",
   },
   {
     question: "Is there a fee to apply?",
     answer:
-      "No. Submission of an Affiliate Gym Application does not require a fee. Additional program details will be provided to selected gyms during the onboarding process.",
+      "No. Submission of an Affiliate Gym Application does not require a fee. Program fee details are shared only with selected gyms during the onboarding stage.",
+  },
+  {
+    question: "Is there a membership fee after approval?",
+    answer:
+      "Yes. Current affiliation options are €100 per month or €250 for three months.",
+  },
+  {
+    question: "What happens after I submit the application?",
+    answer:
+      "Applications are reviewed internally by BKFC International Development. During the evaluation process, additional information or clarification may be requested. Approved gyms are then contacted directly with the next steps for onboarding.",
+  },
+  {
+    question: "How long does the review process take?",
+    answer:
+      "Applications are typically reviewed within 5–10 business days. In some cases, additional time may be required depending on submission volume or whether further information is needed.",
+  },
+  {
+    question: "Can we use BKFC branding after submitting the application?",
+    answer:
+      "No. BKFC branding, affiliate status, and any related public representation may only be used after formal written approval has been granted by BKFC International Development.",
   },
   {
     question: "Can gyms outside the United States apply?",
     answer:
-      "Yes. The BKFC Affiliate Gym Program is an international initiative. Applications are accepted from gyms worldwide.",
-  },
-  {
-    question: "What happens if our application is not approved?",
-    answer:
-      "Gyms that are not selected at the time of application may be invited to reapply in the future as the BKFC Affiliate Gym Network continues to expand.",
+      "Yes. The BKFC Affiliate Gym Network is an international program and applications are accepted from qualifying gyms worldwide.",
   },
   {
     question: "Does affiliate status guarantee fighter selection for BKFC events?",
     answer:
-      "Affiliate status supports athlete visibility within the BKFC ecosystem but does not guarantee selection for events. Fighter participation decisions remain subject to matchmaking evaluation and event requirements.",
+      "No. Affiliate status may support athlete visibility within the BKFC ecosystem, but fighter participation in BKFC events remains subject to matchmaking evaluation, event requirements, and final internal approval.",
+  },
+  {
+    question: "Can affiliate gyms host BKFC tryouts or official activities?",
+    answer:
+      "Affiliate status does not automatically grant hosting rights. Tryouts, seminars, and other official BKFC activities are approved separately and remain subject to BKFC’s event, territory, and operational requirements.",
+  },
+  {
+    question: "What happens if our application is not approved?",
+    answer:
+      "Gyms that are not selected during the initial review may be invited to reapply in the future as the BKFC Affiliate Gym Network continues to expand into additional territories.",
+  },
+  {
+    question: "Who do I contact if I need assistance?",
+    answer:
+      "For questions regarding applications, eligibility, or affiliate program details, contact affiliate@bkfc.com.",
   },
 ];
 
