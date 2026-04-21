@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react";
 
 const sections = [
-  { id: "overview", label: "Overview" },
+  { id: "program-definition", label: "Program" },
+  { id: "fighter-pathway", label: "Pathway" },
+  { id: "tier-ladder", label: "Tiers" },
+  { id: "gym-of-the-month", label: "Gym Month" },
+  { id: "expectations", label: "Standards" },
   { id: "benefits", label: "Benefits" },
-  { id: "faq", label: "FAQ" },
+  { id: "selection-process", label: "Process" },
+  { id: "starter-kit-preview", label: "Starter Kit" },
+  { id: "expansion-positioning", label: "Expansion" },
   { id: "application-form", label: "Apply" },
-  { id: "support", label: "Support" },
+  { id: "faq", label: "FAQ" },
 ];
 
 export function SectionNav() {
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState("program-definition");
 
   useEffect(() => {
     const handleScroll = () => {
