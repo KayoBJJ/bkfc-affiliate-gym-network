@@ -117,7 +117,7 @@ export default function HomePage() {
       <section className="panel content-section" id="program-definition">
         <div className="section-heading">
           <p className="eyebrow">Program Definition</p>
-          <h2>What the BKFC Affiliate Gym Program is</h2>
+          <h2>What the BKFC Affiliate Gym Program is:</h2>
         </div>
         <p>
           The BKFC Affiliate Gym Program is a structured affiliation model for
@@ -310,7 +310,7 @@ export default function HomePage() {
         <div className="prep-inline panel-soft">
           <div>
             <p className="eyebrow">Before submitting</p>
-            <h3>Please prepare the following materials</h3>
+            <h3>Please prepare the following materials:</h3>
           </div>
           <ul>
             {prepItems.map((item) => (
