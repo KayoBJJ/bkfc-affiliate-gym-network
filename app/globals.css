@@ -1233,3 +1233,11 @@ h1 {
   margin: 12px 0;
   line-height: 1.68;
 }
+
+.expectations-list {
+  margin-top: 18px;
+}
+
+.expectations-list li::marker {
+  color: #ffd73b;
+}

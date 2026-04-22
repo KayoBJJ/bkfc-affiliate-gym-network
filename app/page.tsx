@@ -22,11 +22,11 @@ const tierItems = [
 ];
 
 const expectationItems = [
-  "Professional training environment and strong operational standards",
-  "Active coaching structure and athlete development focus",
-  "Willingness to collaborate with BKFC program direction",
-  "Capacity to represent the program properly at local level",
-  "Commitment to long-term gym growth and brand alignment",
+  "A professional training environment with strong operational discipline",
+  "Active coaching structure and a clear athlete development culture",
+  "Willingness to align with BKFC program standards and direction",
+  "Capacity to represent the program properly at local market level",
+  "Long-term mindset toward gym growth, quality, and brand alignment",
 ];
 
 const benefitGroups = [
@@ -211,17 +211,24 @@ export default function HomePage() {
 </section>
 
       <section className="panel content-section" id="expectations">
-        <div className="section-heading">
-          <p className="eyebrow">Expectations</p>
-          <h2>What BKFC looks for in affiliate gyms</h2>
-        </div>
+  <div className="section-heading">
+    <p className="eyebrow">Expectations</p>
+    <h2>What BKFC looks for in affiliate gyms</h2>
+  </div>
 
-        <ul className="clean-list">
-          {expectationItems.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </section>
+  <p>
+    The BKFC Affiliate Gym Program is intended for serious gyms that can
+    represent the standard of the network properly. Acceptance is based not only
+    on interest, but on structure, professionalism, development value, and
+    long-term alignment.
+  </p>
+
+  <ul className="clean-list expectations-list">
+    {expectationItems.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+</section>
 
       <section className="benefits-section" id="benefits">
         <div className="benefits-container">
