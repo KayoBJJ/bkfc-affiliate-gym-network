@@ -258,61 +258,55 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="panel content-section" id="selection-process">
-        <div className="section-heading">
-          <p className="eyebrow">Selection Process</p>
-          <h2>How gyms are reviewed</h2>
-        </div>
+     <section className="panel content-section" id="selection-process">
+  <div className="section-heading">
+    <p className="eyebrow">Selection Process</p>
+    <h2>How gyms enter the program</h2>
+  </div>
 
-        <div className="process-grid">
-          <div className="process-step">
-            <span>01</span>
-            <h3>Application</h3>
-            <p>Submit your gym information and supporting materials.</p>
-          </div>
-          <div className="process-step">
-            <span>02</span>
-            <h3>Internal Review</h3>
-            <p>BKFC reviews operational fit, standards, and alignment.</p>
-          </div>
-          <div className="process-step">
-            <span>03</span>
-            <h3>Verification</h3>
-            <p>Selected gyms may be contacted for additional confirmation.</p>
-          </div>
-          <div className="process-step">
-            <span>04</span>
-            <h3>Onboarding Decision</h3>
-            <p>Approved gyms move into the next stage of program entry.</p>
-          </div>
-        </div>
-      </section>
+  <p>
+    Entry into the BKFC Affiliate Gym Program follows a structured evaluation
+    process. Each application is reviewed individually to ensure alignment with
+    program standards, coaching structure, and long-term development potential.
+  </p>
+
+  <ol className="selection-steps">
+    <li>Application submission through the official affiliate form</li>
+    <li>Internal review by BKFC International Development</li>
+    <li>Evaluation of gym structure, coaching environment, and positioning</li>
+    <li>Program alignment confirmation and onboarding preparation</li>
+  </ol>
+</section>
 
       <section className="info-grid" id="starter-kit-preview">
-        <article className="panel">
-          <div className="section-heading">
-            <p className="eyebrow">Starter Kit Preview</p>
-            <h2>What accepted gyms move toward</h2>
-          </div>
-          <p>
-            Accepted gyms enter a more structured relationship with BKFC through
-            onboarding support, recognition assets, program guidance, and a
-            clearer pathway into future opportunities.
-          </p>
-        </article>
+  <article className="panel">
+    <div className="section-heading">
+      <p className="eyebrow">Starter Kit Preview</p>
+      <h2>What accepted gyms move toward</h2>
+    </div>
+    <p>
+  Accepted gyms enter a structured onboarding pathway designed to position
+  them inside the BKFC international development network.
+</p>
+<p className="section-support">
+  More than a welcome layer, the starter kit acts as the first operational
+  step in aligning a gym with BKFC program structure, communication standards,
+  and future opportunity channels.
+</p>
+  </article>
 
-        <aside className="panel prep-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Included direction</p>
-            <h2>Preview items</h2>
-          </div>
-          <ul>
-            {starterKitItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </aside>
-      </section>
+  <aside className="panel prep-panel">
+    <div className="section-heading">
+      <p className="eyebrow">Included direction</p>
+      <h2>Preview items</h2>
+    </div>
+    <ul className="starter-kit-list">
+      {starterKitItems.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  </aside>
+</section>
 
       <section className="panel content-section" id="expansion-positioning">
         <div className="section-heading">

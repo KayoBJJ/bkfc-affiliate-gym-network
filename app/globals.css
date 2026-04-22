@@ -1293,3 +1293,44 @@ h1 {
 .benefit-list li::marker {
   color: #ffd73b;
 }
+
+.selection-steps {
+  counter-reset: step;
+  list-style: none;
+  padding-left: 0;
+}
+
+.selection-steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 42px;
+  margin: 16px 0;
+}
+
+.selection-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffd73b;
+  color: black;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starter-kit-list {
+  margin-top: 18px;
+}
+
+.starter-kit-list li {
+  margin: 12px 0;
+}
+
+.starter-kit-list li::marker {
+  color: #ffd73b;
+}
