@@ -199,7 +199,7 @@ export default function HomePage() {
         <div className="benefits-container">
           <div className="benefits-header">
             <p className="benefits-label">Benefits</p>
-            <h2>Why selected gyms join the program</h2>
+            <h2>Why selected gyms join the program?</h2>
             <p className="benefits-subtitle">
               The BKFC Affiliate Gym Network is built to create meaningful value
               across visibility, athlete development, and long-term gym growth.
@@ -280,7 +280,7 @@ export default function HomePage() {
       <section className="panel content-section" id="expansion-positioning">
         <div className="section-heading">
           <p className="eyebrow">Expansion Positioning</p>
-          <h2>Joining at the foundation stage of a growing network</h2>
+          <h2>Joining at the foundation stage of a growing network!</h2>
         </div>
         <p>
           BKFC is building a broader international gym ecosystem around combat
@@ -297,7 +297,7 @@ export default function HomePage() {
       >
         <div className="section-heading">
           <p className="eyebrow">Official Affiliation Application</p>
-          <h2 id="form-heading">Apply for BKFC Affiliate Gym Network review</h2>
+          <h2 id="form-heading">Apply for BKFC Affiliate Gym Network review:</h2>
 
           <p className="form-confidence">
             All information submitted through this application is reviewed
