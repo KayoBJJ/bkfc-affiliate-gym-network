@@ -162,11 +162,17 @@ export default function HomePage() {
         <div className="section-heading center-heading">
           <p className="eyebrow">Tier Ladder</p>
           <h2>Performance-based progression inside the network</h2>
+          <p className="section-support tier-intro">
+            The BKFC Affiliate Gym Program is build as a tier-based network,
+            allowing gyms to strengthen their position over time through consistency,
+            standards, activity and overall program value.
+          </p>
         </div>
 
         <div className="three-card-grid">
           {tierItems.map((item) => (
             <article className="panel tier-card" key={item.title}>
+              <span className="tier-kicker">Affiliate Level</span>
               <h3>{item.title}</h3>
               <p>{item.copy}</p>
             </article>
