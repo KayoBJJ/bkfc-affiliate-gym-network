@@ -180,19 +180,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="panel content-section highlight-section" id="gym-of-the-month">
-        <div className="section-heading">
-          <p className="eyebrow">Gym of the Month</p>
-          <h2>Ongoing recognition inside the affiliate network</h2>
-        </div>
-        <p>
-          The program is designed to remain active, not static. Through a
-          recurring Gym of the Month mechanism, BKFC can highlight strong gym
-          performance, consistency, activity, and alignment. This creates
-          momentum across the network while opening the door to additional
-          visibility and future activation opportunities.
-        </p>
-      </section>
+      <section
+  className="panel content-section highlight-section"
+  id="gym-of-the-month"
+>
+  <div className="section-heading">
+    <p className="eyebrow">Gym of the Month</p>
+    <h2>Recurring recognition for standout affiliate gyms</h2>
+  </div>
+
+  <p>
+    The BKFC Affiliate Gym Program is designed to stay active throughout the
+    year. Through a recurring Gym of the Month feature, BKFC can spotlight
+    affiliate gyms that demonstrate strong standards, visible activity, and
+    meaningful contribution to the network.
+  </p>
+
+  <p className="section-support">
+    More than simple recognition, this mechanism creates momentum across the
+    program and gives standout gyms an additional layer of visibility, prestige,
+    and future activation potential within the BKFC ecosystem.
+  </p>
+
+  <div className="recognition-strip">
+    <div className="recognition-pill">Monthly spotlight</div>
+    <div className="recognition-pill">Extra visibility</div>
+    <div className="recognition-pill">Program prestige</div>
+    <div className="recognition-pill">Future activation potential</div>
+  </div>
+</section>
 
       <section className="panel content-section" id="expectations">
         <div className="section-heading">
