@@ -96,9 +96,12 @@ export default function HomePage() {
             sports facilities to the BKFC international ecosystem.
           </p>
           <p className="hero-supporting">
-            Built to support visibility, athlete opportunity, network growth,
-            and future activation across serious gyms aligned with BKFC
-            standards.
+            Built for gyms with serious standards, athlete potential,
+            and long-term growth ambition inside and expanding 
+            BKFC network.
+        
+          
+          
           </p>
 
           <div className="hero-actions">
@@ -123,11 +126,14 @@ export default function HomePage() {
           The BKFC Affiliate Gym Program is a structured affiliation model for
           selected combat sports gyms that demonstrate strong standards,
           development potential, and alignment with BKFC’s international growth
-          direction. It is not simply a listing or badge. It is a performance-
+          direction. It is not simply a listing or badge. 
+          </p>
+          <p className="section-support">
+            It is a performance-
           driven network designed to connect serious gyms with visibility,
           athlete pathways, and future activation opportunities inside the BKFC
           ecosystem.
-        </p>
+          </p>
       </section>
 
       <section className="panel content-section" id="fighter-pathway">
@@ -141,7 +147,7 @@ export default function HomePage() {
           <div className="pathway-arrow">→</div>
           <div className="pathway-step">Talent Visibility</div>
           <div className="pathway-arrow">→</div>
-          <div className="pathway-step">BKFC Tryouts / Trials</div>
+          <div className="pathway-step">BKFC Tryouts</div>
           <div className="pathway-arrow">→</div>
           <div className="pathway-step">Selection Opportunity</div>
         </div>
