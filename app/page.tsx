@@ -34,9 +34,9 @@ const benefitGroups = [
     title: "Exposure",
     items: [
       "Official BKFC affiliate recognition",
-      "Featured placement within the BKFC network ecosystem",
-      "Social media and content visibility opportunities",
-      "Stronger positioning for gyms looking to stand out locally and internationally",
+      "Positioning inside the BKFC international gym network",
+      "Visibility opportunities across BKFC digital and content channels",
+      "Stronger credibility for gyms looking to grow locally and internationally",
     ],
   },
   {
@@ -44,17 +44,17 @@ const benefitGroups = [
     items: [
       "Priority visibility for fighters connected to affiliate gyms",
       "Closer connection to BKFC tryouts, trials, and talent pathways",
-      "Increased opportunity for athlete evaluation and development",
-      "Stronger long-term bridge between gym talent and BKFC platforms",
+      "Stronger long-term bridge between gym athletes and BKFC opportunity channels",
+      "Additional value for gyms focused on developing competitive fighters",
     ],
   },
   {
     title: "Commercial & Program Advantages",
     items: [
-      "Potential activation opportunities with BKFC initiatives",
-      "Merchandising access and future promotional support",
-      "Seminar and appearance opportunities connected to BKFC talent",
-      "Access to a structured network designed for growth, not just affiliation",
+      "Potential access to selected BKFC-related activations",
+      "Merchandising and promotional opportunity framework",
+      "Seminar and appearance possibilities connected to BKFC talent",
+      "Entry into a structured program built for growth, not just affiliation",
     ],
   },
 ];
@@ -234,18 +234,20 @@ export default function HomePage() {
         <div className="benefits-container">
           <div className="benefits-header">
             <p className="benefits-label">Benefits</p>
-            <h2>Why selected gyms join the program?</h2>
+            <h2>Why selected gyms join the program</h2>
             <p className="benefits-subtitle">
-              The BKFC Affiliate Gym Network is built to create meaningful value
-              across visibility, athlete development, and long-term gym growth.
-            </p>
+  The BKFC Affiliate Gym Program is designed to create value across brand
+  visibility, fighter opportunity, and long-term gym development inside a
+  structured international network.
+</p>
           </div>
 
           <div className="benefit-groups">
             {benefitGroups.map((group) => (
               <article className="benefit-group-card" key={group.title}>
+                <span className="benefit-kicker">Program Value</span>
                 <h3>{group.title}</h3>
-                <ul className="clean-list">
+                <ul className="clean-list benefit-list">
                   {group.items.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
