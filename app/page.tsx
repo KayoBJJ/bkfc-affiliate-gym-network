@@ -7,17 +7,17 @@ const tierItems = [
   {
     title: "Tier 1",
     copy:
-      "Entry level affiliate status for approved gyms aligned with BKFC standards and ready to join the network foundation.",
+      "Official entry into the BKFC Affiliate Gym Network for approved gyms that meet core standards and show strong structural potential.",
   },
   {
     title: "Tier 2",
     copy:
-      "Developing affiliate gyms demonstrating stronger activity, athlete pipeline potential, and local activation value.",
+      "Progressive affiliate level for gyms demonstrating stronger activity, athlete development consistency, and growing value inside the network.",
   },
   {
     title: "Tier 3",
     copy:
-      "Top-performing gyms positioned for deeper BKFC visibility, stronger fighter opportunity, and special activation consideration.",
+      "Top-tier affiliate level reserved for standout gyms with the strongest momentum, recognition potential, and long-term BKFC activation upside.",
   },
 ];
 
