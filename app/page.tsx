@@ -332,28 +332,45 @@ export default function HomePage() {
         aria-labelledby="form-heading"
       >
         <div className="section-heading">
-          <p className="eyebrow">Official Affiliation Application</p>
-          <h2 id="form-heading">Apply for BKFC Affiliate Gym Network review</h2>
+  <p className="eyebrow">Official Affiliation Application</p>
+  <h2 id="form-heading">Submit your gym for BKFC affiliate review</h2>
 
-          <p className="form-confidence">
-            All information submitted through this application is reviewed
-            confidentially by BKFC International Development and used solely for
-            internal evaluation of affiliation eligibility, operational fit, and
-            program alignment.
-          </p>
-        </div>
+  <p>
+    Complete the official application below to present your gym for review by
+    BKFC International Development.
+  </p>
 
-        <div className="prep-inline panel-soft">
-          <div>
-            <p className="eyebrow">Before submitting</p>
-            <h3>Please prepare the following materials:</h3>
-          </div>
-          <ul>
-            {prepItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
+  <p className="form-confidence">
+    Submission does not guarantee acceptance. Each application is reviewed
+    individually based on program fit, operational standards, and long-term
+    alignment with the BKFC affiliate network.
+  </p>
+</div>
+
+       <div className="prep-inline panel-soft">
+  <div>
+    <p className="eyebrow">Before submitting</p>
+    <h3>Prepare the following materials</h3>
+    <p className="prep-copy">
+      Having these items ready will help BKFC review your application more
+      efficiently and accurately.
+    </p>
+  </div>
+  <ul className="prep-materials-list">
+    {prepItems.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+</div>
+
+<p className="submission-trust-note">
+  All submitted information is handled confidentially and used solely for
+  internal BKFC affiliate program evaluation.
+</p>
+
+<div className="form-start-marker">
+  <span>Application Form</span>
+</div>
 
         <RegistrationForm />
       </section>
