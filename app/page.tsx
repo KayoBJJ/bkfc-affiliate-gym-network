@@ -97,7 +97,7 @@ export default function HomePage() {
           </p>
           <p className="hero-supporting">
             Built for gyms with serious standards, athlete potential,
-            and long-term growth ambition inside and expanding 
+            and long-term growth ambition inside an expanding 
             BKFC network.
         
           

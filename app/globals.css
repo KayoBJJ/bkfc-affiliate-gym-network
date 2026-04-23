@@ -8,7 +8,7 @@
   --muted: rgba(244, 244, 240, 0.68);
   --line: rgba(255, 255, 255, 0.12);
   --line-strong: rgba(255, 255, 255, 0.2);
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  --shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
   --radius-xl: 32px;
   --radius-lg: 22px;
   --radius-md: 16px;
@@ -31,7 +31,12 @@ body {
     radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 28%),
     linear-gradient(180deg, #0f0f0f 0%, #050505 42%, #090909 100%);
   color: var(--text);
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family:
+  Inter,
+  "Helvetica Neue",
+  Helvetica,
+  Arial,
+  sans-serif;
 }
 
 body::before {
@@ -347,7 +352,7 @@ h1 {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 215, 59, 0.35),
+    rgba(255, 215, 59, 0.5),
     transparent
   );
 }
@@ -749,7 +754,9 @@ h1 {
   text-transform: uppercase;
   text-decoration: none;
   border: 0;
-  box-shadow: 0 14px 30px rgba(255, 215, 59, 0.18);
+  box-shadow:
+  0 10px 24px rgba(255,215,59,0.18),
+  0 2px 6px rgba(0,0,0,0.35);
   transition:
     transform 140ms ease,
     box-shadow 140ms ease,
@@ -830,8 +837,14 @@ h1 {
 }
 
 .section-nav-link.active {
-  background: #ffd73b;
+  background: linear-gradient(
+    180deg,
+    #ffe27a,
+    #ffd73b
+  );
   color: #0a0a0a;
+  box-shadow:
+    0 4px 12px rgba(255,215,59,0.25);
 }
 
 @media (max-width: 768px) {
@@ -1184,7 +1197,7 @@ h1 {
 }
 
 .content-section {
-  margin-top: 22px;
+  margin-top: 26px;
 }
 
 .section-heading {
@@ -1385,4 +1398,62 @@ h1 {
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 20% 0%,
+      rgba(255,255,255,0.08),
+      transparent 40%
+    );
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 50% -20%,
+      rgba(255,215,59,0.08),
+      transparent 55%
+    );
+  pointer-events: none;
+}
+
+.content-section + .content-section {
+  margin-top: 28px;
+}
+
+.section-nav-inner {
+  transition: border-color 200ms ease;
+}
+
+.section-nav-inner:hover {
+  border-color: rgba(255,215,59,0.25);
+}
+
+.panel:hover {
+  transform: translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+h1 {
+  text-shadow:
+    0 2px 12px rgba(0,0,0,0.6);
+}
+
+.tier-card:hover::before {
+  height: 4px;
 }
