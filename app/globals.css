@@ -1334,3 +1334,10 @@ h1 {
 .starter-kit-list li::marker {
   color: #ffd73b;
 }
+
+.expansion-section {
+  border-color: rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    linear-gradient(180deg, var(--panel), var(--panel-strong));
+}

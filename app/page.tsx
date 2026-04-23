@@ -308,18 +308,23 @@ export default function HomePage() {
   </aside>
 </section>
 
-      <section className="panel content-section" id="expansion-positioning">
-        <div className="section-heading">
-          <p className="eyebrow">Expansion Positioning</p>
-          <h2>Joining at the foundation stage of a growing network!</h2>
-        </div>
-        <p>
-          BKFC is building a broader international gym ecosystem around combat
-          sports development, affiliate structure, and long-term market
-          expansion. Early affiliate gyms are not entering late. They are
-          entering while the network is still being shaped.
-        </p>
-      </section>
+     <section className="panel content-section expansion-section" id="expansion-positioning">
+  <div className="section-heading">
+    <p className="eyebrow">Expansion Positioning</p>
+    <h2>Entering at the foundation stage of a growing network</h2>
+  </div>
+
+  <p>
+    BKFC is building a broader international gym ecosystem around affiliate
+    structure, athlete development, and long-term market expansion.
+  </p>
+
+  <p className="section-support">
+    Early affiliate gyms are not joining after the system is already crowded.
+    They are entering while the network is still being shaped, creating stronger
+    long-term positioning inside a developing BKFC international framework.
+  </p>
+</section>
 
       <section
         id="application-form"
@@ -328,7 +333,7 @@ export default function HomePage() {
       >
         <div className="section-heading">
           <p className="eyebrow">Official Affiliation Application</p>
-          <h2 id="form-heading">Apply for BKFC Affiliate Gym Network review:</h2>
+          <h2 id="form-heading">Apply for BKFC Affiliate Gym Network review</h2>
 
           <p className="form-confidence">
             All information submitted through this application is reviewed
