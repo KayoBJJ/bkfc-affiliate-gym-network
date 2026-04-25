@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 export const runtime = "nodejs";
 
@@ -7,6 +8,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -57,6 +60,67 @@ async function uploadFile(file: File, folder: string) {
     .getPublicUrl(filePath);
 
   return data.publicUrl;
+}
+
+async function sendApplicationEmails({
+  gymName,
+  cityCountry,
+  contactPerson,
+  email,
+  phone,
+  websiteInstagram,
+  disciplinesOffered,
+}: {
+  gymName: string;
+  cityCountry: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  websiteInstagram: string;
+  disciplinesOffered: string;
+}) {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("Missing RESEND_API_KEY. Email notifications skipped.");
+    return;
+  }
+
+ const internalEmail = await resend.emails.send({
+  from: "BKFC Affiliate Intake <onboarding@resend.dev>",
+  to: "kkaloyanov@lgsports-ent.com",
+  subject: `New BKFC Affiliate Gym Application: ${gymName}`,
+  html: `
+    <h2>New BKFC Affiliate Gym Application</h2>
+    <p><strong>Gym:</strong> ${gymName}</p>
+    <p><strong>Location:</strong> ${cityCountry}</p>
+    <p><strong>Contact:</strong> ${contactPerson}</p>
+    <p><strong>Email:</strong> ${email}</p>
+    <p><strong>Phone:</strong> ${phone}</p>
+    <p><strong>Website / Social:</strong> ${websiteInstagram}</p>
+    <p><strong>Disciplines:</strong></p>
+    <p>${disciplinesOffered}</p>
+    <hr />
+    <p>Review the full submission inside Supabase.</p>
+  `,
+});
+
+console.log("Internal email response:", internalEmail);
+
+
+const applicantEmail = await resend.emails.send({
+  from: "BKFC Affiliate Intake <onboarding@resend.dev>",
+  to: "kkaloyanov@lgsports-ent.com", // TEMP: change this for testing
+  subject: "Your BKFC Affiliate Gym application was received",
+  html: `
+    <h2>Application received</h2>
+    <p>Thank you for submitting your gym for BKFC Affiliate Gym Network review.</p>
+    <p>Your materials have been received and will be reviewed by BKFC International Development.</p>
+    <p>If additional information is required during evaluation, you will be contacted at the email provided.</p>
+    <p><strong>Gym:</strong> ${gymName}</p>
+    <p><strong>Location:</strong> ${cityCountry}</p>
+  `,
+});
+
+console.log("Applicant email response:", applicantEmail);
 }
 
 export async function POST(request: Request) {
@@ -135,6 +199,20 @@ export async function POST(request: Request) {
     if (error) {
       throw new Error(`Database insert failed: ${error.message}`);
     }
+
+    try {
+  await sendApplicationEmails({
+    gymName,
+    cityCountry,
+    contactPerson,
+    email,
+    phone,
+    websiteInstagram,
+    disciplinesOffered,
+  });
+} catch (emailError) {
+  console.error("Email notification failed", emailError);
+}
 
     return NextResponse.json({
       message:
