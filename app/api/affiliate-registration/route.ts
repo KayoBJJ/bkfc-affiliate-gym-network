@@ -48,6 +48,15 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
+function extractCountry(cityCountry: string) {
+  const parts = cityCountry
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.length > 1 ? parts[parts.length - 1] : cityCountry.trim();
+}
+
 async function uploadFile(file: File, folder: string) {
   const safeName = sanitizeFileName(file.name || "upload");
   const filePath = `${folder}/${Date.now()}-${safeName}`;
@@ -76,6 +85,7 @@ async function sendApplicationEmails({
   submittedAt,
   gymName,
   cityCountry,
+  country,
   contactPerson,
   email,
   phone,
@@ -87,6 +97,7 @@ async function sendApplicationEmails({
   submittedAt: string;
   gymName: string;
   cityCountry: string;
+  country: string;
   contactPerson: string;
   email: string;
   phone: string;
@@ -164,6 +175,7 @@ async function sendApplicationEmails({
           <td style="padding:18px;color:#ffffff !important;">
             <p><strong>Gym:</strong> ${escapeHtml(gymName)}</p>
             <p><strong>Location:</strong> ${escapeHtml(cityCountry)}</p>
+            <p><strong>Country:</strong> ${escapeHtml(country)}</p>
             <p><strong>Contact:</strong> ${escapeHtml(contactPerson)}</p>
             <p><strong>Email:</strong> ${escapeHtml(email)}</p>
             <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
@@ -348,6 +360,7 @@ export async function POST(request: Request) {
 
     const gymName = getString(formData, "gymName");
     const cityCountry = getString(formData, "cityCountry");
+    const country = extractCountry(cityCountry);
     const contactPerson = getString(formData, "contactPerson");
     const email = getString(formData, "email");
     const phone = getString(formData, "phone");
@@ -400,6 +413,7 @@ export async function POST(request: Request) {
       id: submissionId,
       gym_name: gymName,
       city_country: cityCountry,
+      country,
       contact_person: contactPerson,
       email,
       phone,
@@ -424,6 +438,7 @@ export async function POST(request: Request) {
     submittedAt,
     gymName,
     cityCountry,
+    country,
     contactPerson,
     email,
     phone,
