@@ -146,13 +146,13 @@ export function RegistrationForm() {
         </label>
 
         <label className="field">
-          <span>Promo video upload</span>
-          <input
-            name="promoVideoUpload"
-            type="file"
-            accept="video/*,.mov,.mp4,.m4v"
-          />
-        </label>
+  <span>Promo video link</span>
+  <input
+    name="promoVideoLink"
+    type="url"
+    placeholder="YouTube, Google Drive, Dropbox, WeTransfer or Instagram link"
+  />
+</label>
       </div>
 
       <section className="consent-panel" aria-labelledby="consent-heading">
