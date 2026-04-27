@@ -249,6 +249,7 @@ export async function POST(request: Request) {
     const phone = getString(formData, "phone");
     const websiteInstagram = getString(formData, "websiteInstagram");
     const disciplinesOffered = getString(formData, "disciplinesOffered");
+    const promoVideoLink = getString(formData, "promoVideoLink");
 
     const reviewConsent = formData.get("reviewConsent") === "on";
     const followUpConsent = formData.get("followUpConsent") === "on";
@@ -256,7 +257,6 @@ export async function POST(request: Request) {
     const logoUpload = getFile(formData, "logoUpload");
     const gymPhotos = getFiles(formData, "gymPhotos");
     const fighterListUpload = getFile(formData, "fighterListUpload");
-    const promoVideoUpload = getFile(formData, "promoVideoUpload");
 
     if (
       !gymName ||
@@ -289,9 +289,7 @@ export async function POST(request: Request) {
       ? await uploadFile(fighterListUpload, `${folder}/fighter-list`)
       : null;
 
-    const promoVideoUrl = promoVideoUpload
-      ? await uploadFile(promoVideoUpload, `${folder}/promo-video`)
-      : null;
+    
 
     const { error } = await supabase.from("affiliate_applications").insert({
       id: submissionId,
@@ -305,7 +303,7 @@ export async function POST(request: Request) {
       logo_url: logoUrl,
       gym_photo_urls: gymPhotoUrls,
       fighter_list_url: fighterListUrl,
-      promo_video_url: promoVideoUrl,
+      promo_video_link: promoVideoLink || null,
       review_consent: reviewConsent,
       follow_up_consent: followUpConsent,
       status: "new",
