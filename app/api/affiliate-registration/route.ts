@@ -108,15 +108,130 @@ console.log("Internal email response:", internalEmail);
 
 const applicantEmail = await resend.emails.send({
   from: "BKFC Affiliate Intake <onboarding@resend.dev>",
-  to: "kkaloyanov@lgsports-ent.com", // TEMP: change this for testing
-  subject: "Your BKFC Affiliate Gym application was received",
+  to: "kkaloyanov@lgsports-ent.com", // TEMP for testing. Later change to: email
+  subject: "BKFC Affiliate Application Received",
   html: `
-    <h2>Application received</h2>
-    <p>Thank you for submitting your gym for BKFC Affiliate Gym Network review.</p>
-    <p>Your materials have been received and will be reviewed by BKFC International Development.</p>
-    <p>If additional information is required during evaluation, you will be contacted at the email provided.</p>
-    <p><strong>Gym:</strong> ${gymName}</p>
-    <p><strong>Location:</strong> ${cityCountry}</p>
+    <body style="margin:0;background:#000000;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#000000;">
+        <tr>
+          <td align="center">
+
+            <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#000000;">
+              
+              <tr>
+                <td align="center" style="padding:34px 20px 22px;">
+                  <div style="font-size:56px;font-weight:900;letter-spacing:2px;color:#ffffff;line-height:1;">
+                    BKFC
+                  </div>
+                  <div style="font-size:12px;letter-spacing:5px;color:#f2c94c;text-transform:uppercase;margin-top:10px;">
+                    Bare Knuckle Fighting Championship
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:0 24px 24px;">
+                  <div style="border:1px solid #333333;background:#111111;padding:30px;text-align:center;">
+                    <div style="font-size:13px;letter-spacing:4px;color:#f2c94c;text-transform:uppercase;">
+                      Official Intake Confirmation
+                    </div>
+                    <h1 style="margin:18px 0 10px;font-size:34px;line-height:1.1;color:#ffffff;text-transform:uppercase;">
+                      Affiliate Gym Network
+                    </h1>
+                    <div style="font-size:18px;color:#d8d8d8;">
+                      Application Received
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:0 32px 12px;">
+                  <p style="font-size:17px;line-height:1.6;color:#ffffff;margin:0 0 16px;">
+                    Thank you for submitting your gym to the official BKFC Affiliate Gym Network.
+                  </p>
+                  <p style="font-size:16px;line-height:1.6;color:#d6d6d6;margin:0;">
+                    Your application has been registered and will be reviewed by BKFC International Development.
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:18px 32px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#151515;border:1px solid #333333;">
+                    <tr>
+                      <td style="padding:20px;">
+                        <div style="font-size:13px;letter-spacing:3px;color:#f2c94c;text-transform:uppercase;margin-bottom:12px;">
+                          Application Summary
+                        </div>
+                        <p style="margin:0 0 8px;font-size:16px;color:#ffffff;">
+                          <strong>Gym:</strong> ${gymName}
+                        </p>
+                        <p style="margin:0;font-size:16px;color:#ffffff;">
+                          <strong>Location:</strong> ${cityCountry}
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:6px 32px 20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f0f;border:1px solid #333333;">
+                    <tr>
+                      <td style="padding:20px;">
+                        <div style="font-size:13px;letter-spacing:3px;color:#f2c94c;text-transform:uppercase;margin-bottom:12px;">
+                          Next Step
+                        </div>
+                        <p style="margin:0;font-size:15px;line-height:1.6;color:#d6d6d6;">
+                          Our team will evaluate your facility, coaching structure, athlete development environment, and regional alignment. If additional information is required, you will be contacted directly.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:12px 32px 34px;">
+                  <div style="display:inline-block;border:2px solid #ffffff;padding:14px 28px;font-size:15px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#ffffff;">
+                    Review Pending
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:0 24px;">
+                  <hr style="border:0;border-top:2px solid #ffffff;">
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:24px;">
+                  <div style="background:#202020;padding:18px;">
+                    <span style="font-size:14px;color:#ffffff;margin:0 10px;">BKFC International Development</span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:8px 32px 40px;">
+                  <p style="font-size:13px;line-height:1.5;color:#ffffff;margin:0;">
+                    Copyright © 2026 Bare Knuckle Fighting Championship, LLC. All rights reserved.
+                  </p>
+                  <p style="font-size:12px;line-height:1.5;color:#888888;margin:10px 0 0;">
+                    You are receiving this email because you submitted a BKFC Affiliate Gym application.
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+
+          </td>
+        </tr>
+      </table>
+    </body>
   `,
 });
 
