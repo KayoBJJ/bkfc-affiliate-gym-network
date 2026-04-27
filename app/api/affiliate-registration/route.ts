@@ -39,6 +39,15 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 async function uploadFile(file: File, folder: string) {
   const safeName = sanitizeFileName(file.name || "upload");
   const filePath = `${folder}/${Date.now()}-${safeName}`;
@@ -70,6 +79,7 @@ async function sendApplicationEmails({
   phone,
   websiteInstagram,
   disciplinesOffered,
+  promoVideoLink,
 }: {
   gymName: string;
   cityCountry: string;
@@ -78,6 +88,7 @@ async function sendApplicationEmails({
   phone: string;
   websiteInstagram: string;
   disciplinesOffered: string;
+  promoVideoLink: string;
 }) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("Missing RESEND_API_KEY. Email notifications skipped.");
@@ -89,17 +100,81 @@ async function sendApplicationEmails({
   to: "kkaloyanov@lgsports-ent.com",
   subject: `New BKFC Affiliate Gym Application: ${gymName}`,
   html: `
-    <h2>New BKFC Affiliate Gym Application</h2>
-    <p><strong>Gym:</strong> ${gymName}</p>
-    <p><strong>Location:</strong> ${cityCountry}</p>
-    <p><strong>Contact:</strong> ${contactPerson}</p>
-    <p><strong>Email:</strong> ${email}</p>
-    <p><strong>Phone:</strong> ${phone}</p>
-    <p><strong>Website / Social:</strong> ${websiteInstagram}</p>
-    <p><strong>Disciplines:</strong></p>
-    <p>${disciplinesOffered}</p>
-    <hr />
-    <p>Review the full submission inside Supabase.</p>
+    <div style="margin:0;background:#000000;padding:32px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+      <div style="max-width:680px;margin:0 auto;background:#0b0b0b;border:1px solid #2a2a2a;">
+
+        <div style="text-align:center;padding:32px 24px 22px;border-bottom:3px solid #ffffff;">
+          <div style="font-size:54px;font-weight:900;letter-spacing:2px;line-height:1;color:#ffffff;">
+            BKFC
+          </div>
+          <div style="margin-top:10px;font-size:12px;letter-spacing:4px;color:#f2c94c;text-transform:uppercase;">
+            Affiliate Gym Network
+          </div>
+        </div>
+
+        <div style="padding:28px 30px 18px;">
+          <div style="font-size:13px;letter-spacing:3px;color:#f2c94c;text-transform:uppercase;margin-bottom:10px;">
+            New Application Received
+          </div>
+
+          <h1 style="margin:0 0 12px;font-size:30px;line-height:1.15;color:#ffffff;text-transform:uppercase;">
+            ${escapeHtml(gymName)}
+          </h1>
+
+          <p style="margin:0;font-size:16px;line-height:1.6;color:#d6d6d6;">
+            A new gym has submitted an application for review by BKFC International Development.
+          </p>
+        </div>
+
+        <div style="padding:10px 30px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#151515;border:1px solid #333333;">
+            <tr>
+              <td style="padding:18px;border-bottom:1px solid #333333;color:#f2c94c;font-size:13px;letter-spacing:2px;text-transform:uppercase;">
+                Application Details
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px;">
+                <p style="margin:0 0 10px;font-size:15px;color:#ffffff;"><strong>Gym:</strong> ${escapeHtml(gymName)}</p>
+                <p style="margin:0 0 10px;font-size:15px;color:#ffffff;"><strong>Location:</strong> ${escapeHtml(cityCountry)}</p>
+                <p style="margin:0 0 10px;font-size:15px;color:#ffffff;"><strong>Contact:</strong> ${escapeHtml(contactPerson)}</p>
+                <p style="margin:0 0 10px;font-size:15px;color:#ffffff;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+                <p style="margin:0 0 10px;font-size:15px;color:#ffffff;"><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+                <p style="margin:0 0 10px;font-size:15px;color:#ffffff;"><strong>Website / Social:</strong> ${escapeHtml(websiteInstagram)}</p>
+                <p style="margin:0;font-size:15px;color:#ffffff;"><strong>Promo Video Link:</strong> ${promoVideoLink ? escapeHtml(promoVideoLink) : "Not provided"}</p>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="padding:18px 30px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#101010;border:1px solid #333333;">
+            <tr>
+              <td style="padding:18px;border-bottom:1px solid #333333;color:#f2c94c;font-size:13px;letter-spacing:2px;text-transform:uppercase;">
+                Disciplines Offered
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px;font-size:15px;line-height:1.6;color:#ffffff;">
+                ${escapeHtml(disciplinesOffered).replace(/\n/g, "<br />")}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="padding:24px 30px 30px;text-align:center;">
+          <div style="display:inline-block;border:2px solid #ffffff;padding:13px 24px;font-size:14px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#ffffff;">
+            Review in Supabase
+          </div>
+
+          <p style="margin:20px 0 0;font-size:13px;line-height:1.5;color:#999999;">
+            Full uploaded assets are stored in Supabase Storage under the affiliate application record.
+          </p>
+        </div>
+
+      </div>
+    </div>
   `,
 });
 
@@ -322,6 +397,7 @@ export async function POST(request: Request) {
     phone,
     websiteInstagram,
     disciplinesOffered,
+    promoVideoLink,
   });
 } catch (emailError) {
   console.error("Email notification failed", emailError);
