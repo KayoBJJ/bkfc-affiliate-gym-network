@@ -57,6 +57,76 @@ function extractCountry(cityCountry: string) {
   return parts.length > 1 ? parts[parts.length - 1] : cityCountry.trim();
 }
 
+function getRegionFromCountry(country: string) {
+  const normalizedCountry = country.trim().toLowerCase();
+
+  const europe = [
+    "bulgaria",
+    "spain",
+    "italy",
+    "serbia",
+    "poland",
+    "germany",
+    "france",
+    "netherlands",
+    "belgium",
+    "romania",
+    "greece",
+    "hungary",
+    "croatia",
+    "montenegro",
+    "albania",
+    "north macedonia",
+    "austria",
+    "switzerland",
+    "united kingdom",
+    "ireland",
+    "portugal",
+  ];
+
+  const mena = [
+    "uae",
+    "united arab emirates",
+    "saudi arabia",
+    "qatar",
+    "kuwait",
+    "bahrain",
+    "oman",
+    "egypt",
+    "morocco",
+    "tunisia",
+    "jordan",
+    "lebanon",
+  ];
+
+  const latam = [
+    "mexico",
+    "brazil",
+    "argentina",
+    "colombia",
+    "chile",
+    "peru",
+    "uruguay",
+    "paraguay",
+    "ecuador",
+    "venezuela",
+  ];
+
+  const northAmerica = [
+    "usa",
+    "united states",
+    "united states of america",
+    "canada",
+  ];
+
+  if (europe.includes(normalizedCountry)) return "Europe";
+  if (mena.includes(normalizedCountry)) return "MENA";
+  if (latam.includes(normalizedCountry)) return "LATAM";
+  if (northAmerica.includes(normalizedCountry)) return "North America";
+
+  return "Other";
+}
+
 async function uploadFile(file: File, folder: string) {
   const safeName = sanitizeFileName(file.name || "upload");
   const filePath = `${folder}/${Date.now()}-${safeName}`;
@@ -86,6 +156,7 @@ async function sendApplicationEmails({
   gymName,
   cityCountry,
   country,
+  region,
   contactPerson,
   email,
   phone,
@@ -98,6 +169,7 @@ async function sendApplicationEmails({
   gymName: string;
   cityCountry: string;
   country: string;
+  region: string;
   contactPerson: string;
   email: string;
   phone: string;
@@ -176,6 +248,7 @@ async function sendApplicationEmails({
             <p><strong>Gym:</strong> ${escapeHtml(gymName)}</p>
             <p><strong>Location:</strong> ${escapeHtml(cityCountry)}</p>
             <p><strong>Country:</strong> ${escapeHtml(country)}</p>
+            <p><strong>Region:</strong> ${escapeHtml(region)}</p>
             <p><strong>Contact:</strong> ${escapeHtml(contactPerson)}</p>
             <p><strong>Email:</strong> ${escapeHtml(email)}</p>
             <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
@@ -361,6 +434,7 @@ export async function POST(request: Request) {
     const gymName = getString(formData, "gymName");
     const cityCountry = getString(formData, "cityCountry");
     const country = extractCountry(cityCountry);
+    const region = getRegionFromCountry(country);
     const contactPerson = getString(formData, "contactPerson");
     const email = getString(formData, "email");
     const phone = getString(formData, "phone");
@@ -414,6 +488,7 @@ export async function POST(request: Request) {
       gym_name: gymName,
       city_country: cityCountry,
       country,
+      region,
       contact_person: contactPerson,
       email,
       phone,
@@ -439,6 +514,7 @@ export async function POST(request: Request) {
     gymName,
     cityCountry,
     country,
+    region,
     contactPerson,
     email,
     phone,
