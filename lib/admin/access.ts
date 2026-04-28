@@ -1,7 +1,7 @@
 const allowedAdminEmails = [
   "kkaloyanov@lgsports-ent.com",
+  "lubo@bkfc.com",
   // TODO: Add affiliate@bkfc.com
-  // TODO: Add lubo@bkfc.com
   // TODO: Add marchela@bkfc.com
 ];
 
