@@ -501,6 +501,7 @@ export async function POST(request: Request) {
       review_consent: reviewConsent,
       follow_up_consent: followUpConsent,
       status: "new",
+      review_stage: "submitted",
     });
 
     if (error) {
