@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
@@ -9,6 +10,44 @@ import type { ReviewFormState } from "@/lib/admin/types";
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+async function updateApplicationStageAndStatus({
+  applicationId,
+  reviewStage,
+  status,
+  internalNotes,
+}: {
+  applicationId: string;
+  reviewStage: string;
+  status: string;
+  internalNotes?: string | null;
+}) {
+  const supabase = createAdminSupabaseClient();
+  const updates: {
+    review_stage: string;
+    status: string;
+    internal_notes?: string | null;
+  } = {
+    review_stage: reviewStage,
+    status,
+  };
+
+  if (typeof internalNotes !== "undefined") {
+    updates.internal_notes = internalNotes || null;
+  }
+
+  const { error } = await supabase
+    .from("affiliate_applications")
+    .update(updates)
+    .eq("id", applicationId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/applications");
+  revalidatePath(`/admin/applications/${applicationId}`);
 }
 
 export async function updateApplicationReviewAction(
@@ -44,22 +83,12 @@ export async function updateApplicationReviewAction(
   }
 
   try {
-    const supabase = createAdminSupabaseClient();
-    const { error } = await supabase
-      .from("affiliate_applications")
-      .update({
-        review_stage: reviewStage,
-        status,
-        internal_notes: internalNotes || null,
-      })
-      .eq("id", applicationId);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    revalidatePath("/admin/applications");
-    revalidatePath(`/admin/applications/${applicationId}`);
+    await updateApplicationStageAndStatus({
+      applicationId,
+      reviewStage,
+      status,
+      internalNotes,
+    });
 
     return {
       message: "Application review updated.",
@@ -72,4 +101,32 @@ export async function updateApplicationReviewAction(
       status: "error",
     };
   }
+}
+
+export async function triggerPipelineAction(formData: FormData) {
+  await requireAdminUser();
+
+  const applicationId = getFormValue(formData, "applicationId");
+  const reviewStage = getFormValue(formData, "review_stage");
+  const status = getFormValue(formData, "status");
+
+  if (!applicationId) {
+    throw new Error("Missing application id.");
+  }
+
+  if (!REVIEW_STAGE_OPTIONS.includes(reviewStage)) {
+    throw new Error("Invalid review stage selected.");
+  }
+
+  if (!APPLICATION_STATUS_OPTIONS.includes(status)) {
+    throw new Error("Invalid application status selected.");
+  }
+
+  await updateApplicationStageAndStatus({
+    applicationId,
+    reviewStage,
+    status,
+  });
+
+  redirect(`/admin/applications/${applicationId}`);
 }

@@ -1,19 +1,22 @@
 export const REVIEW_STAGE_OPTIONS = [
   "submitted",
-  "screening",
-  "shortlisted",
-  "follow-up",
+  "under_review",
+  "follow_up_required",
+  "interview",
+  "trial_candidate",
   "approved",
-  "declined",
+  "rejected",
+  "activated_affiliate",
 ];
 
 export const APPLICATION_STATUS_OPTIONS = [
   "new",
   "in_review",
-  "pending_follow_up",
+  "pending_info",
+  "candidate",
   "approved",
   "rejected",
+  "active",
 ];
 
 export const KPI_REGIONS = ["Europe", "MENA", "LATAM", "North America"] as const;
-

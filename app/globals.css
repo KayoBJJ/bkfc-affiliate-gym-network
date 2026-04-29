@@ -1289,6 +1289,12 @@ h1 {
   gap: 24px;
 }
 
+.admin-detail-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .admin-detail-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
@@ -1315,6 +1321,12 @@ h1 {
 
 .admin-inline-link:hover {
   text-decoration: underline;
+}
+
+.admin-stage-pill-strong {
+  align-self: flex-start;
+  border-color: rgba(255, 215, 59, 0.3);
+  background: linear-gradient(180deg, rgba(255, 215, 59, 0.16), rgba(255, 215, 59, 0.06));
 }
 
 .admin-media-grid {
@@ -1358,6 +1370,40 @@ h1 {
 .admin-update-form {
   display: grid;
   gap: 16px;
+}
+
+.admin-detail-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-pipeline-panel {
+  margin-top: 24px;
+}
+
+.admin-pipeline-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-pipeline-form {
+  display: block;
+}
+
+.admin-pipeline-button {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+}
+
+.admin-pipeline-button.danger {
+  border-color: rgba(255, 111, 111, 0.3);
+  color: #ffb3b3;
+}
+
+.admin-pipeline-button.danger:hover {
+  background: rgba(255, 111, 111, 0.08);
+  border-color: rgba(255, 111, 111, 0.45);
 }
 
 .admin-submit-button {
@@ -1466,6 +1512,12 @@ h1 {
   .admin-detail-layout {
     grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
     align-items: start;
+  }
+
+  .admin-detail-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .admin-update-panel {

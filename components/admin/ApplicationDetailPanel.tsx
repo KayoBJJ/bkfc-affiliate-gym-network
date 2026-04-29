@@ -37,7 +37,12 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
     <section className="panel admin-detail-panel">
       <div className="section-heading">
         <p className="eyebrow">Application Detail</p>
-        <h2>{application.gym_name}</h2>
+        <div className="admin-detail-heading">
+          <h2>{application.gym_name}</h2>
+          <span className="admin-stage-pill admin-stage-pill-strong">
+            Current stage: {application.review_stage}
+          </span>
+        </div>
       </div>
 
       <div className="admin-detail-grid">
@@ -115,4 +120,3 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
     </section>
   );
 }
-

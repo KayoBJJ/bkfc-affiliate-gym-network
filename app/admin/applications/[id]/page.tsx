@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ApplicationDetailPanel } from "@/components/admin/ApplicationDetailPanel";
+import { PipelineActionsPanel } from "@/components/admin/PipelineActionsPanel";
 import { ReviewUpdateForm } from "@/components/admin/ReviewUpdateForm";
 import {
   APPLICATION_STATUS_OPTIONS,
@@ -43,15 +44,19 @@ export default async function AdminApplicationDetailPage({
       <div className="admin-detail-layout">
         <ApplicationDetailPanel application={application} />
 
-        <ReviewUpdateForm
-          applicationId={application.id}
-          currentStatus={application.status}
-          currentReviewStage={application.review_stage}
-          currentInternalNotes={application.internal_notes}
-          reviewStageOptions={REVIEW_STAGE_OPTIONS}
-          statusOptions={APPLICATION_STATUS_OPTIONS}
-          action={updateApplicationReviewAction}
-        />
+        <div className="admin-detail-sidebar">
+          <PipelineActionsPanel applicationId={application.id} />
+
+          <ReviewUpdateForm
+            applicationId={application.id}
+            currentStatus={application.status}
+            currentReviewStage={application.review_stage}
+            currentInternalNotes={application.internal_notes}
+            reviewStageOptions={REVIEW_STAGE_OPTIONS}
+            statusOptions={APPLICATION_STATUS_OPTIONS}
+            action={updateApplicationReviewAction}
+          />
+        </div>
       </div>
     </AdminShell>
   );
