@@ -16,7 +16,7 @@ export async function getAdminSession() {
 
   return {
     user,
-    isAllowed: isAllowedAdminEmail(user.email),
+    isAllowed: await isAllowedAdminEmail(user.email),
   };
 }
 

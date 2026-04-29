@@ -1,15 +1,23 @@
-const allowedAdminEmails = [
-  "kkaloyanov@lgsports-ent.com",
-  "lubo@bkfc.com",
-  // TODO: Add affiliate@bkfc.com
-  // TODO: Add marchela@bkfc.com
-];
+import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 
-export function isAllowedAdminEmail(email: string | undefined | null) {
-  if (!email) {
+export async function isAllowedAdminEmail(email: string | undefined | null) {
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  if (!normalizedEmail) {
     return false;
   }
 
-  return allowedAdminEmails.includes(email.toLowerCase());
-}
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("id")
+    .ilike("email", normalizedEmail)
+    .eq("is_active", true)
+    .maybeSingle();
 
+  if (error) {
+    throw new Error(`Failed to verify admin access: ${error.message}`);
+  }
+
+  return Boolean(data);
+}

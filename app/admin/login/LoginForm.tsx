@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { isAllowedAdminEmail } from "@/lib/admin/access";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type LoginFormProps = {
@@ -30,31 +29,14 @@ export function LoginForm({ initialError }: LoginFormProps) {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    console.log("Attempting login with:", cleanEmail);
-
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: cleanEmail,
       password,
     });
 
-    console.log("LOGIN DATA:", data);
-    console.log("LOGIN ERROR:", signInError);
-
     if (signInError) {
       setPending(false);
-      setError(signInError.message);
-      return;
-    }
-
-    const signedInEmail = data.user?.email?.toLowerCase();
-
-    console.log("SIGNED IN EMAIL:", signedInEmail);
-    console.log("ALLOWED:", isAllowedAdminEmail(signedInEmail));
-
-    if (!isAllowedAdminEmail(signedInEmail)) {
-      await supabase.auth.signOut();
-      setPending(false);
-      setError("Logged in, but this email is not approved for admin access.");
+      setError(errorMessages.invalid_credentials);
       return;
     }
 

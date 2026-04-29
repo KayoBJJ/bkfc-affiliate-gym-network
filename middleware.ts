@@ -44,16 +44,18 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginRoute = pathname === "/admin/login";
-  const isAllowed = isAllowedAdminEmail(user?.email);
+  const isAllowed = user?.email ? await isAllowedAdminEmail(user.email) : false;
 
   if (!user && !isLoginRoute) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
   if (user && !isAllowed) {
-    return NextResponse.redirect(
-      new URL("/admin/login?error=unauthorized", request.url)
-    );
+    if (isLoginRoute) {
+      return response;
+    }
+
+    return NextResponse.redirect(new URL("/admin/login?error=unauthorized", request.url));
   }
 
   if (user && isAllowed && isLoginRoute) {
