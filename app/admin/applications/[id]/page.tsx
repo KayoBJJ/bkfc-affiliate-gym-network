@@ -4,12 +4,16 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { ApplicationDetailPanel } from "@/components/admin/ApplicationDetailPanel";
 import { PipelineActionsPanel } from "@/components/admin/PipelineActionsPanel";
 import { ReviewUpdateForm } from "@/components/admin/ReviewUpdateForm";
+import { StageTimelineCard } from "@/components/admin/StageTimelineCard";
 import {
   APPLICATION_STATUS_OPTIONS,
   REVIEW_STAGE_OPTIONS,
 } from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
-import { getAffiliateApplicationById } from "@/lib/admin/supabase";
+import {
+  getAffiliateApplicationById,
+  getApplicationStageHistory,
+} from "@/lib/admin/supabase";
 import { updateApplicationReviewAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +28,10 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   await requireAdminUser();
-  const application = await getAffiliateApplicationById(params.id);
+  const [application, stageHistory] = await Promise.all([
+    getAffiliateApplicationById(params.id),
+    getApplicationStageHistory(params.id),
+  ]);
 
   if (!application) {
     notFound();
@@ -56,6 +63,8 @@ export default async function AdminApplicationDetailPage({
             statusOptions={APPLICATION_STATUS_OPTIONS}
             action={updateApplicationReviewAction}
           />
+
+          <StageTimelineCard historyEntries={stageHistory} />
         </div>
       </div>
     </AdminShell>

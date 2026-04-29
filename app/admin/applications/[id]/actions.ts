@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
+import { logStageChange } from "@/lib/admin/stageHistory";
 import type { ReviewFormState } from "@/lib/admin/types";
 
 function getFormValue(formData: FormData, key: string) {
@@ -24,6 +25,20 @@ async function updateApplicationStageAndStatus({
   internalNotes?: string | null;
 }) {
   const supabase = createAdminSupabaseClient();
+  const { data: existingApplication, error: existingApplicationError } = await supabase
+    .from("affiliate_applications")
+    .select("review_stage")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  if (existingApplicationError) {
+    throw new Error(existingApplicationError.message);
+  }
+
+  if (!existingApplication) {
+    throw new Error("Application not found.");
+  }
+
   const updates: {
     review_stage: string;
     status: string;
@@ -44,6 +59,10 @@ async function updateApplicationStageAndStatus({
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (existingApplication.review_stage !== reviewStage) {
+    await logStageChange(applicationId, reviewStage, status);
   }
 
   revalidatePath("/admin/applications");

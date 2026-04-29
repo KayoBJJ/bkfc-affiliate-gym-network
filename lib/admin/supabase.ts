@@ -1,7 +1,10 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
-import type { AffiliateApplication } from "@/lib/admin/types";
+import type {
+  AffiliateApplication,
+  ApplicationStageHistoryEntry,
+} from "@/lib/admin/types";
 import { getSupabaseServiceRoleKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 export function createAdminSupabaseClient() {
@@ -60,4 +63,19 @@ export async function getAffiliateApplicationById(id: string) {
   }
 
   return data as AffiliateApplication | null;
+}
+
+export async function getApplicationStageHistory(applicationId: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("application_stage_history")
+    .select("id, application_id, review_stage, status, changed_at")
+    .eq("application_id", applicationId)
+    .order("changed_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load application stage history: ${error.message}`);
+  }
+
+  return (data ?? []) as ApplicationStageHistoryEntry[];
 }

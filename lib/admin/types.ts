@@ -26,3 +26,10 @@ export type ReviewFormState = {
   status: "idle" | "success" | "error";
 };
 
+export type ApplicationStageHistoryEntry = {
+  id: string;
+  application_id: string;
+  review_stage: string;
+  status: string;
+  changed_at: string;
+};
