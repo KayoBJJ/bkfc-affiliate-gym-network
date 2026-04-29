@@ -1,5 +1,7 @@
 "use client";
 
+import { REVIEW_STAGE_FILTER_TABS } from "@/lib/admin/constants";
+
 type ApplicationsFiltersProps = {
   filters: {
     region: string;
@@ -10,6 +12,7 @@ type ApplicationsFiltersProps = {
   countries: string[];
   regions: string[];
   reviewStages: string[];
+  reviewStageCounts: Record<string, number>;
   onChange: (next: {
     region: string;
     country: string;
@@ -23,6 +26,7 @@ export function ApplicationsFilters({
   countries,
   regions,
   reviewStages,
+  reviewStageCounts,
   onChange,
 }: ApplicationsFiltersProps) {
   return (
@@ -30,6 +34,27 @@ export function ApplicationsFilters({
       <div className="section-heading">
         <p className="eyebrow">Filters</p>
         <h2>Review pipeline controls</h2>
+      </div>
+
+      <div className="admin-stage-tabs" role="tablist" aria-label="Review stages">
+        {REVIEW_STAGE_FILTER_TABS.map((tab) => {
+          const count = tab.value ? reviewStageCounts[tab.value] ?? 0 : reviewStageCounts.all ?? 0;
+          const isActive = filters.reviewStage === tab.value;
+
+          return (
+            <button
+              key={tab.label}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={`admin-stage-tab${isActive ? " active" : ""}`}
+              onClick={() => onChange({ ...filters, reviewStage: tab.value })}
+            >
+              <span>{tab.label}</span>
+              <span className="admin-stage-tab-count">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="admin-filters-grid">
@@ -91,4 +116,3 @@ export function ApplicationsFilters({
     </section>
   );
 }
-

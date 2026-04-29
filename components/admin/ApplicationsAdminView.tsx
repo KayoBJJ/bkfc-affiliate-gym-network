@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AdminKpiCard } from "@/components/admin/AdminKpiCard";
 import { ApplicationsFilters } from "@/components/admin/ApplicationsFilters";
 import { ApplicationsTable } from "@/components/admin/ApplicationsTable";
-import { KPI_REGIONS } from "@/lib/admin/constants";
+import { KPI_REGIONS, REVIEW_STAGE_FILTER_TABS } from "@/lib/admin/constants";
 import type { AffiliateApplication } from "@/lib/admin/types";
 
 type ApplicationsAdminViewProps = {
@@ -58,6 +58,41 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
     });
   }, [applications, filters]);
 
+  const preStageFilteredApplications = useMemo(() => {
+    const searchTerm = filters.search.trim().toLowerCase();
+
+    return applications.filter((application) => {
+      const matchesRegion = !filters.region || application.region === filters.region;
+      const matchesCountry = !filters.country || application.country === filters.country;
+      const matchesSearch =
+        !searchTerm ||
+        [application.gym_name, application.contact_person, application.email]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTerm);
+
+      return matchesRegion && matchesCountry && matchesSearch;
+    });
+  }, [applications, filters.country, filters.region, filters.search]);
+
+  const reviewStageCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: preStageFilteredApplications.length,
+    };
+
+    for (const tab of REVIEW_STAGE_FILTER_TABS) {
+      if (!tab.value) {
+        continue;
+      }
+
+      counts[tab.value] = preStageFilteredApplications.filter(
+        (application) => application.review_stage === tab.value
+      ).length;
+    }
+
+    return counts;
+  }, [preStageFilteredApplications]);
+
   const regionCounts = useMemo(() => {
     return KPI_REGIONS.reduce<Record<string, number>>((accumulator, region) => {
       accumulator[region] = filteredApplications.filter(
@@ -90,11 +125,14 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
         countries={countries}
         regions={regions}
         reviewStages={reviewStages}
+        reviewStageCounts={reviewStageCounts}
         onChange={setFilters}
       />
 
-      <ApplicationsTable applications={filteredApplications} />
+      <ApplicationsTable
+        applications={filteredApplications}
+        totalApplications={applications.length}
+      />
     </>
   );
 }
-

@@ -3,6 +3,7 @@ import type { AffiliateApplication } from "@/lib/admin/types";
 
 type ApplicationsTableProps = {
   applications: AffiliateApplication[];
+  totalApplications: number;
 };
 
 function formatDate(value: string) {
@@ -12,13 +13,19 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function ApplicationsTable({ applications }: ApplicationsTableProps) {
+export function ApplicationsTable({
+  applications,
+  totalApplications,
+}: ApplicationsTableProps) {
   return (
     <section className="panel admin-table-panel">
       <div className="admin-panel-header">
         <div>
           <p className="eyebrow">Applications</p>
           <h2>Affiliate intake list</h2>
+          <p className="admin-overview-copy">
+            Showing {applications.length} of {totalApplications} applications
+          </p>
         </div>
         <p className="admin-results-copy">{applications.length} visible records</p>
       </div>
@@ -73,4 +80,3 @@ export function ApplicationsTable({ applications }: ApplicationsTableProps) {
     </section>
   );
 }
-

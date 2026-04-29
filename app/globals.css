@@ -1160,6 +1160,58 @@ h1 {
   gap: 16px;
 }
 
+.admin-stage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.admin-stage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.admin-stage-tab:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+  border-color: rgba(255, 215, 59, 0.24);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-stage-tab.active {
+  color: #0a0a0a;
+  border-color: rgba(255, 215, 59, 0.55);
+  background: linear-gradient(180deg, #ffe27a, var(--gold));
+  box-shadow: 0 10px 20px rgba(255, 215, 59, 0.18);
+}
+
+.admin-stage-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 0.78rem;
+}
+
 .admin-field {
   display: grid;
   gap: 10px;
@@ -1216,6 +1268,11 @@ h1 {
 
 .admin-results-copy,
 .admin-empty-copy {
+  color: var(--muted);
+}
+
+.admin-overview-copy {
+  margin-top: 10px;
   color: var(--muted);
 }
 
