@@ -3,8 +3,8 @@ export type AffiliateApplication = {
   created_at: string;
   gym_name: string;
   city_country: string;
-  country: string;
-  region: string;
+  country: string | null;
+  region: string | null;
   contact_person: string;
   email: string;
   phone: string;

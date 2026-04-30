@@ -11,7 +11,6 @@ type ApplicationsFiltersProps = {
   };
   countries: string[];
   regions: string[];
-  reviewStages: string[];
   reviewStageCounts: Record<string, number>;
   onChange: (next: {
     region: string;
@@ -25,7 +24,6 @@ export function ApplicationsFilters({
   filters,
   countries,
   regions,
-  reviewStages,
   reviewStageCounts,
   onChange,
 }: ApplicationsFiltersProps) {
@@ -83,21 +81,6 @@ export function ApplicationsFilters({
             {countries.map((country) => (
               <option key={country} value={country}>
                 {country}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="admin-field">
-          <span>Review stage</span>
-          <select
-            value={filters.reviewStage}
-            onChange={(event) => onChange({ ...filters, reviewStage: event.target.value })}
-          >
-            <option value="">All stages</option>
-            {reviewStages.map((stage) => (
-              <option key={stage} value={stage}>
-                {stage}
               </option>
             ))}
           </select>

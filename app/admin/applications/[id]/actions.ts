@@ -76,8 +76,6 @@ export async function updateApplicationReviewAction(
   await requireAdminUser();
 
   const applicationId = getFormValue(formData, "applicationId");
-  const reviewStage = getFormValue(formData, "review_stage");
-  const status = getFormValue(formData, "status");
   const internalNotes = getFormValue(formData, "internal_notes");
 
   if (!applicationId) {
@@ -87,30 +85,24 @@ export async function updateApplicationReviewAction(
     };
   }
 
-  if (!REVIEW_STAGE_OPTIONS.includes(reviewStage)) {
-    return {
-      message: "Invalid review stage selected.",
-      status: "error",
-    };
-  }
-
-  if (!APPLICATION_STATUS_OPTIONS.includes(status)) {
-    return {
-      message: "Invalid application status selected.",
-      status: "error",
-    };
-  }
-
   try {
-    await updateApplicationStageAndStatus({
-      applicationId,
-      reviewStage,
-      status,
-      internalNotes,
-    });
+    const supabase = createAdminSupabaseClient();
+    const { error } = await supabase
+      .from("affiliate_applications")
+      .update({
+        internal_notes: internalNotes || null,
+      })
+      .eq("id", applicationId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath("/admin/applications");
+    revalidatePath(`/admin/applications/${applicationId}`);
 
     return {
-      message: "Application review updated.",
+      message: "Notes updated.",
       status: "success",
     };
   } catch (error) {

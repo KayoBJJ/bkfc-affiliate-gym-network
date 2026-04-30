@@ -5,10 +5,6 @@ import { ApplicationDetailPanel } from "@/components/admin/ApplicationDetailPane
 import { PipelineActionsPanel } from "@/components/admin/PipelineActionsPanel";
 import { ReviewUpdateForm } from "@/components/admin/ReviewUpdateForm";
 import { StageTimelineCard } from "@/components/admin/StageTimelineCard";
-import {
-  APPLICATION_STATUS_OPTIONS,
-  REVIEW_STAGE_OPTIONS,
-} from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
 import {
   getAffiliateApplicationById,
@@ -56,11 +52,7 @@ export default async function AdminApplicationDetailPage({
 
           <ReviewUpdateForm
             applicationId={application.id}
-            currentStatus={application.status}
-            currentReviewStage={application.review_stage}
             currentInternalNotes={application.internal_notes}
-            reviewStageOptions={REVIEW_STAGE_OPTIONS}
-            statusOptions={APPLICATION_STATUS_OPTIONS}
             action={updateApplicationReviewAction}
           />
 

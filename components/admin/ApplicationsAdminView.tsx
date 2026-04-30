@@ -19,23 +19,19 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
     search: "",
   });
 
+  function hasValue(value: string | null): value is string {
+    return Boolean(value?.trim());
+  }
+
   const countries = useMemo(
     () =>
-      Array.from(new Set(applications.map((application) => application.country).filter(Boolean))).sort(),
+      Array.from(new Set(applications.map((application) => application.country).filter(hasValue))).sort(),
     [applications]
   );
 
   const regions = useMemo(
     () =>
-      Array.from(new Set(applications.map((application) => application.region).filter(Boolean))).sort(),
-    [applications]
-  );
-
-  const reviewStages = useMemo(
-    () =>
-      Array.from(
-        new Set(applications.map((application) => application.review_stage).filter(Boolean))
-      ).sort(),
+      Array.from(new Set(applications.map((application) => application.region).filter(hasValue))).sort(),
     [applications]
   );
 
@@ -124,7 +120,6 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
         filters={filters}
         countries={countries}
         regions={regions}
-        reviewStages={reviewStages}
         reviewStageCounts={reviewStageCounts}
         onChange={setFilters}
       />

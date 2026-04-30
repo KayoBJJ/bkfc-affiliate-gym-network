@@ -13,6 +13,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatLocationValue(value: string | null) {
+  return value?.trim() ? value : "Not set";
+}
+
 export function ApplicationsTable({
   applications,
   totalApplications,
@@ -49,8 +53,8 @@ export function ApplicationsTable({
               applications.map((application) => (
                 <tr key={application.id}>
                   <td>{application.gym_name}</td>
-                  <td>{application.country}</td>
-                  <td>{application.region}</td>
+                  <td>{formatLocationValue(application.country)}</td>
+                  <td>{formatLocationValue(application.region)}</td>
                   <td>{application.contact_person}</td>
                   <td className="admin-cell-wrap">{application.email}</td>
                   <td>
