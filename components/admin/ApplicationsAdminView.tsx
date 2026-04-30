@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AdminKpiCard } from "@/components/admin/AdminKpiCard";
 import { ApplicationsFilters } from "@/components/admin/ApplicationsFilters";
+import { PipelineOverview } from "@/components/admin/PipelineOverview";
 import { ApplicationsTable } from "@/components/admin/ApplicationsTable";
 import { KPI_REGIONS, REVIEW_STAGE_FILTER_TABS } from "@/lib/admin/constants";
 import type { AffiliateApplication } from "@/lib/admin/types";
@@ -104,16 +105,32 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
 
   return (
     <>
-      <section className="admin-kpi-grid">
-        <AdminKpiCard label="Total applications" value={filteredApplications.length} accent />
-        <AdminKpiCard label="New applications" value={newApplicationsCount} />
-        <AdminKpiCard label="Europe applications" value={regionCounts.Europe ?? 0} />
-        <AdminKpiCard label="MENA applications" value={regionCounts.MENA ?? 0} />
-        <AdminKpiCard label="LATAM applications" value={regionCounts.LATAM ?? 0} />
-        <AdminKpiCard
-          label="North America applications"
-          value={regionCounts["North America"] ?? 0}
-        />
+      <PipelineOverview
+        counts={reviewStageCounts}
+        activeStage={filters.reviewStage}
+        onStageSelect={(reviewStage) => setFilters((current) => ({ ...current, reviewStage }))}
+      />
+
+      <section className="panel admin-region-section">
+        <div className="section-heading">
+          <p className="eyebrow">Regional Distribution</p>
+          <h2>Global application signal map</h2>
+          <p className="admin-overview-copy">
+            Supporting intelligence for where affiliate interest is concentrating.
+          </p>
+        </div>
+
+        <div className="admin-kpi-grid admin-kpi-grid-secondary">
+          <AdminKpiCard label="Total applications" value={filteredApplications.length} accent />
+          <AdminKpiCard label="New applications" value={newApplicationsCount} />
+          <AdminKpiCard label="Europe applications" value={regionCounts.Europe ?? 0} />
+          <AdminKpiCard label="MENA applications" value={regionCounts.MENA ?? 0} />
+          <AdminKpiCard label="LATAM applications" value={regionCounts.LATAM ?? 0} />
+          <AdminKpiCard
+            label="North America applications"
+            value={regionCounts["North America"] ?? 0}
+          />
+        </div>
       </section>
 
       <ApplicationsFilters
