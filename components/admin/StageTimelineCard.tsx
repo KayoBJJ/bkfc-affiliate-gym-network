@@ -1,15 +1,9 @@
+import { formatLabel, getStageClass } from "@/lib/admin/formatLabel";
 import type { ApplicationStageHistoryEntry } from "@/lib/admin/types";
 
 type StageTimelineCardProps = {
   historyEntries: ApplicationStageHistoryEntry[];
 };
-
-function formatStageLabel(value: string) {
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 function formatTimelineDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -27,11 +21,22 @@ export function StageTimelineCard({ historyEntries }: StageTimelineCardProps) {
 
       {historyEntries.length > 0 ? (
         <div className="admin-timeline-list">
-          {historyEntries.map((entry) => (
-            <article key={entry.id} className="admin-timeline-item">
+          {historyEntries.map((entry, index) => (
+            <article
+              key={entry.id}
+              className={`admin-timeline-item${index === 0 ? " latest" : ""}`}
+            >
               <div className="admin-timeline-dot" aria-hidden="true" />
               <div>
-                <p className="admin-timeline-stage">{formatStageLabel(entry.review_stage)}</p>
+                <p>
+                  <span
+                    className={`admin-stage-pill admin-timeline-stage-pill ${getStageClass(
+                      entry.review_stage
+                    )}`}
+                  >
+                    {formatLabel(entry.review_stage)}
+                  </span>
+                </p>
                 <p className="admin-timeline-date">{formatTimelineDate(entry.changed_at)}</p>
               </div>
             </article>

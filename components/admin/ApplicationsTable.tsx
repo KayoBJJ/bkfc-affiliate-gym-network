@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatLabel, getStageClass } from "@/lib/admin/formatLabel";
 import type { AffiliateApplication } from "@/lib/admin/types";
 
 type ApplicationsTableProps = {
@@ -43,7 +44,7 @@ export function ApplicationsTable({
               <th>Region</th>
               <th>Contact person</th>
               <th>Email</th>
-              <th>Review stage</th>
+              <th>Status</th>
               <th>Created</th>
               <th />
             </tr>
@@ -52,15 +53,23 @@ export function ApplicationsTable({
             {applications.length > 0 ? (
               applications.map((application) => (
                 <tr key={application.id}>
-                  <td>{application.gym_name}</td>
-                  <td>{formatLocationValue(application.country)}</td>
-                  <td>{formatLocationValue(application.region)}</td>
-                  <td>{application.contact_person}</td>
+                  <td className="admin-table-gym">{application.gym_name}</td>
+                  <td className="admin-table-location">
+                    {formatLocationValue(application.country)}
+                  </td>
+                  <td className="admin-table-location">
+                    {formatLocationValue(application.region)}
+                  </td>
+                  <td className="admin-table-contact">{application.contact_person}</td>
                   <td className="admin-cell-wrap">{application.email}</td>
                   <td>
-                    <span className="admin-stage-pill">{application.review_stage}</span>
+                    <span
+                      className={`admin-stage-pill ${getStageClass(application.review_stage)}`}
+                    >
+                      {formatLabel(application.review_stage)}
+                    </span>
                   </td>
-                  <td>{formatDate(application.created_at)}</td>
+                  <td className="admin-table-date">{formatDate(application.created_at)}</td>
                   <td>
                     <Link
                       href={`/admin/applications/${application.id}`}

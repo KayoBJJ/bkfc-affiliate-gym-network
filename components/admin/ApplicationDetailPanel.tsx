@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { formatLabel, getStageClass } from "@/lib/admin/formatLabel";
 import type { AffiliateApplication } from "@/lib/admin/types";
 
 type ApplicationDetailPanelProps = {
@@ -32,6 +33,10 @@ function MaybeLink({ href }: { href: string | null }) {
   );
 }
 
+function formatLocationValue(value: string | null) {
+  return value?.trim() ? value : "Not set";
+}
+
 export function ApplicationDetailPanel({ application }: ApplicationDetailPanelProps) {
   return (
     <section className="panel admin-detail-panel">
@@ -39,16 +44,20 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
         <p className="eyebrow">Application Detail</p>
         <div className="admin-detail-heading">
           <h2>{application.gym_name}</h2>
-          <span className="admin-stage-pill admin-stage-pill-strong">
-            Current stage: {application.review_stage}
+          <span
+            className={`admin-stage-pill admin-stage-pill-strong ${getStageClass(
+              application.review_stage
+            )}`}
+          >
+            {formatLabel(application.review_stage)}
           </span>
         </div>
       </div>
 
       <div className="admin-detail-grid">
         <Field label="City / Country">{application.city_country}</Field>
-        <Field label="Country">{application.country}</Field>
-        <Field label="Region">{application.region}</Field>
+        <Field label="Country">{formatLocationValue(application.country)}</Field>
+        <Field label="Region">{formatLocationValue(application.region)}</Field>
         <Field label="Contact person">{application.contact_person}</Field>
         <Field label="Email">{application.email}</Field>
         <Field label="Phone">{application.phone}</Field>
@@ -68,8 +77,8 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
         </Field>
         <Field label="Review consent">{application.review_consent ? "Yes" : "No"}</Field>
         <Field label="Follow-up consent">{application.follow_up_consent ? "Yes" : "No"}</Field>
-        <Field label="Status">{application.status}</Field>
-        <Field label="Review stage">{application.review_stage}</Field>
+        <Field label="Status">{formatLabel(application.status)}</Field>
+        <Field label="Review stage">{formatLabel(application.review_stage)}</Field>
       </div>
 
       <div className="admin-media-grid">

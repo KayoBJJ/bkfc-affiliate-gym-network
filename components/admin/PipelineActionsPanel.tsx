@@ -4,42 +4,69 @@ type PipelineActionsPanelProps = {
   applicationId: string;
 };
 
-const pipelineActions = [
+type PipelineAction = {
+  label: string;
+  reviewStage: string;
+  status: string;
+  tone?: "danger";
+};
+
+type PipelineGroup = {
+  title: string;
+  actions: PipelineAction[];
+};
+
+const pipelineGroups: PipelineGroup[] = [
   {
-    label: "Start Review",
-    reviewStage: "under_review",
-    status: "in_review",
+    title: "Review Flow",
+    actions: [
+      {
+        label: "Start Review",
+        reviewStage: "under_review",
+        status: "in_review",
+      },
+      {
+        label: "Request Follow-Up",
+        reviewStage: "follow_up_required",
+        status: "pending_info",
+      },
+      {
+        label: "Mark for Interview",
+        reviewStage: "interview",
+        status: "in_review",
+      },
+      {
+        label: "Mark Trial Candidate",
+        reviewStage: "trial_candidate",
+        status: "candidate",
+      },
+    ],
   },
   {
-    label: "Request Follow-Up",
-    reviewStage: "follow_up_required",
-    status: "pending_info",
+    title: "Approvals",
+    actions: [
+      {
+        label: "Approve Gym",
+        reviewStage: "approved",
+        status: "approved",
+      },
+      {
+        label: "Activate Affiliate",
+        reviewStage: "activated_affiliate",
+        status: "active",
+      },
+    ],
   },
   {
-    label: "Mark for Interview",
-    reviewStage: "interview",
-    status: "in_review",
-  },
-  {
-    label: "Mark Trial Candidate",
-    reviewStage: "trial_candidate",
-    status: "candidate",
-  },
-  {
-    label: "Approve Gym",
-    reviewStage: "approved",
-    status: "approved",
-  },
-  {
-    label: "Activate Affiliate",
-    reviewStage: "activated_affiliate",
-    status: "active",
-  },
-  {
-    label: "Reject",
-    reviewStage: "rejected",
-    status: "rejected",
-    tone: "danger" as const,
+    title: "Close Out",
+    actions: [
+      {
+        label: "Reject",
+        reviewStage: "rejected",
+        status: "rejected",
+        tone: "danger" as const,
+      },
+    ],
   },
 ];
 
@@ -51,21 +78,32 @@ export function PipelineActionsPanel({ applicationId }: PipelineActionsPanelProp
         <h2>Quick workflow updates</h2>
       </div>
 
-      <div className="admin-pipeline-grid">
-        {pipelineActions.map((action) => (
-          <form key={action.label} action={triggerPipelineAction} className="admin-pipeline-form">
-            <input type="hidden" name="applicationId" value={applicationId} />
-            <input type="hidden" name="review_stage" value={action.reviewStage} />
-            <input type="hidden" name="status" value={action.status} />
-            <button
-              type="submit"
-              className={`secondary-button admin-pipeline-button${
-                action.tone === "danger" ? " danger" : ""
-              }`}
-            >
-              {action.label}
-            </button>
-          </form>
+      <div className="admin-pipeline-groups">
+        {pipelineGroups.map((group) => (
+          <div key={group.title} className="admin-pipeline-group">
+            <p className="admin-pipeline-group-label">{group.title}</p>
+            <div className="admin-pipeline-grid">
+              {group.actions.map((action) => (
+                <form
+                  key={action.label}
+                  action={triggerPipelineAction}
+                  className="admin-pipeline-form"
+                >
+                  <input type="hidden" name="applicationId" value={applicationId} />
+                  <input type="hidden" name="review_stage" value={action.reviewStage} />
+                  <input type="hidden" name="status" value={action.status} />
+                  <button
+                    type="submit"
+                    className={`secondary-button admin-pipeline-button${
+                      action.tone === "danger" ? " danger" : ""
+                    }`}
+                  >
+                    {action.label}
+                  </button>
+                </form>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     </section>
