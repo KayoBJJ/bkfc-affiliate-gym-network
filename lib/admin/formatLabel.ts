@@ -1,9 +1,12 @@
 const stageLabelMap: Record<string, string> = {
-  submitted: "SUBMITTED",
-  under_review: "IN REVIEW",
-  approved: "APPROVED",
-  rejected: "REJECTED",
-  activated_affiliate: "ACTIVE",
+  submitted: "New Submission",
+  under_review: "Internal Review",
+  follow_up_required: "Needs Follow-Up",
+  interview: "Interview Scheduled",
+  trial_candidate: "Trial Candidate Pool",
+  approved: "Approved Pending Activaton",
+  activated_affiliate: "Active Affiliate",
+  rejected: "Rejected / Archived",
 };
 
 const stageClassMap: Record<string, string> = {

@@ -105,12 +105,6 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
 
   return (
     <>
-      <PipelineOverview
-        counts={reviewStageCounts}
-        activeStage={filters.reviewStage}
-        onStageSelect={(reviewStage) => setFilters((current) => ({ ...current, reviewStage }))}
-      />
-
       <section className="panel admin-region-section">
         <div className="section-heading">
           <p className="eyebrow">Regional Distribution</p>
@@ -132,6 +126,12 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
           />
         </div>
       </section>
+
+      <PipelineOverview
+        counts={reviewStageCounts}
+        activeStage={filters.reviewStage}
+        onStageSelect={(reviewStage) => setFilters((current) => ({ ...current, reviewStage }))}
+      />
 
       <ApplicationsFilters
         filters={filters}

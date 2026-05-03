@@ -31,7 +31,7 @@ export function ApplicationsFilters({
     <section className="panel admin-filter-panel">
       <div className="section-heading">
         <p className="eyebrow">Filters</p>
-        <h2>Review pipeline controls</h2>
+        <h2>Pipeline Filters</h2>
       </div>
 
       <div className="admin-stage-tabs" role="tablist" aria-label="Review stages">

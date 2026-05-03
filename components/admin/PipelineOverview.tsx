@@ -18,60 +18,60 @@ const pipelineCards = [
 
 const pipelineGroups = [
   {
-    label: "Early Pipeline",
+    label: "New Applications",
     cards: [
       {
-        label: "Submitted",
+        label: "New Submission",
         value: "submitted",
         supportingText: "pipeline stage",
       },
       {
-        label: "In Review",
+        label: "Internal Review",
         value: "under_review",
         supportingText: "pipeline stage",
       },
       {
-        label: "Follow-Up",
+        label: "Needs Follow-Up",
         value: "follow_up_required",
         supportingText: "pipeline stage",
       },
     ],
   },
   {
-    label: "Evaluation",
+    label: "Under Review",
     cards: [
       {
-        label: "Interview",
+        label: "Interview Scheduled",
         value: "interview",
         supportingText: "pipeline stage",
       },
       {
-        label: "Trial Candidates",
+        label: "Trial Candidate Pool",
         value: "trial_candidate",
         supportingText: "pipeline stage",
       },
     ],
   },
   {
-    label: "Conversion",
+    label: "Approved",
     cards: [
       {
-        label: "Approved",
+        label: "Approved Pending Activation",
         value: "approved",
         supportingText: "pipeline stage",
       },
       {
-        label: "Active",
+        label: "Active Affiliate",
         value: "activated_affiliate",
         supportingText: "pipeline stage",
       },
     ],
   },
   {
-    label: "Exit",
+    label: "Archived",
     cards: [
       {
-        label: "Rejected",
+        label: "Rejected / Archived",
         value: "rejected",
         supportingText: "pipeline stage",
       },
@@ -89,7 +89,7 @@ export function PipelineOverview({
       <div className="admin-panel-header">
         <div>
           <p className="eyebrow">Pipeline Overview</p>
-          <h2>Affiliate expansion command center</h2>
+          <h2>Affiliate Pipeline Status</h2>
           <p className="admin-overview-copy">
             Scan the funnel instantly, then click a stage to focus the table.
           </p>
@@ -117,6 +117,10 @@ export function PipelineOverview({
           );
         })}
       </div>
+
+      <p className="admin-pipeline-flow-helper">
+        Pipeline Flow: New Applications → Under Review → Approved → Archived
+      </p>
 
       <div className="admin-pipeline-flow">
         {pipelineGroups.map((group, groupIndex) => (
