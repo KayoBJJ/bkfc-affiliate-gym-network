@@ -118,6 +118,26 @@ export function PipelineOverview({
         })}
       </div>
 
+           <div className="admin-pipeline-kpi-strip">
+        <div className="admin-pipeline-kpi-mini">
+          <span>Conversion Rate</span>
+          <strong>
+            {counts.all ? Math.round(((counts.approved ?? 0) / counts.all) * 100) : 0}%
+          </strong>
+        </div>
+
+        <div className="admin-pipeline-kpi-mini">
+          <span>Activation Rate</span>
+          <strong>
+            {(counts.approved ?? 0) > 0
+              ? `${Math.round(
+                  ((counts.activated_affiliate ?? 0) / (counts.approved ?? 0)) * 100
+                )}%`
+              : "-"}
+          </strong>
+        </div>
+      </div>
+
       <p className="admin-pipeline-flow-helper">
         Pipeline Flow: New Applications → Under Review → Approved → Archived
       </p>

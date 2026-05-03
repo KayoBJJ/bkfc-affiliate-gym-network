@@ -2007,3 +2007,58 @@ h1 {
     align-items: center;
   }
 }
+
+.admin-pipeline-kpi-strip {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0.4rem 0 0.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-pipeline-kpi-mini {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 140px;
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+
+.admin-pipeline-kpi-mini:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-pipeline-kpi-mini span {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 3px;
+}
+
+.admin-pipeline-kpi-mini strong {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.admin-pipeline-kpi-mini strong {
+  background: linear-gradient(90deg, #ffffff, #d1d1d1);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.admin-pipeline-kpi-mini:nth-child(1) strong {
+  color: #ffffff; /* Conversion = neutral */
+}
+
+.admin-pipeline-kpi-mini:nth-child(2) strong {
+  color: #22c55e; /* Activation = green */
+}
