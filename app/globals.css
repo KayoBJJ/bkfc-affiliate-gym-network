@@ -2068,3 +2068,11 @@ h1 {
 .admin-pipeline-kpi-mini:nth-child(2) strong {
   color: #22c55e; /* Activation = green */
 }
+.admin-pipeline-kpi-conversion {
+  font-size: 0.70rem; 
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.38);
+  margin-top: 1px;
+  line-height: 1.1;
+}

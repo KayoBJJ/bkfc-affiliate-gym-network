@@ -174,7 +174,7 @@ export function PipelineOverview({
                   >
                     <span className="admin-pipeline-kpi-label">{card.label}</span>
                     <span className="admin-pipeline-kpi-value">{count}</span>
-                    <span className="admin-pipeline-kpi-rate">
+                    <span className="admin-pipeline-kpi-conversion">
                       {conversionRates[card.value] ?? 0}% of total
                     </span>
                     <span className="admin-pipeline-kpi-support">{card.supportingText}</span>
