@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AdminKpiCard } from "@/components/admin/AdminKpiCard";
 import { ApplicationsFilters } from "@/components/admin/ApplicationsFilters";
 import { PipelineOverview } from "@/components/admin/PipelineOverview";
@@ -13,6 +13,7 @@ type ApplicationsAdminViewProps = {
 };
 
 export function ApplicationsAdminView({ applications }: ApplicationsAdminViewProps) {
+  const applicationsListRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState({
     region: "",
     country: "",
@@ -90,6 +91,21 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
     return counts;
   }, [preStageFilteredApplications]);
 
+  const conversionRates = useMemo(() => {
+    const totalApplications = reviewStageCounts.all;
+    const rates: Record<string, number> = {};
+
+    for (const [stage, count] of Object.entries(reviewStageCounts)) {
+      if (stage === "all") {
+        continue;
+      }
+
+      rates[stage] = totalApplications > 0 ? Math.round((count / totalApplications) * 100) : 0;
+    }
+
+    return rates;
+  }, [reviewStageCounts]);
+
   const regionCounts = useMemo(() => {
     return KPI_REGIONS.reduce<Record<string, number>>((accumulator, region) => {
       accumulator[region] = filteredApplications.filter(
@@ -102,6 +118,17 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
   const newApplicationsCount = filteredApplications.filter(
     (application) => application.status === "new"
   ).length;
+
+    const handleStageSelect = (reviewStage: string) => {
+    setFilters((current) => ({ ...current, reviewStage }));
+
+    setTimeout(() => {
+      applicationsListRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  };
 
   return (
     <>
@@ -129,8 +156,9 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
 
       <PipelineOverview
         counts={reviewStageCounts}
+        conversionRates={conversionRates}
         activeStage={filters.reviewStage}
-        onStageSelect={(reviewStage) => setFilters((current) => ({ ...current, reviewStage }))}
+        onStageSelect={handleStageSelect}
       />
 
       <ApplicationsFilters
@@ -141,10 +169,12 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
         onChange={setFilters}
       />
 
-      <ApplicationsTable
-        applications={filteredApplications}
-        totalApplications={applications.length}
-      />
+            <div ref={applicationsListRef}>
+        <ApplicationsTable
+          applications={filteredApplications}
+          totalApplications={applications.length}
+        />
+      </div>
     </>
   );
 }

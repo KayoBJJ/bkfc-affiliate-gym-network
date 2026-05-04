@@ -4,6 +4,7 @@ import { getStageClass } from "@/lib/admin/formatLabel";
 
 type PipelineOverviewProps = {
   counts: Record<string, number>;
+  conversionRates: Record<string, number>;
   activeStage: string;
   onStageSelect: (stage: string) => void;
 };
@@ -81,6 +82,7 @@ const pipelineGroups = [
 
 export function PipelineOverview({
   counts,
+  conversionRates,
   activeStage,
   onStageSelect,
 }: PipelineOverviewProps) {
@@ -112,6 +114,7 @@ export function PipelineOverview({
             >
               <span className="admin-pipeline-kpi-label">{card.label}</span>
               <span className="admin-pipeline-kpi-value">{count}</span>
+              <span className="admin-pipeline-kpi-rate">100% of total</span>
               <span className="admin-pipeline-kpi-support">{card.supportingText}</span>
             </button>
           );
@@ -171,6 +174,9 @@ export function PipelineOverview({
                   >
                     <span className="admin-pipeline-kpi-label">{card.label}</span>
                     <span className="admin-pipeline-kpi-value">{count}</span>
+                    <span className="admin-pipeline-kpi-rate">
+                      {conversionRates[card.value] ?? 0}% of total
+                    </span>
                     <span className="admin-pipeline-kpi-support">{card.supportingText}</span>
                   </button>
                 );
