@@ -9,6 +9,8 @@ type PipelineOverviewProps = {
   onStageSelect: (stage: string) => void;
 };
 
+
+
 const pipelineCards = [
   {
     label: "Total Applications",
@@ -86,6 +88,10 @@ export function PipelineOverview({
   activeStage,
   onStageSelect,
 }: PipelineOverviewProps) {
+    const bottleneckStage = Object.entries(counts)
+    .filter(([key, value]) => key !== "all" && value > 0)
+    .sort((a, b) => a[1] - b[1])[0]?.[0];
+
   return (
     <section className="panel admin-pipeline-overview-panel">
       <div className="admin-panel-header">
@@ -162,14 +168,15 @@ export function PipelineOverview({
                 const count = counts[card.value] ?? 0;
                 const isActive = activeStage === card.value;
                 const stageClass = getStageClass(card.value);
+                const isBottleneck = card.value === bottleneckStage;
 
                 return (
                   <button
                     key={card.label}
                     type="button"
                     className={`admin-pipeline-kpi-card ${stageClass}${
-                      isActive ? " active" : ""
-                    }`}
+  isActive ? " active" : ""
+}${isBottleneck ? " bottleneck" : ""}`}
                     onClick={() => onStageSelect(card.value)}
                   >
                     <span className="admin-pipeline-kpi-label">{card.label}</span>

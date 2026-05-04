@@ -2076,3 +2076,8 @@ h1 {
   margin-top: 1px;
   line-height: 1.1;
 }
+
+.admin-pipeline-kpi-card.bottleneck {
+  border-color: rgba(255, 80, 80, 0.55);
+  box-shadow: 0 0 0 1px rgba(255, 80, 80, 0.12);
+}
