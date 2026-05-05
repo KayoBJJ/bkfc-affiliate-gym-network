@@ -79,3 +79,19 @@ export async function getApplicationStageHistory(applicationId: string) {
 
   return (data ?? []) as ApplicationStageHistoryEntry[];
 }
+
+export async function getAllApplicationStageHistory() {
+  const supabase = createAdminSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("application_stage_history")
+    .select("id, application_id, review_stage, status, changed_at")
+    .order("changed_at", { ascending: true })
+    .limit(5000);
+
+  if (error) {
+    throw new Error(`Failed to load application stage history: ${error.message}`);
+  }
+
+  return (data ?? []) as ApplicationStageHistoryEntry[];
+}

@@ -6,13 +6,20 @@ import { ApplicationsFilters } from "@/components/admin/ApplicationsFilters";
 import { PipelineOverview } from "@/components/admin/PipelineOverview";
 import { ApplicationsTable } from "@/components/admin/ApplicationsTable";
 import { KPI_REGIONS, REVIEW_STAGE_FILTER_TABS } from "@/lib/admin/constants";
-import type { AffiliateApplication } from "@/lib/admin/types";
+import type {
+  AffiliateApplication,
+  ApplicationStageHistoryEntry,
+} from "@/lib/admin/types";
 
 type ApplicationsAdminViewProps = {
   applications: AffiliateApplication[];
+  stageHistory: ApplicationStageHistoryEntry[];
 };
 
-export function ApplicationsAdminView({ applications }: ApplicationsAdminViewProps) {
+export function ApplicationsAdminView({
+  applications,
+  stageHistory,
+}: ApplicationsAdminViewProps) {
   const applicationsListRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState({
     region: "",
@@ -106,6 +113,43 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
     return rates;
   }, [reviewStageCounts]);
 
+  const weeklyNewApplications = useMemo(() => {
+    const now = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    return preStageFilteredApplications.filter((app) => {
+      const createdAt = new Date(app.created_at);
+      return createdAt >= sevenDaysAgo;
+    }).length;
+  }, [preStageFilteredApplications]);
+
+  const previousWeekApplications = useMemo(() => {
+  const now = new Date();
+
+  const startOfThisWeek = new Date();
+  startOfThisWeek.setDate(now.getDate() - 7);
+
+  const startOfLastWeek = new Date();
+  startOfLastWeek.setDate(now.getDate() - 14);
+
+    return preStageFilteredApplications.filter((app) =>{
+      const createdAt = new Date(app.created_at);
+      return createdAt >= startOfLastWeek && createdAt < startOfThisWeek;
+    }).length;
+  }, [preStageFilteredApplications]);
+
+  const weeklyGrowth = useMemo(() => {
+    if (previousWeekApplications === 0) return 0;
+
+
+    return Math.round(
+      ((weeklyNewApplications - previousWeekApplications) / previousWeekApplications) * 100
+    );
+  }, [weeklyNewApplications, previousWeekApplications]);
+  const stageHistoryCount = stageHistory.length;
+  console.log("Stage history records:", stageHistoryCount);
+
   const regionCounts = useMemo(() => {
     return KPI_REGIONS.reduce<Record<string, number>>((accumulator, region) => {
       accumulator[region] = filteredApplications.filter(
@@ -157,6 +201,8 @@ export function ApplicationsAdminView({ applications }: ApplicationsAdminViewPro
       <PipelineOverview
         counts={reviewStageCounts}
         conversionRates={conversionRates}
+        weeklyNew={weeklyNewApplications}
+        weeklyGrowth={weeklyGrowth}
         activeStage={filters.reviewStage}
         onStageSelect={handleStageSelect}
       />

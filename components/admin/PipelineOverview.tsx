@@ -5,6 +5,8 @@ import { getStageClass } from "@/lib/admin/formatLabel";
 type PipelineOverviewProps = {
   counts: Record<string, number>;
   conversionRates: Record<string, number>;
+  weeklyNew: number;
+  weeklyGrowth: number;
   activeStage: string;
   onStageSelect: (stage: string) => void;
 };
@@ -85,6 +87,8 @@ const pipelineGroups = [
 export function PipelineOverview({
   counts,
   conversionRates,
+  weeklyNew,
+  weeklyGrowth,
   activeStage,
   onStageSelect,
 }: PipelineOverviewProps) {
@@ -121,7 +125,28 @@ export function PipelineOverview({
               <span className="admin-pipeline-kpi-label">{card.label}</span>
               <span className="admin-pipeline-kpi-value">{count}</span>
               <span className="admin-pipeline-kpi-rate">100% of total</span>
-              <span className="admin-pipeline-kpi-support">{card.supportingText}</span>
+              <span className="admin-pipeline-kpi-support">
+  {isAll ? (
+    <>
+      +{weeklyNew} this week{" "}
+      <span
+        className={`admin-pipeline-growth ${
+          weeklyGrowth > 0
+            ? "positive"
+            : weeklyGrowth < 0
+            ? "negative"
+            : "neutral"
+        }`}
+      >
+        {weeklyGrowth > 0 ? "↑" : weeklyGrowth < 0 ? "↓" : ""}
+        {" "}
+        ({Math.abs(weeklyGrowth)}%)
+      </span>
+    </>
+  ) : (
+    card.supportingText
+  )}
+</span>
             </button>
           );
         })}
@@ -172,19 +197,26 @@ export function PipelineOverview({
 
                 return (
                   <button
-                    key={card.label}
-                    type="button"
-                    className={`admin-pipeline-kpi-card ${stageClass}${
-  isActive ? " active" : ""
-}${isBottleneck ? " bottleneck" : ""}`}
+                key={card.label}
+                 type="button"
+                  className={`admin-pipeline-kpi-card ${stageClass}${
+                  isActive ? " active" : ""
+                   }${isBottleneck ? " bottleneck" : ""}`}
                     onClick={() => onStageSelect(card.value)}
                   >
+                 {isBottleneck && (
+                  <span className="admin-pipeline-bottleneck-label">
+                   bottleneck
+               </span>
+                  )}
+
+                    
                     <span className="admin-pipeline-kpi-label">{card.label}</span>
                     <span className="admin-pipeline-kpi-value">{count}</span>
                     <span className="admin-pipeline-kpi-conversion">
                       {conversionRates[card.value] ?? 0}% of total
                     </span>
-                    <span className="admin-pipeline-kpi-support">{card.supportingText}</span>
+                   
                   </button>
                 );
               })}
