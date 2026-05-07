@@ -2121,4 +2121,43 @@ h1 {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(239, 68, 68, 0.82);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: fit-content;
+  margin-bottom: 0.65rem;
+}
+
+.admin-pipeline-stage-duration {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.friction-healthy {
+  background: rgba(34, 197, 94, 0.14);
+  color: rgb(134, 239, 172);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.friction-slowing {
+  background: rgba(250, 204, 21, 0.14);
+  color: rgb(253, 224, 71);
+  border: 1px solid rgba(250, 204, 21, 0.28);
+}
+
+.friction-stuck {
+  background: rgba(239, 68, 68, 0.16);
+  color: rgb(252, 165, 165);
+  border: 1px solid rgba(239, 68, 68, 0.32);
 }

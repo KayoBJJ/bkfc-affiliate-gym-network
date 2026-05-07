@@ -147,6 +147,84 @@ export function ApplicationsAdminView({
       ((weeklyNewApplications - previousWeekApplications) / previousWeekApplications) * 100
     );
   }, [weeklyNewApplications, previousWeekApplications]);
+
+ const stageThresholds: Record<string, number> = {
+  submitted: 3,
+  under_review: 7,
+  follow_up_required: 5,
+  interview: 7,
+  trial_candidate: 14,
+  approved: 14,
+  activated_affiliate: 30,
+  rejected: 30,
+};
+
+const stageFriction = useMemo(() => {
+  const now = new Date();
+  const stageTotals: Record<
+    string,
+    { totalDays: number; count: number; stuckCount: number }
+  > = {};
+
+  for (const application of preStageFilteredApplications) {
+    const stage = application.review_stage;
+
+    if (!stage) {
+      continue;
+    }
+
+    const threshold = stageThresholds[stage] ?? 7;
+    const createdAt = new Date(application.created_at);
+    const daysInStage = Math.max(
+      0,
+      Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
+    );
+
+    if (!stageTotals[stage]) {
+      stageTotals[stage] = {
+        totalDays: 0,
+        count: 0,
+        stuckCount: 0,
+      };
+    }
+
+    stageTotals[stage].totalDays += daysInStage;
+    stageTotals[stage].count += 1;
+
+    if (daysInStage >= threshold) {
+      stageTotals[stage].stuckCount += 1;
+    }
+  }
+
+  return Object.entries(stageTotals).reduce<
+    Record<
+      string,
+      {
+        stuckCount: number;
+        averageDaysInStage: number;
+        frictionLevel: "healthy" | "slowing" | "stuck";
+      }
+    >
+  >((accumulator, [stage, totals]) => {
+    const threshold = stageThresholds[stage] ?? 7;
+    const averageDaysInStage =
+      totals.count > 0 ? Math.round(totals.totalDays / totals.count) : 0;
+
+    accumulator[stage] = {
+      stuckCount: totals.stuckCount,
+      averageDaysInStage,
+      frictionLevel:
+        totals.stuckCount > 0
+          ? "stuck"
+          : averageDaysInStage >= threshold * 0.7
+          ? "slowing"
+          : "healthy",
+    };
+
+    return accumulator;
+  }, {});
+}, [preStageFilteredApplications]);
+  
   const stageHistoryCount = stageHistory.length;
   console.log("Stage history records:", stageHistoryCount);
 
@@ -191,9 +269,7 @@ export function ApplicationsAdminView({
           <AdminKpiCard label="Europe applications" value={regionCounts.Europe ?? 0} />
           <AdminKpiCard label="MENA applications" value={regionCounts.MENA ?? 0} />
           <AdminKpiCard label="LATAM applications" value={regionCounts.LATAM ?? 0} />
-          <AdminKpiCard
-            label="North America applications"
-            value={regionCounts["North America"] ?? 0}
+          <AdminKpiCard label="North America applications" value={regionCounts["North America"] ?? 0}
           />
         </div>
       </section>
@@ -201,6 +277,7 @@ export function ApplicationsAdminView({
       <PipelineOverview
         counts={reviewStageCounts}
         conversionRates={conversionRates}
+        stageFriction={stageFriction}
         weeklyNew={weeklyNewApplications}
         weeklyGrowth={weeklyGrowth}
         activeStage={filters.reviewStage}

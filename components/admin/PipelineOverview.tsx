@@ -5,10 +5,17 @@ import { getStageClass } from "@/lib/admin/formatLabel";
 type PipelineOverviewProps = {
   counts: Record<string, number>;
   conversionRates: Record<string, number>;
+  stageFriction?: Record<string, StageFriction>;
   weeklyNew: number;
   weeklyGrowth: number;
   activeStage: string;
   onStageSelect: (stage: string) => void;
+};
+
+type StageFriction = {
+  stuckCount: number;
+  averageDaysInStage: number;
+  frictionLevel: "healthy" | "slowing" | "stuck";
 };
 
 
@@ -87,14 +94,15 @@ const pipelineGroups = [
 export function PipelineOverview({
   counts,
   conversionRates,
+  stageFriction = {},
   weeklyNew,
   weeklyGrowth,
   activeStage,
   onStageSelect,
 }: PipelineOverviewProps) {
-    const bottleneckStage = Object.entries(counts)
-    .filter(([key, value]) => key !== "all" && value > 0)
-    .sort((a, b) => a[1] - b[1])[0]?.[0];
+  const bottleneckStage = Object.entries(stageFriction)
+    .filter(([, friction]) => friction.stuckCount > 0)
+    .sort((a, b) => b[1].stuckCount - a[1].stuckCount)[0]?.[0] ?? "";
 
   return (
     <section className="panel admin-pipeline-overview-panel">
@@ -204,11 +212,19 @@ export function PipelineOverview({
                    }${isBottleneck ? " bottleneck" : ""}`}
                     onClick={() => onStageSelect(card.value)}
                   >
-                 {isBottleneck && (
-                  <span className="admin-pipeline-bottleneck-label">
-                   bottleneck
-               </span>
-                  )}
+                 {stageFriction[card.value] && (
+                 <span
+                 className={`admin-pipeline-bottleneck-label friction-${
+                 stageFriction[card.value].frictionLevel
+                 }`}
+                 >
+    {stageFriction[card.value].frictionLevel === "stuck"
+      ? "critical friction"
+      : stageFriction[card.value].frictionLevel === "slowing"
+      ? "slowing"
+      : "healthy"}
+  </span>
+)}
 
                     
                     <span className="admin-pipeline-kpi-label">{card.label}</span>
@@ -216,6 +232,12 @@ export function PipelineOverview({
                     <span className="admin-pipeline-kpi-conversion">
                       {conversionRates[card.value] ?? 0}% of total
                     </span>
+
+                    {stageFriction[card.value] && (
+                   <span className="admin-pipeline-stage-duration">
+                      Avg {stageFriction[card.value].averageDaysInStage}d in stage
+                   </span>
+                 )}
                    
                   </button>
                 );
