@@ -2161,3 +2161,20 @@ h1 {
   color: rgb(252, 165, 165);
   border: 1px solid rgba(239, 68, 68, 0.32);
 }
+
+.admin-table-friction-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 6.5rem;
+  white-space: nowrap;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+

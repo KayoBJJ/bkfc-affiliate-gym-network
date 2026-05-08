@@ -237,6 +237,70 @@ const stageFriction = useMemo(() => {
     }, {});
   }, [filteredApplications]);
 
+  const regionalFriction = useMemo(() => {
+  return KPI_REGIONS.reduce<
+    Record<
+      string,
+      {
+        label: string;
+        className: string;
+      }
+    >
+  >((accumulator, region) => {
+    const regionApplications = filteredApplications.filter(
+      (application) => application.region === region
+    );
+
+    if (regionApplications.length === 0) {
+      accumulator[region] = {
+        label: "No signal",
+        className: "friction-neutral",
+      };
+
+      return accumulator;
+    }
+
+    const hasCritical = regionApplications.some((application) => {
+      const days = Math.floor(
+        (Date.now() - new Date(application.created_at).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+
+      return days >= 10;
+    });
+
+    if (hasCritical) {
+      accumulator[region] = {
+        label: "Friction",
+        className: "friction-stuck",
+      };
+
+      return accumulator;
+    }
+
+    const hasSlowing = regionApplications.some((application) => {
+      const days = Math.floor(
+        (Date.now() - new Date(application.created_at).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+
+      return days >= 5;
+    });
+
+    accumulator[region] = hasSlowing
+      ? {
+          label: "Slowing",
+          className: "friction-slowing",
+        }
+      : {
+          label: "Healthy",
+          className: "friction-healthy",
+        };
+
+    return accumulator;
+  }, {});
+}, [filteredApplications]);
+
   const newApplicationsCount = filteredApplications.filter(
     (application) => application.status === "new"
   ).length;
@@ -269,7 +333,7 @@ const stageFriction = useMemo(() => {
           <AdminKpiCard label="Europe applications" value={regionCounts.Europe ?? 0} />
           <AdminKpiCard label="MENA applications" value={regionCounts.MENA ?? 0} />
           <AdminKpiCard label="LATAM applications" value={regionCounts.LATAM ?? 0} />
-          <AdminKpiCard label="North America applications" value={regionCounts["North America"] ?? 0}
+          <AdminKpiCard label="North America applications" value={regionCounts["North America"] ?? 0 }
           />
         </div>
       </section>

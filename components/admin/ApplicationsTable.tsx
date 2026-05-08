@@ -18,6 +18,51 @@ function formatLocationValue(value: string | null) {
   return value?.trim() ? value : "Not set";
 }
 
+const stageThresholds: Record<string, number> = {
+  submitted: 3,
+  under_review: 7,
+  follow_up_required: 5,
+  interview: 7,
+  trial_candidate: 14,
+  approved: 14,
+  activated_affiliate: 30,
+  rejected: 30,
+};
+
+function getDaysInStage(createdAt: string) {
+  const now = new Date();
+  const createdDate = new Date(createdAt);
+
+  return Math.max(
+    0,
+    Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+  );
+}
+
+function getApplicationFriction(reviewStage: string, createdAt: string) {
+  const threshold = stageThresholds[reviewStage] ?? 7;
+  const daysInStage = getDaysInStage(createdAt);
+
+  if (daysInStage >= threshold) {
+    return {
+      label: `Stuck ${daysInStage}d`,
+      className: "friction-stuck",
+    };
+  }
+
+  if (daysInStage >= threshold * 0.7) {
+    return {
+      label: `Slowing ${daysInStage}d`,
+      className: "friction-slowing",
+    };
+  }
+
+  return {
+    label: `Healthy ${daysInStage}d`,
+    className: "friction-healthy",
+  };
+}
+
 export function ApplicationsTable({
   applications,
   totalApplications,
@@ -45,14 +90,22 @@ export function ApplicationsTable({
               <th>Contact person</th>
               <th>Email</th>
               <th>Status</th>
+              <th>Friction</th>
               <th>Created</th>
               <th />
             </tr>
           </thead>
           <tbody>
             {applications.length > 0 ? (
-              applications.map((application) => (
-                <tr key={application.id}>
+              applications.map((application) => {
+                const friction = getApplicationFriction(
+                  application.review_stage,
+                  application.created_at
+                );
+                
+                return (
+                  <tr key={application.id}>
+                  
                   <td className="admin-table-gym">{application.gym_name}</td>
                   <td className="admin-table-location">
                     {formatLocationValue(application.country)}
@@ -69,6 +122,14 @@ export function ApplicationsTable({
                       {formatLabel(application.review_stage)}
                     </span>
                   </td>
+
+
+                   <td>
+                     <span className={`admin-table-friction-pill ${friction.className}`}>
+                      {friction.label}
+                     </span>
+                   </td>
+
                   <td className="admin-table-date">{formatDate(application.created_at)}</td>
                   <td>
                     <Link
@@ -79,10 +140,11 @@ export function ApplicationsTable({
                     </Link>
                   </td>
                 </tr>
-              ))
+  );
+})
             ) : (
               <tr>
-                <td colSpan={8} className="admin-empty-state">
+                <td colSpan={9} className="admin-empty-state">
                   No applications match the current filters.
                 </td>
               </tr>
