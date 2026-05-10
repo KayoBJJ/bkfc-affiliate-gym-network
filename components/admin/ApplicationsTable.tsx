@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { formatLabel, getStageClass } from "@/lib/admin/formatLabel";
 import type { AffiliateApplication } from "@/lib/admin/types";
+import type { ApplicationIntelligence } from "@/lib/admin/intelligence";
 
 type ApplicationsTableProps = {
   applications: AffiliateApplication[];
+  intelligence: ApplicationIntelligence[];
   totalApplications: number;
 };
 
@@ -11,6 +12,7 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "UTC",
   }).format(new Date(value));
 }
 
@@ -18,55 +20,15 @@ function formatLocationValue(value: string | null) {
   return value?.trim() ? value : "Not set";
 }
 
-const stageThresholds: Record<string, number> = {
-  submitted: 3,
-  under_review: 7,
-  follow_up_required: 5,
-  interview: 7,
-  trial_candidate: 14,
-  approved: 14,
-  activated_affiliate: 30,
-  rejected: 30,
-};
-
-function getDaysInStage(createdAt: string) {
-  const now = new Date();
-  const createdDate = new Date(createdAt);
-
-  return Math.max(
-    0,
-    Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
-  );
-}
-
-function getApplicationFriction(reviewStage: string, createdAt: string) {
-  const threshold = stageThresholds[reviewStage] ?? 7;
-  const daysInStage = getDaysInStage(createdAt);
-
-  if (daysInStage >= threshold) {
-    return {
-      label: `Stuck ${daysInStage}d`,
-      className: "friction-stuck",
-    };
-  }
-
-  if (daysInStage >= threshold * 0.7) {
-    return {
-      label: `Slowing ${daysInStage}d`,
-      className: "friction-slowing",
-    };
-  }
-
-  return {
-    label: `Healthy ${daysInStage}d`,
-    className: "friction-healthy",
-  };
-}
-
 export function ApplicationsTable({
   applications,
+  intelligence,
   totalApplications,
 }: ApplicationsTableProps) {
+  const intelligenceMap = Object.fromEntries(
+    intelligence.map((item) => [item.id, item])
+  );
+
   return (
     <section className="panel admin-table-panel">
       <div className="admin-panel-header">
@@ -98,10 +60,7 @@ export function ApplicationsTable({
           <tbody>
             {applications.length > 0 ? (
               applications.map((application) => {
-                const friction = getApplicationFriction(
-                  application.review_stage,
-                  application.created_at
-                );
+                const applicationIntelligence = intelligenceMap[application.id];
                 
                 return (
                   <tr key={application.id}>
@@ -117,17 +76,23 @@ export function ApplicationsTable({
                   <td className="admin-cell-wrap">{application.email}</td>
                   <td>
                     <span
-                      className={`admin-stage-pill ${getStageClass(application.review_stage)}`}
-                    >
-                      {formatLabel(application.review_stage)}
-                    </span>
+                    className={`admin-stage-pill ${
+                    applicationIntelligence?.stageClassName ?? ""
+                 }`}
+>
+  {applicationIntelligence?.stageLabel ?? "Unknown"}
+</span>
                   </td>
 
 
                    <td>
-                     <span className={`admin-table-friction-pill ${friction.className}`}>
-                      {friction.label}
-                     </span>
+                     <span
+                     className={`admin-table-friction-pill ${
+                     applicationIntelligence?.frictionClassName ?? "friction-neutral"
+                     }`}
+               >
+                 {applicationIntelligence?.frictionLabel ?? "No signal"}
+               </span>
                    </td>
 
                   <td className="admin-table-date">{formatDate(application.created_at)}</td>
@@ -140,8 +105,8 @@ export function ApplicationsTable({
                     </Link>
                   </td>
                 </tr>
-  );
-})
+              );
+            })
             ) : (
               <tr>
                 <td colSpan={9} className="admin-empty-state">

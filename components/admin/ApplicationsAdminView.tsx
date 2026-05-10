@@ -6,6 +6,7 @@ import { ApplicationsFilters } from "@/components/admin/ApplicationsFilters";
 import { PipelineOverview } from "@/components/admin/PipelineOverview";
 import { ApplicationsTable } from "@/components/admin/ApplicationsTable";
 import { KPI_REGIONS, REVIEW_STAGE_FILTER_TABS } from "@/lib/admin/constants";
+import { getApplicationIntelligence } from "@/lib/admin/intelligence";
 import type {
   AffiliateApplication,
   ApplicationStageHistoryEntry,
@@ -28,9 +29,13 @@ export function ApplicationsAdminView({
     search: "",
   });
 
+  const applicationIntelligence = useMemo(() => {
+    return applications.map(getApplicationIntelligence);
+  }, [applications]);
+
   function hasValue(value: string | null): value is string {
-    return Boolean(value?.trim());
-  }
+  return Boolean(value?.trim());
+}
 
   const countries = useMemo(
     () =>
@@ -62,6 +67,18 @@ export function ApplicationsAdminView({
       return matchesRegion && matchesCountry && matchesStage && matchesSearch;
     });
   }, [applications, filters]);
+
+  const filteredApplicationIntelligence = useMemo(() => {
+  const filteredApplicationIds = new Set(
+    filteredApplications.map((application) => application.id)
+  );
+
+  return applicationIntelligence.filter((application) =>
+    filteredApplicationIds.has(application.id)
+  );
+}, [applicationIntelligence, filteredApplications]);
+
+console.log("Filtered intelligence:", filteredApplicationIntelligence);
 
   const preStageFilteredApplications = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
@@ -239,15 +256,9 @@ const stageFriction = useMemo(() => {
 
   const regionalFriction = useMemo(() => {
   return KPI_REGIONS.reduce<
-    Record<
-      string,
-      {
-        label: string;
-        className: string;
-      }
-    >
+    Record<string, { label: string; className: string }>
   >((accumulator, region) => {
-    const regionApplications = filteredApplications.filter(
+    const regionApplications = filteredApplicationIntelligence.filter(
       (application) => application.region === region
     );
 
@@ -260,16 +271,11 @@ const stageFriction = useMemo(() => {
       return accumulator;
     }
 
-    const hasCritical = regionApplications.some((application) => {
-      const days = Math.floor(
-        (Date.now() - new Date(application.created_at).getTime()) /
-          (1000 * 60 * 60 * 24)
-      );
+    const hasHighFriction = regionApplications.some(
+      (application) => application.frictionLevel === "high"
+    );
 
-      return days >= 10;
-    });
-
-    if (hasCritical) {
+    if (hasHighFriction) {
       accumulator[region] = {
         label: "Friction",
         className: "friction-stuck",
@@ -278,16 +284,11 @@ const stageFriction = useMemo(() => {
       return accumulator;
     }
 
-    const hasSlowing = regionApplications.some((application) => {
-      const days = Math.floor(
-        (Date.now() - new Date(application.created_at).getTime()) /
-          (1000 * 60 * 60 * 24)
-      );
+    const hasMediumFriction = regionApplications.some(
+      (application) => application.frictionLevel === "medium"
+    );
 
-      return days >= 5;
-    });
-
-    accumulator[region] = hasSlowing
+    accumulator[region] = hasMediumFriction
       ? {
           label: "Slowing",
           className: "friction-slowing",
@@ -299,10 +300,10 @@ const stageFriction = useMemo(() => {
 
     return accumulator;
   }, {});
-}, [filteredApplications]);
+}, [filteredApplicationIntelligence]);
 
-  const newApplicationsCount = filteredApplications.filter(
-    (application) => application.status === "new"
+  const newApplicationsCount = filteredApplicationIntelligence.filter(
+    (application) => application.milestoneStatus === "new"
   ).length;
 
     const handleStageSelect = (reviewStage: string) => {
@@ -359,6 +360,7 @@ const stageFriction = useMemo(() => {
             <div ref={applicationsListRef}>
         <ApplicationsTable
           applications={filteredApplications}
+          intelligence={filteredApplicationIntelligence}
           totalApplications={applications.length}
         />
       </div>
