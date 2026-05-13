@@ -18,78 +18,40 @@ type StageFriction = {
   frictionLevel: "healthy" | "slowing" | "stuck";
 };
 
-
-
-const pipelineCards = [
-  {
-    label: "Total Applications",
-    value: "",
-    supportingText: "all visible pipeline",
-  },
-] as const;
-
 const pipelineGroups = [
   {
     label: "New Applications",
     cards: [
-      {
-        label: "New Submission",
-        value: "submitted",
-        supportingText: "pipeline stage",
-      },
-      {
-        label: "Internal Review",
-        value: "under_review",
-        supportingText: "pipeline stage",
-      },
-      {
-        label: "Needs Follow-Up",
-        value: "follow_up_required",
-        supportingText: "pipeline stage",
-      },
+      { label: "New Submission", value: "submitted" },
+      { label: "Internal Review", value: "under_review" },
+      { label: "Needs Follow-Up", value: "follow_up_required" },
     ],
   },
   {
     label: "Under Review",
     cards: [
-      {
-        label: "Interview Scheduled",
-        value: "interview",
-        supportingText: "pipeline stage",
-      },
-      {
-        label: "Trial Candidate Pool",
-        value: "trial_candidate",
-        supportingText: "pipeline stage",
-      },
+      { label: "Interview Scheduled", value: "interview" },
+      { label: "Trial Candidate Pool", value: "trial_candidate" },
     ],
   },
   {
     label: "Approved",
     cards: [
-      {
-        label: "Approved Pending Activation",
-        value: "approved",
-        supportingText: "pipeline stage",
-      },
-      {
-        label: "Active Affiliate",
-        value: "activated_affiliate",
-        supportingText: "pipeline stage",
-      },
+      { label: "Approved Pending Activation", value: "approved" },
+      { label: "Active Affiliate", value: "activated_affiliate" },
     ],
   },
   {
     label: "Archived",
-    cards: [
-      {
-        label: "Rejected / Archived",
-        value: "rejected",
-        supportingText: "pipeline stage",
-      },
-    ],
+    cards: [{ label: "Rejected / Archived", value: "rejected" }],
   },
 ] as const;
+
+function getFrictionLabel(level: StageFriction["frictionLevel"]) {
+  if (level === "stuck") return "Escalation Risk";
+  if (level === "slowing") return "Slowing";
+  return "Stable Flow";
+}
 
 export function PipelineOverview({
   counts,
@@ -100,9 +62,19 @@ export function PipelineOverview({
   activeStage,
   onStageSelect,
 }: PipelineOverviewProps) {
-  const bottleneckStage = Object.entries(stageFriction)
-    .filter(([, friction]) => friction.stuckCount > 0)
-    .sort((a, b) => b[1].stuckCount - a[1].stuckCount)[0]?.[0] ?? "";
+  const bottleneckStage =
+    Object.entries(stageFriction)
+      .filter(([, friction]) => friction.stuckCount > 0)
+      .sort((a, b) => b[1].stuckCount - a[1].stuckCount)[0]?.[0] ?? "";
+
+  const conversionRate = counts.all
+    ? Math.round(((counts.approved ?? 0) / counts.all) * 100)
+    : 0;
+
+  const activationRate =
+    (counts.approved ?? 0) > 0
+      ? `${Math.round(((counts.activated_affiliate ?? 0) / (counts.approved ?? 0)) * 100)}%`
+      : "-";
 
   return (
     <section className="panel admin-pipeline-overview-panel">
@@ -116,67 +88,50 @@ export function PipelineOverview({
         </div>
       </div>
 
-      <div className="admin-pipeline-overview-summary">
-        {pipelineCards.map((card) => {
-          const isAll = card.value === "";
-          const count = isAll ? counts.all ?? 0 : counts[card.value] ?? 0;
-          const isActive = activeStage === card.value;
-          const stageClass = isAll ? "stage-default" : getStageClass(card.value);
-
-          return (
-            <button
-              key={card.label}
-              type="button"
-              className={`admin-pipeline-kpi-card ${stageClass}${isActive ? " active" : ""}`}
-              onClick={() => onStageSelect(card.value)}
+      <div className="admin-pipeline-command-grid">
+        <button
+          type="button"
+          className={`admin-pipeline-kpi-card stage-default admin-pipeline-total-card${
+            activeStage === "" ? " active" : ""
+          }`}
+          onClick={() => onStageSelect("")}
+        >
+          <span className="admin-pipeline-kpi-label">Total Applications</span>
+          <span className="admin-pipeline-kpi-value">{counts.all ?? 0}</span>
+          <span className="admin-pipeline-kpi-rate">100% of visible pipeline</span>
+          <span className="admin-pipeline-kpi-support">
+            +{weeklyNew} this week{" "}
+            <span
+              className={`admin-pipeline-growth ${
+                weeklyGrowth > 0
+                  ? "positive"
+                  : weeklyGrowth < 0
+                  ? "negative"
+                  : "neutral"
+              }`}
             >
-              <span className="admin-pipeline-kpi-label">{card.label}</span>
-              <span className="admin-pipeline-kpi-value">{count}</span>
-              <span className="admin-pipeline-kpi-rate">100% of total</span>
-              <span className="admin-pipeline-kpi-support">
-  {isAll ? (
-    <>
-      +{weeklyNew} this week{" "}
-      <span
-        className={`admin-pipeline-growth ${
-          weeklyGrowth > 0
-            ? "positive"
-            : weeklyGrowth < 0
-            ? "negative"
-            : "neutral"
-        }`}
-      >
-        {weeklyGrowth > 0 ? "↑" : weeklyGrowth < 0 ? "↓" : ""}
-        {" "}
-        ({Math.abs(weeklyGrowth)}%)
-      </span>
-    </>
-  ) : (
-    card.supportingText
-  )}
-</span>
-            </button>
-          );
-        })}
-      </div>
+              {weeklyGrowth > 0 ? "↑" : weeklyGrowth < 0 ? "↓" : ""}
+              {" "}
+              ({Math.abs(weeklyGrowth)}%)
+            </span>
+          </span>
+        </button>
 
-           <div className="admin-pipeline-kpi-strip">
-        <div className="admin-pipeline-kpi-mini">
-          <span>Conversion Rate</span>
-          <strong>
-            {counts.all ? Math.round(((counts.approved ?? 0) / counts.all) * 100) : 0}%
-          </strong>
-        </div>
+        <div className="admin-pipeline-command-metrics">
+          <div className="admin-pipeline-kpi-mini">
+            <span>Conversion Rate</span>
+            <strong>{conversionRate}%</strong>
+          </div>
 
-        <div className="admin-pipeline-kpi-mini">
-          <span>Activation Rate</span>
-          <strong>
-            {(counts.approved ?? 0) > 0
-              ? `${Math.round(
-                  ((counts.activated_affiliate ?? 0) / (counts.approved ?? 0)) * 100
-                )}%`
-              : "-"}
-          </strong>
+          <div className="admin-pipeline-kpi-mini">
+            <span>Activation Rate</span>
+            <strong>{activationRate}</strong>
+          </div>
+
+          <div className="admin-pipeline-kpi-mini">
+            <span>Active Affiliates</span>
+            <strong>{counts.activated_affiliate ?? 0}</strong>
+          </div>
         </div>
       </div>
 
@@ -202,43 +157,36 @@ export function PipelineOverview({
                 const isActive = activeStage === card.value;
                 const stageClass = getStageClass(card.value);
                 const isBottleneck = card.value === bottleneckStage;
+                const friction = stageFriction[card.value];
 
                 return (
                   <button
-                key={card.label}
-                 type="button"
-                  className={`admin-pipeline-kpi-card ${stageClass}${
-                  isActive ? " active" : ""
-                   }${isBottleneck ? " bottleneck" : ""}`}
+                    key={card.label}
+                    type="button"
+                    className={`admin-pipeline-kpi-card ${stageClass}${
+                      isActive ? " active" : ""
+                    }${isBottleneck ? " bottleneck" : ""}`}
                     onClick={() => onStageSelect(card.value)}
                   >
-                 {stageFriction[card.value] && (
-                 <span
-                 className={`admin-pipeline-bottleneck-label friction-${
-                 stageFriction[card.value].frictionLevel
-                 }`}
-                 >
-    {stageFriction[card.value].frictionLevel === "stuck"
-      ? "critical friction"
-      : stageFriction[card.value].frictionLevel === "slowing"
-      ? "slowing"
-      : "healthy"}
-  </span>
-)}
+                    {friction && (
+                      <span
+                        className={`admin-pipeline-bottleneck-label friction-${friction.frictionLevel}`}
+                      >
+                        {getFrictionLabel(friction.frictionLevel)}
+                      </span>
+                    )}
 
-                    
                     <span className="admin-pipeline-kpi-label">{card.label}</span>
                     <span className="admin-pipeline-kpi-value">{count}</span>
                     <span className="admin-pipeline-kpi-conversion">
                       {conversionRates[card.value] ?? 0}% of total
                     </span>
 
-                    {stageFriction[card.value] && (
-                   <span className="admin-pipeline-stage-duration">
-                      Avg {stageFriction[card.value].averageDaysInStage}d in stage
-                   </span>
-                 )}
-                   
+                    {friction && (
+                      <span className="admin-pipeline-stage-duration">
+                        Avg {friction.averageDaysInStage}d in stage
+                      </span>
+                    )}
                   </button>
                 );
               })}

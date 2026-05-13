@@ -78,7 +78,6 @@ export function ApplicationsAdminView({
   );
 }, [applicationIntelligence, filteredApplications]);
 
-console.log("Filtered intelligence:", filteredApplicationIntelligence);
 
   const preStageFilteredApplications = useMemo(() => {
     const searchTerm = filters.search.trim().toLowerCase();
@@ -242,8 +241,6 @@ const stageFriction = useMemo(() => {
   }, {});
 }, [preStageFilteredApplications]);
   
-  const stageHistoryCount = stageHistory.length;
-  console.log("Stage history records:", stageHistoryCount);
 
   const regionCounts = useMemo(() => {
     return KPI_REGIONS.reduce<Record<string, number>>((accumulator, region) => {
