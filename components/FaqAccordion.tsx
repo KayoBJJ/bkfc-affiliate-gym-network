@@ -416,6 +416,73 @@ it: [
       "Per domande sulle candidature, sull’idoneità o sui dettagli del programma affiliati, contatta affiliate@bkfc.com.",
   },
 ],
+pl: [
+  {
+    question: "Czym jest BKFC Affiliate Gym Network?",
+    answer:
+      "BKFC Affiliate Gym Network to międzynarodowy program afiliacyjny, który łączy zatwierdzone obiekty sportów walki z ekosystemem rozwoju BKFC, obejmując widoczność zawodników, możliwości aktywacji programu oraz przyszłą integrację z wybranymi inicjatywami BKFC.",
+  },
+  {
+    question: "Kto może aplikować?",
+    answer:
+      "Aplikować mogą kluby sportów walki, centra treningowe i obiekty sztuk walki z ustaloną strukturą trenerską, odpowiednim środowiskiem treningowym oraz jasnym zaangażowaniem w rozwój zawodników.",
+  },
+  {
+    question: "Czy każdy klub jest automatycznie akceptowany?",
+    answer:
+      "Nie. Złożenie zgłoszenia nie gwarantuje akceptacji. Każdy obiekt jest oceniany indywidualnie przez BKFC International Development na podstawie standardów operacyjnych, dopasowania do programu i zgodności z marką.",
+  },
+  {
+    question: "Czy aplikowanie jest płatne?",
+    answer:
+      "Nie. Złożenie zgłoszenia do Affiliate Gym nie wymaga opłaty. Szczegóły dotyczące opłat programowych są przekazywane wyłącznie wybranym klubom na etapie onboardingu.",
+  },
+  {
+    question: "Czy po zatwierdzeniu obowiązuje opłata członkowska?",
+    answer:
+      "Tak. Aktualne opcje afiliacji wynoszą €100 miesięcznie lub €250 za trzy miesiące.",
+  },
+  {
+    question: "Co dzieje się po wysłaniu zgłoszenia?",
+    answer:
+      "Zgłoszenia są analizowane wewnętrznie przez BKFC International Development. W trakcie procesu oceny może zostać poproszona dodatkowa informacja lub wyjaśnienie. Zatwierdzone kluby otrzymają bezpośredni kontakt z kolejnymi krokami onboardingu.",
+  },
+  {
+    question: "Ile trwa proces oceny?",
+    answer:
+      "Zgłoszenia są zazwyczaj analizowane w ciągu 5–10 dni roboczych. W niektórych przypadkach może być wymagany dodatkowy czas, zależnie od liczby zgłoszeń lub potrzeby uzyskania dodatkowych informacji.",
+  },
+  {
+    question: "Czy możemy używać brandingu BKFC po wysłaniu zgłoszenia?",
+    answer:
+      "Nie. Branding BKFC, status afiliacyjny oraz jakiekolwiek powiązane publiczne reprezentacje mogą być używane wyłącznie po formalnej pisemnej zgodzie BKFC International Development.",
+  },
+  {
+    question: "Czy kluby spoza Stanów Zjednoczonych mogą aplikować?",
+    answer:
+      "Tak. BKFC Affiliate Gym Network jest programem międzynarodowym i przyjmuje zgłoszenia od kwalifikujących się klubów na całym świecie.",
+  },
+  {
+    question: "Czy status afiliacyjny gwarantuje wybór zawodników na wydarzenia BKFC?",
+    answer:
+      "Nie. Status afiliacyjny może wspierać widoczność zawodników w ekosystemie BKFC, ale udział fighterów w wydarzeniach BKFC pozostaje zależny od oceny matchmakingu, wymagań wydarzenia i końcowej wewnętrznej zgody.",
+  },
+  {
+    question: "Czy kluby afiliacyjne mogą organizować BKFC tryouts lub oficjalne aktywności?",
+    answer:
+      "Status afiliacyjny nie daje automatycznego prawa do organizacji. Tryouts, seminaria i inne oficjalne aktywności BKFC są zatwierdzane osobno i zależą od wymagań BKFC dotyczących wydarzenia, terytorium oraz operacji.",
+  },
+  {
+    question: "Co się stanie, jeśli nasze zgłoszenie nie zostanie zatwierdzone?",
+    answer:
+      "Kluby, które nie zostaną wybrane podczas pierwszej oceny, mogą zostać zaproszone do ponownego aplikowania w przyszłości, wraz z dalszą ekspansją BKFC Affiliate Gym Network na kolejne terytoria.",
+  },
+  {
+    question: "Z kim mam się skontaktować, jeśli potrzebuję pomocy?",
+    answer:
+      "W przypadku pytań dotyczących zgłoszeń, kwalifikacji lub szczegółów programu afiliacyjnego skontaktuj się z affiliate@bkfc.com.",
+  },
+],
 
 };
 

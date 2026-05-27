@@ -4,7 +4,8 @@ export const languages = [
   { code: "pt", label: "Português", shortLabel: "PT" },
   { code: "ru", label: "Русский", shortLabel: "RU" },
   { code: "de", label: "Deutsch", shortLabel: "DE" },
-  { code: "it", label: "Italiano", shortLabel: "IT"},
+  { code: "it", label: "Italiano", shortLabel: "IT" },
+  { code: "pl", label: "Polski", shortLabel: "PL" },
 ] as const;
 
 export type LanguageCode = (typeof languages)[number]["code"];
@@ -995,6 +996,165 @@ it: {
   formSubtitle:
     "Invia i dettagli della tua palestra per la revisione da parte del team internazionale di sviluppo BKFC.",
   submitButton: "Invia candidatura",
+},
+
+pl: {
+  navApply: "Aplikuj teraz",
+  heroEyebrow: "Oficjalna sieć rozwoju BKFC",
+  heroTitle: "BKFC Gym Network",
+  heroSubtitle:
+    "Globalny program afiliacyjny łączący zatwierdzone kluby sportów walki z międzynarodowym systemem rozwoju BKFC.",
+  heroSupporting:
+    "Stworzony dla klubów z wysokimi standardami, potencjałem sportowym i długoterminową ambicją rozwoju w ramach rosnącej sieci BKFC.",
+  heroPrimaryCta: "Wyślij zgłoszenie",
+  heroSecondaryCta: "Zobacz program",
+
+  sectionProgramEyebrow: "Definicja programu",
+  sectionProgramTitle: "Czym jest BKFC Affiliate Gym Program",
+  sectionProgramText:
+    "BKFC Affiliate Gym Program to ustrukturyzowany model afiliacyjny dla wybranych klubów sportów walki, które wykazują wysokie standardy, potencjał rozwojowy i zgodność z międzynarodowym kierunkiem rozwoju BKFC. To nie jest zwykła lista ani odznaka.",
+  sectionProgramSupport:
+    "To sieć nastawiona na wyniki, zaprojektowana po to, aby łączyć poważne kluby z widocznością, ścieżkami dla zawodników i przyszłymi możliwościami aktywacji w ekosystemie BKFC.",
+
+  fighterPathwayEyebrow: "Ścieżka zawodnika",
+  fighterPathwayTitle: "Jak kluby łączą zawodników z ekosystemem BKFC",
+  fighterPathwayStep1: "Klub afiliacyjny",
+  fighterPathwayStep2: "Widoczność talentu",
+  fighterPathwayStep3: "BKFC Tryouts",
+  fighterPathwayStep4: "Możliwość selekcji",
+  fighterPathwaySupport:
+    "Program został zaprojektowany, aby stworzyć bardziej bezpośredni most między silnymi klubami, rozwijającymi się zawodnikami i przyszłymi możliwościami BKFC.",
+
+  tierEyebrow: "Poziomy programu",
+  tierTitle: "Progres oparty na wynikach w ramach sieci",
+  tierIntro:
+    "BKFC Affiliate Gym Program działa jako sieć poziomów, pozwalając klubom wzmacniać swoją pozycję w czasie poprzez konsekwencję, standardy, aktywność i ogólną wartość dla programu.",
+  tierKicker: "Poziom afiliacji",
+  tier1Title: "Poziom 1",
+  tier1Copy:
+    "Oficjalne wejście do BKFC Affiliate Gym Network dla zatwierdzonych klubów, które spełniają podstawowe standardy i pokazują silny potencjał strukturalny.",
+  tier2Title: "Poziom 2",
+  tier2Copy:
+    "Progresywny poziom afiliacyjny dla klubów wykazujących większą aktywność, konsekwencję w rozwoju zawodników i rosnącą wartość w sieci.",
+  tier3Title: "Poziom 3",
+  tier3Copy:
+    "Najwyższy poziom afiliacyjny zarezerwowany dla wyróżniających się klubów z największą dynamiką, potencjałem rozpoznawalności i długoterminową wartością aktywacyjną dla BKFC.",
+
+  gymMonthEyebrow: "Klub miesiąca",
+  gymMonthTitle: "Regularne wyróżnienie dla najlepszych klubów afiliacyjnych",
+  gymMonthText:
+    "BKFC Affiliate Gym Program został zaprojektowany tak, aby pozostawał aktywny przez cały rok. Dzięki funkcji Klub miesiąca BKFC może wyróżniać kluby afiliacyjne, które pokazują wysokie standardy, widoczną aktywność i realny wkład w rozwój sieci.",
+  gymMonthSupport:
+    "To coś więcej niż zwykłe wyróżnienie. Ten mechanizm buduje dynamikę programu i daje najlepszym klubom dodatkową widoczność, prestiż oraz potencjał przyszłych aktywacji w ekosystemie BKFC.",
+  gymMonthPill1: "Miesięczne wyróżnienie",
+  gymMonthPill2: "Dodatkowa widoczność",
+  gymMonthPill3: "Prestiż programu",
+  gymMonthPill4: "Potencjał przyszłych aktywacji",
+
+  expectationsEyebrow: "Oczekiwania",
+  expectationsTitle: "Czego BKFC szuka w klubach afiliacyjnych",
+  expectationsText:
+    "BKFC Affiliate Gym Program jest przeznaczony dla poważnych klubów, które potrafią właściwie reprezentować standard sieci. Akceptacja nie opiera się wyłącznie na zainteresowaniu, ale na strukturze, profesjonalizmie, wartości rozwojowej i długoterminowym dopasowaniu.",
+  expectation1: "Profesjonalne środowisko treningowe z silną dyscypliną operacyjną",
+  expectation2: "Aktywna struktura trenerska i jasna kultura rozwoju zawodników",
+  expectation3: "Gotowość do działania zgodnie ze standardami i kierunkiem programu BKFC",
+  expectation4: "Zdolność do właściwego reprezentowania programu na lokalnym rynku",
+  expectation5: "Długoterminowe podejście do rozwoju klubu, jakości i zgodności z marką",
+
+  benefitsEyebrow: "Korzyści",
+  benefitsTitle: "Dlaczego wybrane kluby dołączają do programu",
+  benefitsSubtitle:
+    "BKFC Affiliate Gym Program został zaprojektowany, aby tworzyć wartość poprzez widoczność marki, możliwości dla zawodników i długoterminowy rozwój klubu w ramach ustrukturyzowanej międzynarodowej sieci.",
+
+  benefitKicker: "Wartość programu",
+
+  benefitGroup1Title: "Ekspozycja",
+  benefitGroup1Item1: "Oficjalne uznanie jako klub afiliacyjny BKFC",
+  benefitGroup1Item2: "Pozycjonowanie w międzynarodowej sieci klubów BKFC",
+  benefitGroup1Item3: "Możliwości widoczności w cyfrowych i contentowych kanałach BKFC",
+  benefitGroup1Item4: "Większa wiarygodność dla klubów chcących rozwijać się lokalnie i międzynarodowo",
+
+  benefitGroup2Title: "Możliwości dla zawodników",
+  benefitGroup2Item1: "Priorytetowa widoczność dla fighterów powiązanych z klubami afiliacyjnymi",
+  benefitGroup2Item2: "Bliższe połączenie z BKFC tryouts, trials i ścieżkami talentów",
+  benefitGroup2Item3: "Silniejszy długoterminowy most między zawodnikami klubu a możliwościami BKFC",
+  benefitGroup2Item4: "Dodatkowa wartość dla klubów rozwijających zawodników na poziomie rywalizacji",
+
+  benefitGroup3Title: "Korzyści komercyjne i programowe",
+  benefitGroup3Item1: "Potencjalny dostęp do wybranych aktywacji związanych z BKFC",
+  benefitGroup3Item2: "Ramy dla możliwości merchandisingu i promocji",
+  benefitGroup3Item3: "Możliwości seminariów i wystąpień z talentami BKFC",
+  benefitGroup3Item4: "Wejście do programu zbudowanego dla wzrostu, a nie tylko afiliacji",
+
+  selectionEyebrow: "Proces selekcji",
+  selectionTitle: "Jak kluby wchodzą do programu",
+  selectionText:
+    "Wejście do BKFC Affiliate Gym Program odbywa się poprzez ustrukturyzowany proces oceny. Każde zgłoszenie jest analizowane indywidualnie, aby potwierdzić zgodność ze standardami programu, strukturą trenerską i długoterminowym potencjałem rozwoju.",
+  selectionStep1: "Złożenie zgłoszenia przez oficjalny formularz afiliacyjny",
+  selectionStep2: "Wewnętrzna analiza przez BKFC International Development",
+  selectionStep3: "Ocena struktury klubu, środowiska treningowego i pozycjonowania",
+  selectionStep4: "Potwierdzenie dopasowania do programu i przygotowanie onboardingu",
+
+  starterEyebrow: "Podgląd Starter Kit",
+  starterTitle: "Do czego przechodzą zaakceptowane kluby",
+  starterText:
+    "Zaakceptowane kluby wchodzą w ustrukturyzowany proces onboardingu, zaprojektowany po to, aby pozycjonować je w międzynarodowej sieci rozwoju BKFC.",
+  starterSupport:
+    "To coś więcej niż warstwa powitalna. Starter Kit jest pierwszym operacyjnym krokiem w dopasowaniu klubu do struktury programu BKFC, standardów komunikacji i przyszłych kanałów możliwości.",
+  starterIncludedEyebrow: "Zawarte wskazówki",
+  starterIncludedTitle: "Elementy podglądowe",
+  starterItem1: "Wskazówki onboardingowe dla afiliantów",
+  starterItem2: "Materiały rozpoznawcze programu",
+  starterItem3: "Wytyczne dotyczące użycia marki",
+  starterItem4: "Struktura wsparcia programu",
+  starterItem5: "Ścieżka przyszłych aktywacji i możliwości",
+
+  expansionEyebrow: "Pozycjonowanie ekspansji",
+  expansionTitle: "Wejście na fundamentowym etapie rosnącej sieci",
+  expansionText:
+    "BKFC buduje szerszy międzynarodowy ekosystem klubów oparty na strukturze afiliacyjnej, rozwoju zawodników i długoterminowej ekspansji rynkowej.",
+  expansionSupport:
+    "Wczesne kluby afiliacyjne nie dołączają wtedy, gdy system jest już zatłoczony. Wchodzą, gdy sieć nadal jest kształtowana, tworząc silniejsze długoterminowe pozycjonowanie w rozwijających się międzynarodowych ramach BKFC.",
+
+  applicationEyebrow: "Oficjalne zgłoszenie afiliacyjne",
+  applicationTitle: "Wyślij swój klub do oceny afiliacyjnej BKFC",
+  applicationText:
+    "Wypełnij oficjalne zgłoszenie poniżej, aby przedstawić swój klub do oceny przez BKFC International Development.",
+  applicationConfidence:
+    "Złożenie zgłoszenia nie gwarantuje akceptacji. Każde zgłoszenie jest oceniane indywidualnie na podstawie dopasowania do programu, standardów operacyjnych i długoterminowej zgodności z siecią afiliacyjną BKFC.",
+
+  prepEyebrow: "Przed wysłaniem",
+  prepTitle: "Przygotuj następujące materiały",
+  prepCopy:
+    "Przygotowanie tych elementów pomoże BKFC sprawniej i dokładniej ocenić Twoje zgłoszenie.",
+  prepItem1: "Logo klubu",
+  prepItem2: "Zdjęcia obiektu",
+  prepItem3: "Strona internetowa lub główny profil społecznościowy",
+  prepItem4: "Aktywna lista fighterów (opcjonalnie)",
+  prepItem5: "Film promocyjny (opcjonalnie)",
+
+  submissionTrustNote:
+    "Wszystkie przesłane informacje są traktowane poufnie i wykorzystywane wyłącznie do wewnętrznej oceny programu afiliacyjnego BKFC.",
+  applicationMarker: "Formularz zgłoszeniowy",
+
+  faqEyebrow: "FAQ",
+  faqTitle: "Najczęściej zadawane pytania",
+  faqSubtitleStart:
+    "Wszystko, co musisz wiedzieć o BKFC Affiliate Program. Jeśli potrzebujesz dodatkowej pomocy, skontaktuj się z",
+
+  footerSupportLabel: "Wsparcie programu",
+  footerSupportText:
+    "Pytania dotyczące Affiliate Gym Program można kierować na:",
+  footerNoticeLabel: "Informacja programu",
+  footerNoticeText:
+    "Korzystanie z brandingu BKFC, statusu afiliacyjnego lub powiązanych reprezentacji jest dozwolone wyłącznie po formalnej zgodzie BKFC International Development.",
+  footerLegal:
+    "© Bare Knuckle Fighting Championship. Wszelkie prawa zastrzeżone.",
+
+  formTitle: "Aplikuj do BKFC Gym Network",
+  formSubtitle:
+    "Prześlij dane swojego klubu do oceny przez międzynarodowy zespół rozwoju BKFC.",
+  submitButton: "Wyślij zgłoszenie",
 },
 
 } satisfies Record<LanguageCode, Record<string, string>>;

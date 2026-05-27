@@ -97,6 +97,20 @@ it: [
   { id: "faq", label: "FAQ" },
 ],
 
+pl: [
+  { id: "program-definition", label: "Program" },
+  { id: "fighter-pathway", label: "Ścieżka" },
+  { id: "tier-ladder", label: "Poziomy" },
+  { id: "gym-of-the-month", label: "Klub miesiąca" },
+  { id: "expectations", label: "Standardy" },
+  { id: "benefits", label: "Korzyści" },
+  { id: "selection-process", label: "Proces" },
+  { id: "starter-kit-preview", label: "Starter Kit" },
+  { id: "expansion-positioning", label: "Ekspansja" },
+  { id: "application-form", label: "Zgłoszenie" },
+  { id: "faq", label: "FAQ" },
+],
+
 };
 
 export function SectionNav({ language }: SectionNavProps) {

@@ -233,6 +233,37 @@ it: {
   fallbackError: "Impossibile inviare la candidatura.",
 },
 
+pl: {
+  gymName: "Nazwa klubu",
+  cityCountry: "Miasto / Kraj",
+  contactPerson: "Główny kontakt / Właściciel",
+  email: "Adres email",
+  phone: "Numer telefonu",
+  websiteInstagram: "Strona internetowa / Profil społecznościowy",
+  websitePlaceholder: "https://example.com lub @gymhandle",
+  disciplinesOffered: "Oferowane dyscypliny",
+  disciplinesPlaceholder:
+    "Przykład: Boks, Muay Thai, MMA, przygotowanie siłowe i motoryczne, zajęcia dla młodzieży...",
+  logoUpload: "Prześlij logo",
+  gymPhotosUpload: "Prześlij zdjęcia klubu",
+  fighterListUpload: "Prześlij listę fighterów",
+  promoVideoLink: "Link do filmu promocyjnego",
+  promoVideoPlaceholder:
+    "YouTube, Google Drive, Dropbox, WeTransfer lub link z Instagrama",
+  consentEyebrow: "Zgoda",
+  consentTitle: "Zbieranie i ocena danych",
+  privacyCopy:
+    "Przesłane informacje będą zbierane i przechowywane w celu oceny sieci afiliacyjnej, wewnętrznego przetwarzania oraz komunikacji związanej z onboardingiem.",
+  reviewConsent:
+    "Wyrażam zgodę na przesłanie podanych informacji do oceny i wewnętrznego przetwarzania.",
+  followUpConsent: "Chcę otrzymywać dalszą komunikację.",
+  submitting: "Wysyłanie...",
+  submit: "Wyślij do oceny",
+  successMessage:
+    "Zgłoszenie zostało pomyślnie wysłane. Twoje materiały zostały odebrane do oceny przez BKFC International Development. Zgłoszenia są zazwyczaj analizowane w ciągu 5–10 dni roboczych. Jeśli podczas oceny będą potrzebne dodatkowe informacje, skontaktujemy się z Tobą pod podanym adresem email.",
+  fallbackError: "Nie udało się wysłać zgłoszenia.",
+},
+
 };
 
 export function RegistrationForm({ language }: RegistrationFormProps) {
