@@ -1,22 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import { LogoPlaceholder } from "@/components/LogoPlaceholder";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { SectionNav } from "@/components/SectionNav";
+import {
+  languages,
+  translations,
+  type LanguageCode,
+} from "@/lib/i18n/translations";
 
-const tierItems = [
-  {
-    title: "Tier 1",
-    copy: "Official entry into the BKFC Affiliate Gym Network for approved gyms that meet core standards and show strong structural potential.",
-  },
-  {
-    title: "Tier 2",
-    copy: "Progressive affiliate level for gyms demonstrating stronger activity, athlete development consistency, and growing value inside the network.",
-  },
-  {
-    title: "Tier 3",
-    copy: "Top-tier affiliate level reserved for standout gyms with the strongest momentum, recognition potential, and long-term BKFC activation upside.",
-  },
-];
 
 const expectationItems = [
   "A professional training environment with strong operational discipline",
@@ -26,141 +20,183 @@ const expectationItems = [
   "Long-term mindset toward gym growth, quality, and brand alignment",
 ];
 
+export default function HomePage() {
+  const [language, setLanguage] = useState<LanguageCode>("en");
+  const t = translations[language];
+  
+  const tierItems = [
+  {
+    title: t.tier1Title,
+    copy: t.tier1Copy,
+  },
+  {
+    title: t.tier2Title,
+    copy: t.tier2Copy,
+  },
+  {
+    title: t.tier3Title,
+    copy: t.tier3Copy,
+  },
+];
+
+const gymMonthPills = [
+  t.gymMonthPill1,
+  t.gymMonthPill2,
+  t.gymMonthPill3,
+  t.gymMonthPill4,
+];
+
+const expectationItems = [
+  t.expectation1,
+  t.expectation2,
+  t.expectation3,
+  t.expectation4,
+  t.expectation5,
+];
+
 const benefitGroups = [
   {
-    title: "Exposure",
+    title: t.benefitGroup1Title,
     items: [
-      "Official BKFC affiliate recognition",
-      "Positioning inside the BKFC international gym network",
-      "Visibility opportunities across BKFC digital and content channels",
-      "Stronger credibility for gyms looking to grow locally and internationally",
+      t.benefitGroup1Item1,
+      t.benefitGroup1Item2,
+      t.benefitGroup1Item3,
+      t.benefitGroup1Item4,
     ],
   },
   {
-    title: "Athlete Opportunity",
+    title: t.benefitGroup2Title,
     items: [
-      "Priority visibility for fighters connected to affiliate gyms",
-      "Closer connection to BKFC tryouts, trials, and talent pathways",
-      "Stronger long-term bridge between gym athletes and BKFC opportunity channels",
-      "Additional value for gyms focused on developing competitive fighters",
+      t.benefitGroup2Item1,
+      t.benefitGroup2Item2,
+      t.benefitGroup2Item3,
+      t.benefitGroup2Item4,
     ],
   },
   {
-    title: "Commercial & Program Advantages",
+    title: t.benefitGroup3Title,
     items: [
-      "Potential access to selected BKFC-related activations",
-      "Merchandising and promotional opportunity framework",
-      "Seminar and appearance possibilities connected to BKFC talent",
-      "Entry into a structured program built for growth, not just affiliation",
+      t.benefitGroup3Item1,
+      t.benefitGroup3Item2,
+      t.benefitGroup3Item3,
+      t.benefitGroup3Item4,
     ],
   },
+];
+
+const selectionSteps = [
+   t.selectionStep1,
+   t.selectionStep2,
+   t.selectionStep3,
+   t.selectionStep4,
 ];
 
 const starterKitItems = [
-  "Affiliate onboarding guidance",
-  "Program recognition assets",
-  "Brand usage direction",
-  "Program support framework",
-  "Future activation and opportunity pathway",
-];
+   t.starterItem1,
+   t.starterItem2,
+   t.starterItem3,
+   t.starterItem4,
+   t.starterItem5,
+]
 
-const prepItems = [
-  "Gym logo",
-  "Facility photos",
-  "Website or primary social media profile",
-  "Active fighter roster (optional)",
-  "Promotional video (optional)",
-];
+ const prepItems = [
+  t.prepItem1,
+  t.prepItem2,
+  t.prepItem3,
+  t.prepItem4,
+  t.prepItem5,
+ ]
 
-export default function HomePage() {
   return (
     <main className="page-shell">
       <section className="hero" id="hero">
         <div className="hero-topbar">
-          <img src="/bkfc-logo.png" alt="BKFC Logo" style={{ height: "80px" }} />
-          <LogoPlaceholder label="Secondary Brand Mark Slot" compact />
-        </div>
+  <img src="/bkfc-logo.png" alt="BKFC Logo" style={{ height: "80px" }} />
+
+  <div className="hero-topbar-actions">
+    <LogoPlaceholder label="Secondary Brand Mark Slot" compact />
+
+    <div className="language-switcher">
+  <select
+    value={language}
+    onChange={(event) => setLanguage(event.target.value as LanguageCode)}
+    className="language-select"
+    aria-label="Select language"
+  >
+    {languages.map((item) => (
+      <option key={item.code} value={item.code}>
+        {item.shortLabel}
+      </option>
+    ))}
+  </select>
+
+  <span className="language-chevron" aria-hidden="true">
+    ▾
+  </span>
+ </div>
+</div>
+</div>
 
         <div className="hero-copy">
-          <p className="eyebrow">Official Gym Affiliation Program</p>
-          <h1>BKFC Affiliate Gym Network</h1>
-          <p className="hero-subtitle">
-            A structured gym development program connecting selected combat sports facilities
-            to the BKFC international ecosystem.
-          </p>
-          <p className="hero-supporting">
-            Built for gyms with serious standards, athlete potential, and long-term growth
-            ambition inside an expanding BKFC network.
-          </p>
+          <p className="eyebrow">{t.heroEyebrow}</p>
+          <h1>{t.heroTitle}</h1>
+          <p className="hero-subtitle">{t.heroSubtitle}</p>
+          <p className="hero-supporting">{t.heroSupporting}</p>
 
           <div className="hero-actions">
             <a href="#application-form" className="cta-button">
-              Apply Now
+              {t.heroPrimaryCta}
             </a>
             <a href="#program-definition" className="secondary-button">
-              See How It Works
+              {t.heroSecondaryCta}
             </a>
           </div>
         </div>
       </section>
 
-      <SectionNav />
+      <SectionNav language={language} />
 
       <section className="panel content-section" id="program-definition">
         <div className="section-heading">
-          <p className="eyebrow">Program Definition</p>
-          <h2>What the BKFC Affiliate Gym Program is</h2>
-        </div>
-        <p>
-          The BKFC Affiliate Gym Program is a structured affiliation model for selected
-          combat sports gyms that demonstrate strong standards, development potential,
-          and alignment with BKFC’s international growth direction. It is not simply a
-          listing or badge.
-        </p>
-        <p className="section-support">
-          It is a performance-driven network designed to connect serious gyms with
-          visibility, athlete pathways, and future activation opportunities inside the
-          BKFC ecosystem.
-        </p>
+  <p className="eyebrow">{t.sectionProgramEyebrow}</p>
+  <h2>{t.sectionProgramTitle}</h2>
+</div>
+
+<p>{t.sectionProgramText}</p>
+
+<p className="section-support">{t.sectionProgramSupport}</p>
       </section>
 
       <section className="panel content-section" id="fighter-pathway">
-        <div className="section-heading">
-          <p className="eyebrow">Fighter Pathway</p>
-          <h2>How gyms connect athletes to the BKFC ecosystem</h2>
-        </div>
+  <div className="section-heading">
+    <p className="eyebrow">{t.fighterPathwayEyebrow}</p>
+    <h2>{t.fighterPathwayTitle}</h2>
+  </div>
 
-        <div className="pathway-grid">
-          <div className="pathway-step">Affiliate Gym</div>
-          <div className="pathway-arrow">→</div>
-          <div className="pathway-step">Talent Visibility</div>
-          <div className="pathway-arrow">→</div>
-          <div className="pathway-step">BKFC Tryouts</div>
-          <div className="pathway-arrow">→</div>
-          <div className="pathway-step">Selection Opportunity</div>
-        </div>
+  <div className="pathway-grid">
+    <div className="pathway-step">{t.fighterPathwayStep1}</div>
+    <div className="pathway-arrow">→</div>
+    <div className="pathway-step">{t.fighterPathwayStep2}</div>
+    <div className="pathway-arrow">→</div>
+    <div className="pathway-step">{t.fighterPathwayStep3}</div>
+    <div className="pathway-arrow">→</div>
+    <div className="pathway-step">{t.fighterPathwayStep4}</div>
+  </div>
 
-        <p className="section-support">
-          The program is designed to create a more direct bridge between strong gyms,
-          emerging athletes, and future BKFC opportunities.
-        </p>
-      </section>
+  <p className="section-support">{t.fighterPathwaySupport}</p>
+</section>
 
       <section className="content-section" id="tier-ladder">
-        <div className="section-heading center-heading">
-          <p className="eyebrow">Tier Ladder</p>
-          <h2>Performance-based progression inside the network</h2>
-          <p className="section-support tier-intro">
-            The BKFC Affiliate Gym Program is built as a tier-based network, allowing
-            gyms to strengthen their position over time through consistency, standards,
-            activity, and overall program value.
-          </p>
-        </div>
+  <div className="section-heading center-heading">
+    <p className="eyebrow">{t.tierEyebrow}</p>
+    <h2>{t.tierTitle}</h2>
+    <p className="section-support tier-intro">{t.tierIntro}</p>
+  </div>
 
         <div className="three-card-grid">
           {tierItems.map((item) => (
             <article className="panel tier-card" key={item.title}>
-              <span className="tier-kicker">Affiliate Level</span>
+              <span className="tier-kicker">{t.tierKicker}</span>
               <h3>{item.title}</h3>
               <p>{item.copy}</p>
             </article>
@@ -170,66 +206,50 @@ export default function HomePage() {
 
       <section className="panel content-section highlight-section" id="gym-of-the-month">
         <div className="section-heading">
-          <p className="eyebrow">Gym of the Month</p>
-          <h2>Recurring recognition for standout affiliate gyms</h2>
-        </div>
+  <p className="eyebrow">{t.gymMonthEyebrow}</p>
+  <h2>{t.gymMonthTitle}</h2>
+</div>
 
-        <p>
-          The BKFC Affiliate Gym Program is designed to stay active throughout the year.
-          Through a recurring Gym of the Month feature, BKFC can spotlight affiliate gyms
-          that demonstrate strong standards, visible activity, and meaningful contribution
-          to the network.
-        </p>
+<p>{t.gymMonthText}</p>
 
-        <p className="section-support">
-          More than simple recognition, this mechanism creates momentum across the program
-          and gives standout gyms an additional layer of visibility, prestige, and future
-          activation potential within the BKFC ecosystem.
-        </p>
+<p className="section-support">{t.gymMonthSupport}</p>
 
-        <div className="recognition-strip">
-          <div className="recognition-pill">Monthly spotlight</div>
-          <div className="recognition-pill">Extra visibility</div>
-          <div className="recognition-pill">Program prestige</div>
-          <div className="recognition-pill">Future activation potential</div>
-        </div>
-      </section>
+<div className="recognition-strip">
+  {gymMonthPills.map((pill) => (
+    <div className="recognition-pill" key={pill}>
+      {pill}
+    </div>
+  ))}
+</div>
+</section>
 
       <section className="panel content-section" id="expectations">
-        <div className="section-heading">
-          <p className="eyebrow">Expectations</p>
-          <h2>What BKFC looks for in affiliate gyms</h2>
-        </div>
+  <div className="section-heading">
+    <p className="eyebrow">{t.expectationsEyebrow}</p>
+    <h2>{t.expectationsTitle}</h2>
+  </div>
 
-        <p>
-          The BKFC Affiliate Gym Program is intended for serious gyms that can represent
-          the standard of the network properly. Acceptance is based not only on interest,
-          but on structure, professionalism, development value, and long-term alignment.
-        </p>
+  <p>{t.expectationsText}</p>
 
-        <ul className="clean-list expectations-list">
-          {expectationItems.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </section>
+  <ul className="clean-list expectations-list">
+    {expectationItems.map((item) => (
+      <li key={item}>{item}</li>
+    ))}
+  </ul>
+</section>
 
       <section className="benefits-section" id="benefits">
-        <div className="benefits-container">
-          <div className="benefits-header">
-            <p className="benefits-label">Benefits</p>
-            <h2>Why selected gyms join the program</h2>
-            <p className="benefits-subtitle">
-              The BKFC Affiliate Gym Program is designed to create value across brand
-              visibility, fighter opportunity, and long-term gym development inside a
-              structured international network.
-            </p>
-          </div>
+  <div className="benefits-container">
+    <div className="benefits-header">
+      <p className="benefits-label">{t.benefitsEyebrow}</p>
+      <h2>{t.benefitsTitle}</h2>
+      <p className="benefits-subtitle">{t.benefitsSubtitle}</p>
+    </div>
 
           <div className="benefit-groups">
             {benefitGroups.map((group) => (
               <article className="benefit-group-card panel" key={group.title}>
-                <span className="benefit-kicker">Program Value</span>
+                <span className="benefit-kicker">{t.benefitKicker}</span>
                 <h3>{group.title}</h3>
                 <ul className="clean-list benefit-list">
                   {group.items.map((item) => (
@@ -243,72 +263,53 @@ export default function HomePage() {
       </section>
 
       <section className="panel content-section" id="selection-process">
-        <div className="section-heading">
-          <p className="eyebrow">Selection Process</p>
-          <h2>How gyms enter the program</h2>
-        </div>
+  <div className="section-heading">
+    <p className="eyebrow">{t.selectionEyebrow}</p>
+    <h2>{t.selectionTitle}</h2>
+  </div>
 
-        <p>
-          Entry into the BKFC Affiliate Gym Program follows a structured evaluation
-          process. Each application is reviewed individually to ensure alignment with
-          program standards, coaching structure, and long-term development potential.
-        </p>
+  <p>{t.selectionText}</p>
 
-        <ol className="selection-steps">
-          <li>Application submission through the official affiliate form</li>
-          <li>Internal review by BKFC International Development</li>
-          <li>Evaluation of gym structure, coaching environment, and positioning</li>
-          <li>Program alignment confirmation and onboarding preparation</li>
-        </ol>
-      </section>
+  <ol className="selection-steps">
+    {selectionSteps.map((step) => (
+      <li key={step}>{step}</li>
+    ))}
+  </ol>
+</section>
 
-      <section className="info-grid" id="starter-kit-preview">
-        <article className="panel">
-          <div className="section-heading">
-            <p className="eyebrow">Starter Kit Preview</p>
-            <h2>What accepted gyms move toward</h2>
-          </div>
-          <p>
-            Accepted gyms enter a structured onboarding pathway designed to position them
-            inside the BKFC international development network.
-          </p>
-          <p className="section-support">
-            More than a welcome layer, the starter kit acts as the first operational step
-            in aligning a gym with BKFC program structure, communication standards, and
-            future opportunity channels.
-          </p>
-        </article>
+     <section className="info-grid" id="starter-kit-preview">
+  <article className="panel">
+    <div className="section-heading">
+      <p className="eyebrow">{t.starterEyebrow}</p>
+      <h2>{t.starterTitle}</h2>
+    </div>
+    <p>{t.starterText}</p>
+    <p className="section-support">{t.starterSupport}</p>
+  </article>
 
-        <aside className="panel prep-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Included direction</p>
-            <h2>Preview items</h2>
-          </div>
-          <ul className="starter-kit-list">
-            {starterKitItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </aside>
-      </section>
+  <aside className="panel prep-panel">
+    <div className="section-heading">
+      <p className="eyebrow">{t.starterIncludedEyebrow}</p>
+      <h2>{t.starterIncludedTitle}</h2>
+    </div>
+    <ul className="starter-kit-list">
+      {starterKitItems.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  </aside>
+</section>
 
       <section className="panel content-section expansion-section" id="expansion-positioning">
-        <div className="section-heading">
-          <p className="eyebrow">Expansion Positioning</p>
-          <h2>Entering at the foundation stage of a growing network</h2>
-        </div>
+  <div className="section-heading">
+    <p className="eyebrow">{t.expansionEyebrow}</p>
+    <h2>{t.expansionTitle}</h2>
+  </div>
 
-        <p>
-          BKFC is building a broader international gym ecosystem around affiliate structure,
-          athlete development, and long-term market expansion.
-        </p>
+  <p>{t.expansionText}</p>
 
-        <p className="section-support">
-          Early affiliate gyms are not joining after the system is already crowded. They are
-          entering while the network is still being shaped, creating stronger long-term
-          positioning inside a developing BKFC international framework.
-        </p>
-      </section>
+  <p className="section-support">{t.expansionSupport}</p>
+</section>
 
       <section
         id="application-form"
@@ -316,30 +317,20 @@ export default function HomePage() {
         aria-labelledby="form-heading"
       >
         <div className="section-heading">
-          <p className="eyebrow">Official Affiliation Application</p>
-          <h2 id="form-heading">Submit your gym for BKFC affiliate review</h2>
+  <p className="eyebrow">{t.applicationEyebrow}</p>
+  <h2 id="form-heading">{t.applicationTitle}</h2>
 
-          <p>
-            Complete the official application below to present your gym for review by BKFC
-            International Development.
-          </p>
+  <p>{t.applicationText}</p>
 
-          <p className="form-confidence">
-            Submission does not guarantee acceptance. Each application is reviewed
-            individually based on program fit, operational standards, and long-term alignment
-            with the BKFC affiliate network.
-          </p>
-        </div>
+  <p className="form-confidence">{t.applicationConfidence}</p>
+</div>
 
         <div className="prep-inline panel-soft">
           <div>
-            <p className="eyebrow">Before submitting</p>
-            <h3>Prepare the following materials</h3>
-            <p className="prep-copy">
-              Having these items ready will help BKFC review your application more efficiently
-              and accurately.
-            </p>
-          </div>
+  <p className="eyebrow">{t.prepEyebrow}</p>
+  <h3>{t.prepTitle}</h3>
+  <p className="prep-copy">{t.prepCopy}</p>
+</div>
           <ul className="prep-materials-list">
             {prepItems.map((item) => (
               <li key={item}>{item}</li>
@@ -347,59 +338,50 @@ export default function HomePage() {
           </ul>
         </div>
 
-        <p className="submission-trust-note">
-          All submitted information is handled confidentially and used solely for internal BKFC
-          affiliate program evaluation.
-        </p>
+       <p className="submission-trust-note">{t.submissionTrustNote}</p>
 
-        <div className="form-start-marker">
-          <span>Application Form</span>
-        </div>
+<div className="form-start-marker">
+  <span>{t.applicationMarker}</span>
+</div>
 
-        <RegistrationForm />
+        <RegistrationForm language={language} />
       </section>
 
       <section className="faq-section" id="faq">
         <div className="faq-container">
           <div className="faq-header">
-            <p className="faq-label">FAQ</p>
-            <h2>Frequently Asked Questions</h2>
+            <p className="faq-label">{t.faqEyebrow}</p>
+            <h2>{t.faqTitle}</h2>
             <p className="faq-subtitle">
-              Everything you need to know about the BKFC Affiliate Program. If you need
-              additional assistance, contact{" "}
+              {t.faqSubtitleStart}{" "}
               <a href="mailto:affiliate@bkfc.com">affiliate@bkfc.com</a>
             </p>
           </div>
 
-          <FaqAccordion />
+          <FaqAccordion  language={language} />
         </div>
       </section>
 
       <footer className="site-footer" id="support">
-        <div className="footer-inner">
-          <div className="footer-brand">
-            <img src="/bkfc-footer-logo.png" alt="BKFC" className="footer-logo" />
-          </div>
+  <div className="footer-inner">
+    <div className="footer-brand">
+      <img src="/bkfc-footer-logo.png" alt="BKFC" className="footer-logo" />
+    </div>
 
-          <div className="footer-column">
-            <p className="footer-label">Program Support</p>
-            <p>Questions regarding the Affiliate Gym Program may be directed to:</p>
-            <a href="mailto:affiliate@bkfc.com">affiliate@bkfc.com</a>
-          </div>
+    <div className="footer-column">
+      <p className="footer-label">{t.footerSupportLabel}</p>
+      <p>{t.footerSupportText}</p>
+      <a href="mailto:affiliate@bkfc.com">affiliate@bkfc.com</a>
+    </div>
 
-          <div className="footer-column">
-            <p className="footer-label">Program notice</p>
-            <p>
-              Use of BKFC branding, affiliate status, or related representations is permitted
-              only after formal approval by BKFC International Development.
-            </p>
-          </div>
-        </div>
+    <div className="footer-column">
+      <p className="footer-label">{t.footerNoticeLabel}</p>
+      <p>{t.footerNoticeText}</p>
+    </div>
+  </div>
 
-        <div className="footer-legal">
-          © Bare Knuckle Fighting Championship. All rights reserved.
-        </div>
-      </footer>
+  <div className="footer-legal">{t.footerLegal}</div>
+</footer>
     </main>
   );
 }
