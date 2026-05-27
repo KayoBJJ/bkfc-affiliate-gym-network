@@ -170,6 +170,69 @@ const formCopy: Record<LanguageCode, {
       "Заявка успешно отправлена. Ваши материалы получены для рассмотрения BKFC International Development. Обычно заявки рассматриваются в течение 5–10 рабочих дней. Если в процессе оценки потребуется дополнительная информация, с вами свяжутся по указанному email.",
     fallbackError: "Не удалось отправить заявку.",
   },
+
+  de: {
+  gymName: "Name des Gyms",
+  cityCountry: "Stadt / Land",
+  contactPerson: "Hauptkontakt / Eigentümer",
+  email: "E-Mail-Adresse",
+  phone: "Telefonnummer",
+  websiteInstagram: "Website / Social-Media-Profil",
+  websitePlaceholder: "https://example.com oder @gymhandle",
+  disciplinesOffered: "Angebotene Disziplinen",
+  disciplinesPlaceholder:
+    "Beispiel: Boxen, Muay Thai, MMA, Kraft- und Athletiktraining, Jugendkurse...",
+  logoUpload: "Logo hochladen",
+  gymPhotosUpload: "Gym-Fotos hochladen",
+  fighterListUpload: "Fighter-Liste hochladen",
+  promoVideoLink: "Link zum Promovideo",
+  promoVideoPlaceholder:
+    "YouTube, Google Drive, Dropbox, WeTransfer oder Instagram-Link",
+  consentEyebrow: "Einwilligung",
+  consentTitle: "Datenerhebung und Prüfung",
+  privacyCopy:
+    "Die eingereichten Informationen werden für die Bewertung des Affiliate-Netzwerks, interne Verarbeitung und Folgekommunikation im Zusammenhang mit dem Onboarding gesammelt und gespeichert.",
+  reviewConsent:
+    "Ich stimme zu, die bereitgestellten Informationen zur Prüfung und internen Verarbeitung einzureichen.",
+  followUpConsent: "Ich möchte Folgekommunikation erhalten.",
+  submitting: "Wird gesendet...",
+  submit: "Zur Prüfung einreichen",
+  successMessage:
+    "Bewerbung erfolgreich eingereicht. Ihre Materialien wurden zur Prüfung durch BKFC International Development erhalten. Bewerbungen werden in der Regel innerhalb von 5–10 Werktagen geprüft. Falls während der Bewertung zusätzliche Informationen benötigt werden, werden Sie über die angegebene E-Mail-Adresse kontaktiert.",
+  fallbackError: "Die Bewerbung konnte nicht eingereicht werden.",
+},
+
+it: {
+  gymName: "Nome della palestra",
+  cityCountry: "Città / Paese",
+  contactPerson: "Contatto principale / Proprietario",
+  email: "Indirizzo email",
+  phone: "Numero di telefono",
+  websiteInstagram: "Sito web / Profilo social",
+  websitePlaceholder: "https://example.com o @gymhandle",
+  disciplinesOffered: "Discipline offerte",
+  disciplinesPlaceholder:
+    "Esempio: Boxe, Muay Thai, MMA, forza e condizionamento, corsi giovanili...",
+  logoUpload: "Carica logo",
+  gymPhotosUpload: "Carica foto della palestra",
+  fighterListUpload: "Carica roster dei fighter",
+  promoVideoLink: "Link video promozionale",
+  promoVideoPlaceholder:
+    "Link YouTube, Google Drive, Dropbox, WeTransfer o Instagram",
+  consentEyebrow: "Consenso",
+  consentTitle: "Raccolta e revisione dei dati",
+  privacyCopy:
+    "Le informazioni inviate saranno raccolte e conservate per la valutazione della rete affiliata, l’elaborazione interna e la comunicazione di follow-up relativa all’onboarding.",
+  reviewConsent:
+    "Accetto di inviare le informazioni fornite per revisione ed elaborazione interna.",
+  followUpConsent: "Desidero ricevere comunicazioni di follow-up.",
+  submitting: "Invio in corso...",
+  submit: "Invia per revisione",
+  successMessage:
+    "Candidatura inviata con successo. I tuoi materiali sono stati ricevuti per la revisione da parte di BKFC International Development. Le candidature vengono normalmente esaminate entro 5–10 giorni lavorativi. Se durante la valutazione saranno necessarie ulteriori informazioni, verrai contattato all’indirizzo email fornito.",
+  fallbackError: "Impossibile inviare la candidatura.",
+},
+
 };
 
 export function RegistrationForm({ language }: RegistrationFormProps) {

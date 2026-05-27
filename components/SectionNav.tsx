@@ -68,6 +68,35 @@ const sectionsByLanguage: Record<LanguageCode, SectionItem[]> = {
     { id: "application-form", label: "Заявка" },
     { id: "faq", label: "FAQ" },
   ],
+
+  de: [
+  { id: "program-definition", label: "Programm" },
+  { id: "fighter-pathway", label: "Pfad" },
+  { id: "tier-ladder", label: "Stufen" },
+  { id: "gym-of-the-month", label: "Gym des Monats" },
+  { id: "expectations", label: "Standards" },
+  { id: "benefits", label: "Vorteile" },
+  { id: "selection-process", label: "Prozess" },
+  { id: "starter-kit-preview", label: "Starter Kit" },
+  { id: "expansion-positioning", label: "Expansion" },
+  { id: "application-form", label: "Bewerbung" },
+  { id: "faq", label: "FAQ" },
+],
+
+it: [
+  { id: "program-definition", label: "Programma" },
+  { id: "fighter-pathway", label: "Percorso" },
+  { id: "tier-ladder", label: "Livelli" },
+  { id: "gym-of-the-month", label: "Palestra del mese" },
+  { id: "expectations", label: "Standard" },
+  { id: "benefits", label: "Vantaggi" },
+  { id: "selection-process", label: "Processo" },
+  { id: "starter-kit-preview", label: "Starter Kit" },
+  { id: "expansion-positioning", label: "Espansione" },
+  { id: "application-form", label: "Candidatura" },
+  { id: "faq", label: "FAQ" },
+],
+
 };
 
 export function SectionNav({ language }: SectionNavProps) {

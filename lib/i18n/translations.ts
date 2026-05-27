@@ -3,6 +3,8 @@ export const languages = [
   { code: "es", label: "Español", shortLabel: "ES" },
   { code: "pt", label: "Português", shortLabel: "PT" },
   { code: "ru", label: "Русский", shortLabel: "RU" },
+  { code: "de", label: "Deutsch", shortLabel: "DE" },
+  { code: "it", label: "Italiano", shortLabel: "IT"},
 ] as const;
 
 export type LanguageCode = (typeof languages)[number]["code"];
@@ -676,4 +678,323 @@ footerLegal:
       "Отправьте данные вашего зала на рассмотрение международной команды развития BKFC.",
     submitButton: "Отправить заявку",
   },
+
+  de: {
+  navApply: "Jetzt bewerben",
+  heroEyebrow: "Offizielles BKFC Entwicklungsnetzwerk",
+  heroTitle: "BKFC Gym Network",
+  heroSubtitle:
+    "Ein globales Affiliate-Programm, das zugelassene Kampfsport-Gyms mit dem internationalen Entwicklungssystem von BKFC verbindet.",
+  heroSupporting:
+    "Entwickelt für Gyms mit hohen Standards, sportlichem Potenzial und langfristigem Wachstum innerhalb eines expandierenden BKFC Netzwerks.",
+  heroPrimaryCta: "Bewerbung einreichen",
+  heroSecondaryCta: "Programm ansehen",
+
+  sectionProgramEyebrow: "Programmdefinition",
+  sectionProgramTitle: "Was das BKFC Affiliate Gym Program ist",
+  sectionProgramText:
+    "Das BKFC Affiliate Gym Program ist ein strukturiertes Affiliate-Modell für ausgewählte Kampfsport-Gyms, die hohe Standards, Entwicklungspotenzial und eine Ausrichtung auf die internationale Wachstumsstrategie von BKFC zeigen. Es ist nicht einfach nur ein Eintrag oder ein Badge.",
+  sectionProgramSupport:
+    "Es ist ein leistungsorientiertes Netzwerk, das seriöse Gyms mit Sichtbarkeit, Athletenpfaden und zukünftigen Aktivierungsmöglichkeiten innerhalb des BKFC Ökosystems verbindet.",
+
+  fighterPathwayEyebrow: "Athletenpfad",
+  fighterPathwayTitle: "Wie Gyms Athleten mit dem BKFC Ökosystem verbinden",
+  fighterPathwayStep1: "Affiliate Gym",
+  fighterPathwayStep2: "Talent-Sichtbarkeit",
+  fighterPathwayStep3: "BKFC Tryouts",
+  fighterPathwayStep4: "Auswahlmöglichkeit",
+  fighterPathwaySupport:
+    "Das Programm ist darauf ausgelegt, eine direktere Brücke zwischen starken Gyms, aufstrebenden Athleten und zukünftigen BKFC Möglichkeiten zu schaffen.",
+
+  tierEyebrow: "Stufenmodell",
+  tierTitle: "Leistungsbasierter Fortschritt innerhalb des Netzwerks",
+  tierIntro:
+    "Das BKFC Affiliate Gym Program ist als stufenbasiertes Netzwerk aufgebaut und ermöglicht es Gyms, ihre Position im Laufe der Zeit durch Konstanz, Standards, Aktivität und Gesamtwert für das Programm zu stärken.",
+  tierKicker: "Affiliate-Stufe",
+  tier1Title: "Stufe 1",
+  tier1Copy:
+    "Offizieller Einstieg in das BKFC Affiliate Gym Network für zugelassene Gyms, die zentrale Standards erfüllen und starkes strukturelles Potenzial zeigen.",
+  tier2Title: "Stufe 2",
+  tier2Copy:
+    "Fortgeschrittene Affiliate-Stufe für Gyms, die stärkere Aktivität, konstante Athletenentwicklung und wachsenden Wert innerhalb des Netzwerks demonstrieren.",
+  tier3Title: "Stufe 3",
+  tier3Copy:
+    "Höchste Affiliate-Stufe für herausragende Gyms mit starker Dynamik, hohem Anerkennungspotenzial und langfristigem BKFC Aktivierungspotenzial.",
+
+  gymMonthEyebrow: "Gym des Monats",
+  gymMonthTitle: "Regelmäßige Anerkennung für herausragende Affiliate-Gyms",
+  gymMonthText:
+    "Das BKFC Affiliate Gym Program ist darauf ausgelegt, das ganze Jahr über aktiv zu bleiben. Durch das wiederkehrende Gym des Monats Feature kann BKFC Affiliate-Gyms hervorheben, die hohe Standards, sichtbare Aktivität und einen wertvollen Beitrag zum Netzwerk zeigen.",
+  gymMonthSupport:
+    "Mehr als einfache Anerkennung schafft dieser Mechanismus Dynamik im Programm und gibt herausragenden Gyms zusätzliche Sichtbarkeit, Prestige und zukünftiges Aktivierungspotenzial innerhalb des BKFC Ökosystems.",
+  gymMonthPill1: "Monatliches Spotlight",
+  gymMonthPill2: "Zusätzliche Sichtbarkeit",
+  gymMonthPill3: "Programm-Prestige",
+  gymMonthPill4: "Zukünftiges Aktivierungspotenzial",
+
+  expectationsEyebrow: "Erwartungen",
+  expectationsTitle: "Was BKFC bei Affiliate-Gyms sucht",
+  expectationsText:
+    "Das BKFC Affiliate Gym Program richtet sich an seriöse Gyms, die den Standard des Netzwerks angemessen repräsentieren können. Die Aufnahme basiert nicht nur auf Interesse, sondern auf Struktur, Professionalität, Entwicklungswert und langfristiger Ausrichtung.",
+  expectation1: "Ein professionelles Trainingsumfeld mit starker operativer Disziplin",
+  expectation2: "Aktive Trainerstruktur und klare Kultur der Athletenentwicklung",
+  expectation3: "Bereitschaft, sich an den Standards und der Ausrichtung des BKFC Programms zu orientieren",
+  expectation4: "Fähigkeit, das Programm auf lokaler Marktebene angemessen zu repräsentieren",
+  expectation5: "Langfristige Denkweise in Bezug auf Gym-Wachstum, Qualität und Markenalignment",
+
+  benefitsEyebrow: "Vorteile",
+  benefitsTitle: "Warum ausgewählte Gyms dem Programm beitreten",
+  benefitsSubtitle:
+    "Das BKFC Affiliate Gym Program ist darauf ausgelegt, Wert in den Bereichen Marken-Sichtbarkeit, Athletenchancen und langfristige Gym-Entwicklung innerhalb eines strukturierten internationalen Netzwerks zu schaffen.",
+
+  benefitKicker: "Programmwert",
+
+  benefitGroup1Title: "Sichtbarkeit",
+  benefitGroup1Item1: "Offizielle Anerkennung als BKFC Affiliate-Gym",
+  benefitGroup1Item2: "Positionierung innerhalb des internationalen BKFC Gym-Netzwerks",
+  benefitGroup1Item3: "Sichtbarkeitsmöglichkeiten über digitale BKFC Kanäle und Content-Plattformen",
+  benefitGroup1Item4: "Stärkere Glaubwürdigkeit für Gyms, die lokal und international wachsen wollen",
+
+  benefitGroup2Title: "Athletenchancen",
+  benefitGroup2Item1: "Priorisierte Sichtbarkeit für Fighter aus Affiliate-Gyms",
+  benefitGroup2Item2: "Nähere Verbindung zu BKFC Tryouts, Trials und Talentpfaden",
+  benefitGroup2Item3: "Stärkere langfristige Brücke zwischen Gym-Athleten und BKFC Chancen",
+  benefitGroup2Item4: "Zusätzlicher Wert für Gyms, die wettkampforientierte Fighter entwickeln",
+
+  benefitGroup3Title: "Kommerzielle & Programmvorteile",
+  benefitGroup3Item1: "Potenzieller Zugang zu ausgewählten BKFC-bezogenen Aktivierungen",
+  benefitGroup3Item2: "Rahmen für Merchandising- und Promotion-Möglichkeiten",
+  benefitGroup3Item3: "Seminar- und Auftrittsmöglichkeiten mit BKFC Talenten",
+  benefitGroup3Item4: "Eintritt in ein strukturiertes Wachstumsprogramm, nicht nur in eine einfache Affiliation",
+
+  selectionEyebrow: "Auswahlprozess",
+  selectionTitle: "Wie Gyms in das Programm aufgenommen werden",
+  selectionText:
+    "Der Eintritt in das BKFC Affiliate Gym Program folgt einem strukturierten Bewertungsprozess. Jede Bewerbung wird individuell geprüft, um die Ausrichtung auf Programmstandards, Trainerstruktur und langfristiges Entwicklungspotenzial sicherzustellen.",
+  selectionStep1: "Einreichung der Bewerbung über das offizielle Affiliate-Formular",
+  selectionStep2: "Interne Prüfung durch BKFC International Development",
+  selectionStep3: "Bewertung der Gym-Struktur, des Trainingsumfelds und der Positionierung",
+  selectionStep4: "Bestätigung der Programmausrichtung und Vorbereitung des Onboardings",
+
+  starterEyebrow: "Starter Kit Vorschau",
+  starterTitle: "Worauf akzeptierte Gyms hinarbeiten",
+  starterText:
+    "Akzeptierte Gyms treten in einen strukturierten Onboarding-Prozess ein, der sie innerhalb des internationalen BKFC Entwicklungsnetzwerks positioniert.",
+  starterSupport:
+    "Mehr als nur eine Willkommensschicht ist das Starter Kit der erste operative Schritt, um ein Gym mit der BKFC Programmstruktur, Kommunikationsstandards und zukünftigen Chancenkanälen auszurichten.",
+  starterIncludedEyebrow: "Enthaltene Richtung",
+  starterIncludedTitle: "Vorschau-Elemente",
+  starterItem1: "Affiliate-Onboarding-Leitfaden",
+  starterItem2: "Anerkennungsassets des Programms",
+  starterItem3: "Richtlinien zur Markennutzung",
+  starterItem4: "Support-Struktur des Programms",
+  starterItem5: "Pfad zu zukünftigen Aktivierungen und Chancen",
+
+  expansionEyebrow: "Expansionspositionierung",
+  expansionTitle: "Eintritt in die Grundphase eines wachsenden Netzwerks",
+  expansionText:
+    "BKFC baut ein breiteres internationales Gym-Ökosystem rund um Affiliate-Struktur, Athletenentwicklung und langfristige Marktexpansion auf.",
+  expansionSupport:
+    "Frühe Affiliate-Gyms treten nicht bei, nachdem das System bereits überfüllt ist. Sie treten ein, während das Netzwerk noch geformt wird, und schaffen dadurch eine stärkere langfristige Positionierung innerhalb eines wachsenden internationalen BKFC Rahmens.",
+
+  applicationEyebrow: "Offizielle Affiliate-Bewerbung",
+  applicationTitle: "Reichen Sie Ihr Gym zur BKFC Affiliate-Prüfung ein",
+  applicationText:
+    "Füllen Sie die offizielle Bewerbung unten aus, um Ihr Gym zur Prüfung durch BKFC International Development einzureichen.",
+  applicationConfidence:
+    "Die Einreichung garantiert keine Aufnahme. Jede Bewerbung wird individuell auf Programmfit, operative Standards und langfristige Ausrichtung mit dem BKFC Affiliate-Netzwerk geprüft.",
+
+  prepEyebrow: "Vor der Einreichung",
+  prepTitle: "Bereiten Sie folgende Materialien vor",
+  prepCopy:
+    "Wenn diese Materialien bereitstehen, kann BKFC Ihre Bewerbung effizienter und genauer prüfen.",
+  prepItem1: "Gym-Logo",
+  prepItem2: "Fotos der Trainingsstätte",
+  prepItem3: "Website oder wichtigstes Social-Media-Profil",
+  prepItem4: "Aktive Fighter-Liste (optional)",
+  prepItem5: "Promovideo (optional)",
+
+  submissionTrustNote:
+    "Alle eingereichten Informationen werden vertraulich behandelt und ausschließlich für die interne Bewertung des BKFC Affiliate-Programms verwendet.",
+  applicationMarker: "Bewerbungsformular",
+
+  faqEyebrow: "FAQ",
+  faqTitle: "Häufig gestellte Fragen",
+  faqSubtitleStart:
+    "Alles, was Sie über das BKFC Affiliate Program wissen müssen. Wenn Sie zusätzliche Unterstützung benötigen, kontaktieren Sie",
+
+  footerSupportLabel: "Programmsupport",
+  footerSupportText:
+    "Fragen zum Affiliate Gym Program können gerichtet werden an:",
+  footerNoticeLabel: "Programmhinweis",
+  footerNoticeText:
+    "Die Nutzung von BKFC Branding, Affiliate-Status oder damit verbundenen Darstellungen ist nur nach formeller Genehmigung durch BKFC International Development erlaubt.",
+  footerLegal:
+    "© Bare Knuckle Fighting Championship. Alle Rechte vorbehalten.",
+
+  formTitle: "Für das BKFC Gym Network bewerben",
+  formSubtitle:
+    "Reichen Sie Ihre Gym-Daten zur Prüfung durch das internationale BKFC Entwicklungsteam ein.",
+  submitButton: "Bewerbung absenden",
+},
+
+it: {
+  navApply: "Candidati ora",
+  heroEyebrow: "Rete ufficiale di sviluppo BKFC",
+  heroTitle: "BKFC Gym Network",
+  heroSubtitle:
+    "Un programma globale di affiliazione che collega palestre di sport da combattimento approvate al sistema internazionale di sviluppo BKFC.",
+  heroSupporting:
+    "Creato per palestre con standard seri, potenziale atletico e ambizione di crescita a lungo termine all’interno di una rete BKFC in espansione.",
+  heroPrimaryCta: "Invia la candidatura",
+  heroSecondaryCta: "Scopri il programma",
+
+  sectionProgramEyebrow: "Definizione del programma",
+  sectionProgramTitle: "Cos’è il BKFC Affiliate Gym Program",
+  sectionProgramText:
+    "Il BKFC Affiliate Gym Program è un modello strutturato di affiliazione per palestre di sport da combattimento selezionate che dimostrano standard elevati, potenziale di sviluppo e allineamento con la direzione di crescita internazionale di BKFC. Non è semplicemente una lista o un badge.",
+  sectionProgramSupport:
+    "È una rete orientata alla performance, progettata per collegare palestre serie con visibilità, percorsi per atleti e future opportunità di attivazione all’interno dell’ecosistema BKFC.",
+
+  fighterPathwayEyebrow: "Percorso dell’atleta",
+  fighterPathwayTitle: "Come le palestre collegano gli atleti all’ecosistema BKFC",
+  fighterPathwayStep1: "Palestra affiliata",
+  fighterPathwayStep2: "Visibilità del talento",
+  fighterPathwayStep3: "Tryouts BKFC",
+  fighterPathwayStep4: "Opportunità di selezione",
+  fighterPathwaySupport:
+    "Il programma è progettato per creare un ponte più diretto tra palestre forti, atleti emergenti e future opportunità BKFC.",
+
+  tierEyebrow: "Livelli del programma",
+  tierTitle: "Progressione basata sulla performance all’interno della rete",
+  tierIntro:
+    "Il BKFC Affiliate Gym Program è costruito come una rete a livelli, permettendo alle palestre di rafforzare la propria posizione nel tempo attraverso costanza, standard, attività e valore complessivo per il programma.",
+  tierKicker: "Livello affiliato",
+  tier1Title: "Livello 1",
+  tier1Copy:
+    "Ingresso ufficiale nel BKFC Affiliate Gym Network per palestre approvate che soddisfano gli standard principali e mostrano forte potenziale strutturale.",
+  tier2Title: "Livello 2",
+  tier2Copy:
+    "Livello affiliato progressivo per palestre che dimostrano maggiore attività, continuità nello sviluppo degli atleti e valore crescente all’interno della rete.",
+  tier3Title: "Livello 3",
+  tier3Copy:
+    "Livello superiore riservato a palestre di spicco con forte slancio, potenziale di riconoscimento e prospettiva di attivazione BKFC a lungo termine.",
+
+  gymMonthEyebrow: "Palestra del mese",
+  gymMonthTitle: "Riconoscimento ricorrente per palestre affiliate di spicco",
+  gymMonthText:
+    "Il BKFC Affiliate Gym Program è progettato per rimanere attivo durante tutto l’anno. Attraverso la funzione Palestra del mese, BKFC può mettere in evidenza palestre affiliate che dimostrano standard elevati, attività visibile e contributo significativo alla rete.",
+  gymMonthSupport:
+    "Più di un semplice riconoscimento, questo meccanismo crea slancio all’interno del programma e offre alle palestre di spicco un ulteriore livello di visibilità, prestigio e potenziale di attivazione futura nell’ecosistema BKFC.",
+  gymMonthPill1: "Spotlight mensile",
+  gymMonthPill2: "Visibilità extra",
+  gymMonthPill3: "Prestigio del programma",
+  gymMonthPill4: "Potenziale di attivazione futura",
+
+  expectationsEyebrow: "Aspettative",
+  expectationsTitle: "Cosa cerca BKFC nelle palestre affiliate",
+  expectationsText:
+    "Il BKFC Affiliate Gym Program è pensato per palestre serie che possano rappresentare correttamente lo standard della rete. L’accettazione non si basa solo sull’interesse, ma su struttura, professionalità, valore di sviluppo e allineamento a lungo termine.",
+  expectation1: "Un ambiente di allenamento professionale con forte disciplina operativa",
+  expectation2: "Struttura tecnica attiva e chiara cultura di sviluppo degli atleti",
+  expectation3: "Disponibilità ad allinearsi agli standard e alla direzione del programma BKFC",
+  expectation4: "Capacità di rappresentare correttamente il programma nel mercato locale",
+  expectation5: "Mentalità a lungo termine verso crescita, qualità e allineamento con il brand",
+
+  benefitsEyebrow: "Vantaggi",
+  benefitsTitle: "Perché le palestre selezionate entrano nel programma",
+  benefitsSubtitle:
+    "Il BKFC Affiliate Gym Program è progettato per creare valore attraverso visibilità del brand, opportunità per gli atleti e sviluppo a lungo termine della palestra dentro una rete internazionale strutturata.",
+
+  benefitKicker: "Valore del programma",
+
+  benefitGroup1Title: "Esposizione",
+  benefitGroup1Item1: "Riconoscimento ufficiale come palestra affiliata BKFC",
+  benefitGroup1Item2: "Posizionamento all’interno della rete internazionale di palestre BKFC",
+  benefitGroup1Item3: "Opportunità di visibilità sui canali digitali e contenuti BKFC",
+  benefitGroup1Item4: "Maggiore credibilità per palestre che vogliono crescere localmente e internazionalmente",
+
+  benefitGroup2Title: "Opportunità per atleti",
+  benefitGroup2Item1: "Visibilità prioritaria per fighter collegati a palestre affiliate",
+  benefitGroup2Item2: "Connessione più stretta con tryouts, trials e percorsi di talento BKFC",
+  benefitGroup2Item3: "Ponte più forte a lungo termine tra atleti della palestra e opportunità BKFC",
+  benefitGroup2Item4: "Valore aggiuntivo per palestre focalizzate sullo sviluppo di fighter competitivi",
+
+  benefitGroup3Title: "Vantaggi commerciali e di programma",
+  benefitGroup3Item1: "Accesso potenziale ad attivazioni selezionate collegate a BKFC",
+  benefitGroup3Item2: "Struttura per opportunità di merchandising e promozione",
+  benefitGroup3Item3: "Possibilità di seminari e apparizioni con talenti BKFC",
+  benefitGroup3Item4: "Ingresso in un programma strutturato per la crescita, non solo in una semplice affiliazione",
+
+  selectionEyebrow: "Processo di selezione",
+  selectionTitle: "Come le palestre entrano nel programma",
+  selectionText:
+    "L’ingresso nel BKFC Affiliate Gym Program segue un processo di valutazione strutturato. Ogni candidatura viene esaminata individualmente per garantire allineamento con gli standard del programma, struttura tecnica e potenziale di sviluppo a lungo termine.",
+  selectionStep1: "Invio della candidatura tramite il modulo ufficiale di affiliazione",
+  selectionStep2: "Revisione interna da parte di BKFC International Development",
+  selectionStep3: "Valutazione della struttura della palestra, ambiente di allenamento e posizionamento",
+  selectionStep4: "Conferma dell’allineamento al programma e preparazione dell’onboarding",
+
+  starterEyebrow: "Anteprima Starter Kit",
+  starterTitle: "Verso cosa avanzano le palestre accettate",
+  starterText:
+    "Le palestre accettate entrano in un percorso strutturato di onboarding, progettato per posizionarle all’interno della rete internazionale di sviluppo BKFC.",
+  starterSupport:
+    "Più di un semplice livello di benvenuto, lo starter kit rappresenta il primo passo operativo per allineare una palestra alla struttura del programma BKFC, agli standard di comunicazione e ai futuri canali di opportunità.",
+  starterIncludedEyebrow: "Direzione inclusa",
+  starterIncludedTitle: "Elementi in anteprima",
+  starterItem1: "Guida all’onboarding affiliato",
+  starterItem2: "Asset di riconoscimento del programma",
+  starterItem3: "Direzione sull’uso del brand",
+  starterItem4: "Struttura di supporto del programma",
+  starterItem5: "Percorso verso future attivazioni e opportunità",
+
+  expansionEyebrow: "Posizionamento di espansione",
+  expansionTitle: "Entrare nella fase fondativa di una rete in crescita",
+  expansionText:
+    "BKFC sta costruendo un ecosistema internazionale più ampio di palestre attorno a struttura di affiliazione, sviluppo degli atleti ed espansione di mercato a lungo termine.",
+  expansionSupport:
+    "Le prime palestre affiliate non entrano quando il sistema è già saturo. Entrano mentre la rete è ancora in fase di costruzione, creando un posizionamento più forte a lungo termine all’interno di un framework internazionale BKFC in sviluppo.",
+
+  applicationEyebrow: "Candidatura ufficiale di affiliazione",
+  applicationTitle: "Invia la tua palestra per la revisione affiliata BKFC",
+  applicationText:
+    "Completa la candidatura ufficiale qui sotto per presentare la tua palestra alla revisione di BKFC International Development.",
+  applicationConfidence:
+    "L’invio della candidatura non garantisce l’accettazione. Ogni candidatura viene esaminata individualmente in base alla compatibilità con il programma, agli standard operativi e all’allineamento a lungo termine con la rete affiliata BKFC.",
+
+  prepEyebrow: "Prima dell’invio",
+  prepTitle: "Prepara i seguenti materiali",
+  prepCopy:
+    "Avere questi elementi pronti aiuterà BKFC a valutare la tua candidatura in modo più efficiente e accurato.",
+  prepItem1: "Logo della palestra",
+  prepItem2: "Foto della struttura",
+  prepItem3: "Sito web o profilo social principale",
+  prepItem4: "Roster attivo dei fighter (opzionale)",
+  prepItem5: "Video promozionale (opzionale)",
+
+  submissionTrustNote:
+    "Tutte le informazioni inviate vengono gestite in modo confidenziale e utilizzate esclusivamente per la valutazione interna del programma affiliati BKFC.",
+  applicationMarker: "Modulo di candidatura",
+
+  faqEyebrow: "FAQ",
+  faqTitle: "Domande frequenti",
+  faqSubtitleStart:
+    "Tutto ciò che devi sapere sul BKFC Affiliate Program. Se hai bisogno di ulteriore assistenza, contatta",
+
+  footerSupportLabel: "Supporto del programma",
+  footerSupportText:
+    "Le domande relative all’Affiliate Gym Program possono essere inviate a:",
+  footerNoticeLabel: "Avviso del programma",
+  footerNoticeText:
+    "L’uso del branding BKFC, dello status affiliato o di rappresentazioni correlate è consentito solo dopo approvazione formale da parte di BKFC International Development.",
+  footerLegal:
+    "© Bare Knuckle Fighting Championship. Tutti i diritti riservati.",
+
+  formTitle: "Candidati al BKFC Gym Network",
+  formSubtitle:
+    "Invia i dettagli della tua palestra per la revisione da parte del team internazionale di sviluppo BKFC.",
+  submitButton: "Invia candidatura",
+},
+
 } satisfies Record<LanguageCode, Record<string, string>>;
