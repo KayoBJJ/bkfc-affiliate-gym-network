@@ -294,6 +294,140 @@ function buildApplicantReceivedEmail({
 `;
 }
 
+function buildApplicationUnderReviewEmail({
+  contactPerson,
+  gymName,
+  cityCountry,
+  submissionId,
+}: {
+  contactPerson: string;
+  gymName: string;
+  cityCountry: string;
+  submissionId: string;
+}) {
+  return `
+<body style="margin:0;background:#080808;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:32px 12px;">
+    <tr>
+      <td align="center">
+
+        <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#111111;border:1px solid #262626;border-radius:14px;overflow:hidden;">
+
+          <tr>
+            <td style="background:#c8a45d;padding:14px 24px;">
+              <div style="margin:0;color:#000000;font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;">
+                BKFC Gym Network - Application Update
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:32px 32px 18px;background:#111111;">
+              <div style="display:inline-block;margin:0 0 16px;padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#c8a45d;background:#1a1a1a;border:1px solid #3a3324;border-radius:999px;">
+                In Progress
+              </div>
+
+              <h1 style="margin:0 0 10px;color:#ffffff;font-size:30px;line-height:36px;font-weight:700;">
+                Your application is moving forward.
+              </h1>
+
+              <p style="margin:0;color:#b5b5b5;font-size:16px;line-height:26px;">
+                Our team has started checking the submitted details.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 32px 32px;">
+
+              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
+               Dear ${escapeHtml(contactPerson)},
+              </p>
+
+              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
+                Thank you again for your application for <strong style="color:#ffffff;">${escapeHtml(gymName)}</strong>.
+             </p>
+
+              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
+                Our team has started checking the submitted details and will contact you directly if anything else is needed.
+            </p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#171717;border:1px solid #2a2a2a;border-radius:12px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <div style="margin:0 0 14px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
+                      Review Summary
+                    </div>
+
+                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
+                      <strong style="color:#c8a45d;">Status:</strong> In Progress
+                    </p>
+
+                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
+                      <strong style="color:#c8a45d;">Gym:</strong> ${escapeHtml(gymName)}
+                    </p>
+
+                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
+                      <strong style="color:#c8a45d;">Location:</strong> ${escapeHtml(cityCountry)}
+                    </p>
+
+                    <p style="margin:0;color:#d4d4d4;font-size:14px;line-height:22px;">
+                      <strong style="color:#c8a45d;">Application ID:</strong> ${escapeHtml(submissionId)}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+               <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#141414;border-left:3px solid #c8a45d;border-radius:10px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <div style="margin:0 0 14px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
+                      Current Step
+                    </div>
+
+                    <p style="margin:0;color:#d4d4d4;font-size:14px;line-height:24px;">
+                      At this stage, no action is required from your side. If anything else is needed, our team will contact you directly.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
+                If your application is approved, we will guide you through the next steps for membership activation, starter kit preparation, and official affiliate onboarding.
+              </p>
+
+              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
+                Thank you for your patience while we complete the review.
+              </p>
+
+              <p style="margin:28px 0 0;color:#ffffff;font-size:15px;font-weight:600;">
+                BKFC International Development
+              </p>
+
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top:1px solid #262626;padding:20px 32px 28px;">
+              <div style="margin:0 0 6px;color:#c8a45d;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                BKFC Gym Network
+              </div>
+
+              <p style="margin:0;color:#8a8a8a;font-size:12px;line-height:20px;">
+                Official communication from BKFC International Development.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+`;
+}
+
 async function sendApplicationEmails({
   submissionId,
   submittedAt,
