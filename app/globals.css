@@ -27,10 +27,6 @@ html {
   scroll-behavior: smooth;
 }
 
-section[id] {
-  scroll-margin-top: 130px;
-}
-
 body {
   margin: 0;
   min-width: 320px;
@@ -78,6 +74,10 @@ p {
   width: min(calc(100% - 32px), var(--content-width));
   margin: 0 auto;
   padding: 24px 0 48px;
+}
+
+.page-shell section[id] {
+  scroll-margin-top: 128px;
 }
 
 .content-section {
@@ -1986,6 +1986,10 @@ h1 {
 }
 
 @media (max-width: 768px) {
+  .page-shell section[id] {
+    scroll-margin-top: 64px;
+  }
+
   .section-nav {
     top: 10px;
   }
@@ -2039,12 +2043,17 @@ h1 {
   }
 
   .section-nav-inner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 10px);
+    z-index: 60;
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
     flex-wrap: nowrap;
     gap: 8px;
-    margin-top: 10px;
+    margin-top: 0;
     padding: 12px;
     border-radius: 24px;
     max-height: 0;
@@ -2059,8 +2068,9 @@ h1 {
   }
 
   .section-nav-inner.open {
-    max-height: 1000px;
+    max-height: calc(100vh - 92px);
     opacity: 1;
+    overflow-y: auto;
     pointer-events: auto;
     transform: translateY(0);
   }
