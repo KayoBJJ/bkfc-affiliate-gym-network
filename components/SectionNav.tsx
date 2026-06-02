@@ -113,9 +113,21 @@ pl: [
 
 };
 
+const applyCtaByLanguage: Record<LanguageCode, string> = {
+  en: "Apply Now",
+  es: "Aplicar Ahora",
+  pt: "Candidatar-se",
+  ru: "Подать заявку",
+  de: "Jetzt bewerben",
+  it: "Candidati ora",
+  pl: "Aplikuj teraz",
+};
+
 export function SectionNav({ language }: SectionNavProps) {
   const [activeSection, setActiveSection] = useState("program-definition");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const sections = sectionsByLanguage[language] ?? sectionsByLanguage.en;
+  const applyCtaLabel = applyCtaByLanguage[language] ?? applyCtaByLanguage.en;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -137,9 +149,45 @@ export function SectionNav({ language }: SectionNavProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [sections]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 769) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const mobileMenuId = "section-nav-menu";
+
+  const handleLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <nav className="section-nav" aria-label="Section navigation">
-      <div className="section-nav-inner">
+      <button
+        type="button"
+        className="section-nav-toggle"
+        aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={isMobileMenuOpen}
+        aria-controls={mobileMenuId}
+        onClick={() => setIsMobileMenuOpen((current) => !current)}
+      >
+        <span>Menu</span>
+        <span className={`section-nav-toggle-icon ${isMobileMenuOpen ? "open" : ""}`}>
+          <span />
+          <span />
+          <span />
+        </span>
+      </button>
+
+      <div
+        id={mobileMenuId}
+        className={`section-nav-inner ${isMobileMenuOpen ? "open" : ""}`}
+      >
         {sections.map((section) => (
           <a
             key={section.id}
@@ -147,10 +195,18 @@ export function SectionNav({ language }: SectionNavProps) {
             className={`section-nav-link ${
               activeSection === section.id ? "active" : ""
             }`}
+            onClick={handleLinkClick}
           >
             {section.label}
           </a>
         ))}
+        <a
+          href="#application-form"
+          className="section-nav-mobile-cta"
+          onClick={handleLinkClick}
+        >
+          {applyCtaLabel}
+        </a>
       </div>
     </nav>
   );
