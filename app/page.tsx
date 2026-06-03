@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { LogoPlaceholder } from "@/components/LogoPlaceholder";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { SectionNav } from "@/components/SectionNav";
@@ -114,8 +113,6 @@ const starterKitItems = [
   <img src="/bkfc-logo.png" alt="BKFC Logo" style={{ height: "80px" }} />
 
   <div className="hero-topbar-actions">
-    <LogoPlaceholder label="Secondary Brand Mark Slot" compact />
-
     <div className="language-switcher">
   <select
     value={language}
