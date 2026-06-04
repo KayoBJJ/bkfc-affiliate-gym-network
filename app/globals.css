@@ -66,6 +66,11 @@ p {
   margin: 0;
 }
 
+.font-display {
+  font-family: var(--font-display), Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 400;
+}
+
 /* Layout */
 
 .page-shell {
@@ -151,9 +156,8 @@ h1 {
 }
 
 .page-shell h1 {
-  font-weight: 900;
   line-height: 0.92;
-  letter-spacing: -0.014em;
+  letter-spacing: 0.012em;
 }
 
 /* Shared surfaces */
@@ -2384,6 +2388,19 @@ h1 {
   line-height: 1.02;
   font-weight: 900;
   letter-spacing: -0.01em;
+}
+
+.page-shell h1,
+.page-shell > section > .section-heading h2,
+.page-shell > .info-grid .section-heading h2,
+.page-shell .benefits-header h2,
+.page-shell .faq-header h2,
+.page-shell .cta-container h2,
+.page-shell .tier-card h3,
+.page-shell .benefit-group-card h3 {
+  font-family: var(--font-display), Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.012em;
 }
 
 .admin-overview-copy,

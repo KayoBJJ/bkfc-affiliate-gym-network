@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Bebas_Neue } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
+
+const displayFont = Bebas_Neue({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display"
+});
 
 export const metadata: Metadata = {
   title: "BKFC Affiliate Gym Program",
@@ -14,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={displayFont.variable}>{children}</body>
     </html>
   );
 }
