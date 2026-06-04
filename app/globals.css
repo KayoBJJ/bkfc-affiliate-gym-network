@@ -927,6 +927,12 @@ h1 {
   font-size: 0.95rem;
 }
 
+.required-mark {
+  margin-left: 0.22rem;
+  color: var(--gold);
+  font-weight: 900;
+}
+
 .field input,
 .field textarea {
   width: 100%;

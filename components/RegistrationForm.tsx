@@ -18,6 +18,14 @@ const initialState: SubmissionState = {
   message: ""
 };
 
+function RequiredMark() {
+  return (
+    <span className="required-mark" aria-hidden="true">
+      *
+    </span>
+  );
+}
+
 type RegistrationFormProps = {
   language: LanguageCode;
 };
@@ -320,32 +328,32 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
     <form className="registration-form" onSubmit={handleSubmit}>
       <div className="form-grid">
         <label className="field">
-          <span>{t.gymName}</span>
+          <span>{t.gymName}<RequiredMark /></span>
           <input name="gymName" type="text" required />
         </label>
 
         <label className="field">
-          <span>{t.cityCountry}</span>
+          <span>{t.cityCountry}<RequiredMark /></span>
           <input name="cityCountry" type="text" required />
         </label>
 
         <label className="field">
-          <span>{t.contactPerson}</span>
+          <span>{t.contactPerson}<RequiredMark /></span>
           <input name="contactPerson" type="text" required />
         </label>
 
         <label className="field">
-          <span>{t.email}</span>
+          <span>{t.email}<RequiredMark /></span>
           <input name="email" type="email" required />
         </label>
 
         <label className="field">
-          <span>{t.phone}</span>
+          <span>{t.phone}<RequiredMark /></span>
           <input name="phone" type="tel" required />
         </label>
 
         <label className="field">
-          <span>{t.websiteInstagram}</span>
+          <span>{t.websiteInstagram}<RequiredMark /></span>
           <input
             name="websiteInstagram"
             type="text"
@@ -355,7 +363,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
         </label>
 
         <label className="field field-full">
-          <span>{t.disciplinesOffered}</span>
+          <span>{t.disciplinesOffered}<RequiredMark /></span>
           <textarea
             name="disciplinesOffered"
             rows={4}
@@ -365,7 +373,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
         </label>
 
         <label className="field">
-          <span>{t.logoUpload}</span>
+          <span>{t.logoUpload}<RequiredMark /></span>
           <input
             name="logoUpload"
             type="file"
@@ -375,7 +383,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
         </label>
 
         <label className="field">
-          <span>{t.gymPhotosUpload}</span>
+          <span>{t.gymPhotosUpload}<RequiredMark /></span>
           <input
             name="gymPhotos"
             type="file"
@@ -413,7 +421,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
 
         <label className="checkbox-field">
           <input name="reviewConsent" type="checkbox" required />
-          <span>{t.reviewConsent}</span>
+          <span>{t.reviewConsent}<RequiredMark /></span>
         </label>
 
         <label className="checkbox-field">
