@@ -71,6 +71,10 @@ p {
   font-weight: 400;
 }
 
+.font-body {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
 /* Layout */
 
 .page-shell {
@@ -145,6 +149,36 @@ p,
   color: var(--muted);
   line-height: 1.65;
   font-size: 0.98rem;
+}
+
+.page-shell .hero-subtitle,
+.page-shell .hero-supporting,
+.page-shell .section-support,
+.page-shell .content-section > p,
+.page-shell .benefits-subtitle,
+.page-shell .faq-subtitle,
+.page-shell .faq-answer p,
+.page-shell .cta-copy,
+.page-shell .clean-list li,
+.page-shell .prep-panel li,
+.page-shell .prep-inline li,
+.page-shell .prep-materials-list li,
+.page-shell .starter-kit-list li,
+.page-shell .benefit-list li,
+.page-shell .selection-steps li,
+.page-shell .tier-card p,
+.page-shell .benefit-group-card p,
+.page-shell .field span,
+.page-shell .checkbox-field span,
+.page-shell .field input,
+.page-shell .field textarea,
+.page-shell .privacy-copy,
+.page-shell .form-confidence,
+.page-shell .submission-trust-note,
+.page-shell .prep-copy,
+.page-shell .submission-message,
+.page-shell .footer-column p:not(.footer-label) {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 h1 {

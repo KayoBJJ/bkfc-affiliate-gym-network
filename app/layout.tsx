@@ -21,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={displayFont.variable}>{children}</body>
+      <body className={displayFont.variable}>
+        {children}
+      </body>
     </html>
   );
 }
