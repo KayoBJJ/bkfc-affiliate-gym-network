@@ -450,11 +450,11 @@ h1 {
 
 .page-shell .cta-button,
 .page-shell .secondary-button {
-  font-size: 1.12rem;
+  font-size: 1.22rem;
 }
 
 .page-shell .section-nav-link {
-  font-size: 0.98rem;
+  font-size: 1.08rem;
 }
 
 /* Lists */
@@ -2110,7 +2110,7 @@ h1 {
     color: var(--text);
     box-shadow: var(--shadow);
     backdrop-filter: blur(18px);
-    font-size: 1.04rem;
+    font-size: 1.12rem;
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -2196,7 +2196,7 @@ h1 {
     border-radius: 999px;
     background: linear-gradient(180deg, #ffe27a, var(--gold));
     color: #0a0a0a;
-    font-size: 1.08rem;
+    font-size: 1.16rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-decoration: none;
