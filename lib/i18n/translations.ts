@@ -33,9 +33,15 @@ export const translations = {
       fighterPathwayEyebrow: "Fighter Pathway",
       fighterPathwayTitle: "How gyms connect athletes to the BKFC ecosystem",
       fighterPathwayStep1: "Affiliate Gym",
+      fighterPathwayStep1Microcopy: "Official entry point into the BKFC affiliate network.",
       fighterPathwayStep2: "Talent Visibility",
+      fighterPathwayStep2Microcopy: "Fighters become easier for BKFC scouts to identify and follow.",
       fighterPathwayStep3: "BKFC Tryouts",
+      fighterPathwayStep3Microcopy:
+        "Athletes move toward structured evaluation through approved tryout opportunities.",
       fighterPathwayStep4: "Selection Opportunity",
+      fighterPathwayStep4Microcopy:
+        "Top prospects gain a clearer route toward future BKFC consideration.",
       fighterPathwaySupport:
         "The program is designed to create a more direct bridge between strong gyms, emerging athletes, and future BKFC opportunities.",
 
@@ -202,9 +208,16 @@ footerLegal:
       fighterPathwayEyebrow: "Ruta del Atleta",
       fighterPathwayTitle: "Cómo los gimnasios conectan atletas con el ecosistema BKFC",
       fighterPathwayStep1: "Gimnasio Afiliado",
+      fighterPathwayStep1Microcopy: "Punto de entrada oficial a la red de afiliados BKFC.",
       fighterPathwayStep2: "Visibilidad del Talento",
+      fighterPathwayStep2Microcopy:
+        "Los peleadores son más fáciles de identificar y seguir para los scouts de BKFC.",
       fighterPathwayStep3: "Tryouts BKFC",
+      fighterPathwayStep3Microcopy:
+        "Los atletas avanzan hacia una evaluación estructurada mediante oportunidades de tryout aprobadas.",
       fighterPathwayStep4: "Oportunidad de Selección",
+      fighterPathwayStep4Microcopy:
+        "Los mejores prospectos obtienen una ruta más clara hacia futura consideración de BKFC.",
       fighterPathwaySupport:
         "El programa está diseñado para crear un puente más directo entre gimnasios sólidos, atletas emergentes y futuras oportunidades dentro de BKFC.",
 
@@ -369,9 +382,16 @@ footerLegal:
       fighterPathwayEyebrow: "Caminho do Atleta",
       fighterPathwayTitle: "Como as academias conectam atletas ao ecossistema BKFC",
       fighterPathwayStep1: "Academia Afiliada",
+      fighterPathwayStep1Microcopy: "Ponto de entrada oficial na rede de afiliados BKFC.",
       fighterPathwayStep2: "Visibilidade do Talento",
+      fighterPathwayStep2Microcopy:
+        "Os lutadores tornam-se mais fáceis de identificar e acompanhar pelos scouts da BKFC.",
       fighterPathwayStep3: "Tryouts BKFC",
+      fighterPathwayStep3Microcopy:
+        "Os atletas avançam para uma avaliação estruturada por meio de oportunidades de tryout aprovadas.",
       fighterPathwayStep4: "Oportunidade de Seleção",
+      fighterPathwayStep4Microcopy:
+        "Os principais prospectos ganham um caminho mais claro para futura consideração da BKFC.",
       fighterPathwaySupport:
         "O programa foi criado para formar uma ponte mais direta entre academias fortes, atletas em desenvolvimento e futuras oportunidades dentro da BKFC.",
 
@@ -535,9 +555,16 @@ footerLegal:
        fighterPathwayEyebrow: "Путь спортсмена",
        fighterPathwayTitle: "Как залы связывают спортсменов с экосистемой BKFC",
        fighterPathwayStep1: "Партнёрский зал",
+       fighterPathwayStep1Microcopy: "Официальная точка входа в партнёрскую сеть BKFC.",
        fighterPathwayStep2: "Видимость таланта",
+       fighterPathwayStep2Microcopy:
+         "Бойцов становится проще выявлять и отслеживать для скаутов BKFC.",
        fighterPathwayStep3: "Tryouts BKFC",
+       fighterPathwayStep3Microcopy:
+         "Спортсмены переходят к структурированной оценке через одобренные возможности tryout.",
        fighterPathwayStep4: "Возможность отбора",
+       fighterPathwayStep4Microcopy:
+         "Лучшие перспективные бойцы получают более понятный путь к будущему рассмотрению BKFC.",
        fighterPathwaySupport:
          "Программа создана для более прямой связи между сильными залами, перспективными спортсменами и будущими возможностями внутри BKFC.",
 
@@ -701,9 +728,16 @@ footerLegal:
   fighterPathwayEyebrow: "Athletenpfad",
   fighterPathwayTitle: "Wie Gyms Athleten mit dem BKFC Ökosystem verbinden",
   fighterPathwayStep1: "Affiliate Gym",
+  fighterPathwayStep1Microcopy: "Offizieller Einstiegspunkt in das BKFC Affiliate Network.",
   fighterPathwayStep2: "Talent-Sichtbarkeit",
+  fighterPathwayStep2Microcopy:
+    "Fighter werden für BKFC-Scouts leichter zu erkennen und zu verfolgen.",
   fighterPathwayStep3: "BKFC Tryouts",
+  fighterPathwayStep3Microcopy:
+    "Athleten bewegen sich über genehmigte Tryout-Möglichkeiten in Richtung strukturierter Bewertung.",
   fighterPathwayStep4: "Auswahlmöglichkeit",
+  fighterPathwayStep4Microcopy:
+    "Top-Prospects erhalten einen klareren Weg zur zukünftigen BKFC-Berücksichtigung.",
   fighterPathwaySupport:
     "Das Programm ist darauf ausgelegt, eine direktere Brücke zwischen starken Gyms, aufstrebenden Athleten und zukünftigen BKFC Möglichkeiten zu schaffen.",
 
@@ -860,9 +894,16 @@ it: {
   fighterPathwayEyebrow: "Percorso dell’atleta",
   fighterPathwayTitle: "Come le palestre collegano gli atleti all’ecosistema BKFC",
   fighterPathwayStep1: "Palestra affiliata",
+  fighterPathwayStep1Microcopy: "Punto di ingresso ufficiale nella rete affiliata BKFC.",
   fighterPathwayStep2: "Visibilità del talento",
+  fighterPathwayStep2Microcopy:
+    "I fighter diventano più facili da individuare e seguire per gli scout BKFC.",
   fighterPathwayStep3: "Tryouts BKFC",
+  fighterPathwayStep3Microcopy:
+    "Gli atleti avanzano verso una valutazione strutturata tramite opportunità di tryout approvate.",
   fighterPathwayStep4: "Opportunità di selezione",
+  fighterPathwayStep4Microcopy:
+    "I migliori prospetti ottengono un percorso più chiaro verso una futura considerazione BKFC.",
   fighterPathwaySupport:
     "Il programma è progettato per creare un ponte più diretto tra palestre forti, atleti emergenti e future opportunità BKFC.",
 
@@ -1019,9 +1060,16 @@ pl: {
   fighterPathwayEyebrow: "Ścieżka zawodnika",
   fighterPathwayTitle: "Jak kluby łączą zawodników z ekosystemem BKFC",
   fighterPathwayStep1: "Klub afiliacyjny",
+  fighterPathwayStep1Microcopy: "Oficjalny punkt wejścia do sieci afiliacyjnej BKFC.",
   fighterPathwayStep2: "Widoczność talentu",
+  fighterPathwayStep2Microcopy:
+    "Zawodnicy stają się łatwiejsi do identyfikacji i obserwowania przez scoutów BKFC.",
   fighterPathwayStep3: "BKFC Tryouts",
+  fighterPathwayStep3Microcopy:
+    "Zawodnicy przechodzą w stronę ustrukturyzowanej oceny poprzez zatwierdzone możliwości tryout.",
   fighterPathwayStep4: "Możliwość selekcji",
+  fighterPathwayStep4Microcopy:
+    "Najlepsi prospekci zyskują wyraźniejszą drogę do przyszłego rozważenia przez BKFC.",
   fighterPathwaySupport:
     "Program został zaprojektowany, aby stworzyć bardziej bezpośredni most między silnymi klubami, rozwijającymi się zawodnikami i przyszłymi możliwościami BKFC.",
 

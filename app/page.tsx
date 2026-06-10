@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { RegistrationForm } from "@/components/RegistrationForm";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { SectionNav } from "@/components/SectionNav";
@@ -90,6 +90,25 @@ const selectionSteps = [
    t.selectionStep4,
 ];
 
+const fighterPathwaySteps = [
+  {
+    title: t.fighterPathwayStep1,
+    microcopy: t.fighterPathwayStep1Microcopy,
+  },
+  {
+    title: t.fighterPathwayStep2,
+    microcopy: t.fighterPathwayStep2Microcopy,
+  },
+  {
+    title: t.fighterPathwayStep3,
+    microcopy: t.fighterPathwayStep3Microcopy,
+  },
+  {
+    title: t.fighterPathwayStep4,
+    microcopy: t.fighterPathwayStep4Microcopy,
+  },
+];
+
 const starterKitItems = [
    t.starterItem1,
    t.starterItem2,
@@ -171,13 +190,19 @@ const starterKitItems = [
   </div>
 
   <div className="pathway-grid">
-    <div className="pathway-step">{t.fighterPathwayStep1}</div>
-    <div className="pathway-arrow">→</div>
-    <div className="pathway-step">{t.fighterPathwayStep2}</div>
-    <div className="pathway-arrow">→</div>
-    <div className="pathway-step">{t.fighterPathwayStep3}</div>
-    <div className="pathway-arrow">→</div>
-    <div className="pathway-step">{t.fighterPathwayStep4}</div>
+    {fighterPathwaySteps.map((step, index) => (
+      <Fragment key={step.title}>
+        <div className="pathway-step">
+          <span className="pathway-step-title">{step.title}</span>
+          <span className="pathway-step-copy">{step.microcopy}</span>
+        </div>
+        {index < fighterPathwaySteps.length - 1 ? (
+          <div className="pathway-arrow" aria-hidden="true">
+            →
+          </div>
+        ) : null}
+      </Fragment>
+    ))}
   </div>
 
   <p className="section-support">{t.fighterPathwaySupport}</p>
