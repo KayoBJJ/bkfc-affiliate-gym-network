@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import { Bebas_Neue } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={displayFont.variable}>
         {children}
+        <Analytics />
       </body>
     </html>
   );
