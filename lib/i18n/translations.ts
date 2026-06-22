@@ -108,6 +108,9 @@ export const translations = {
     benefitGroup3Item2: "Merchandising and promotional opportunity framework",
     benefitGroup3Item3: "Seminar and appearance possibilities connected to BKFC talent",
     benefitGroup3Item4: "Entry into a structured program built for growth, not just affiliation",
+    benefitGroup4Title: "Licensee Referral Commission",
+    benefitGroup4Item1:
+      "Approved affiliate gyms may earn 10% of the license fee when they introduce a qualified event licensee who is approved by BKFC and successfully signs and pays.",
 
 
     selectionEyebrow: "Selection Process",
@@ -282,6 +285,9 @@ benefitGroup3Item1: "Acceso potencial a activaciones seleccionadas relacionadas 
 benefitGroup3Item2: "Marco de oportunidades de merchandising y promoción",
 benefitGroup3Item3: "Posibilidades de seminarios y apariciones vinculadas a talento BKFC",
 benefitGroup3Item4: "Entrada a un programa estructurado para crecimiento, no solo afiliación",
+benefitGroup4Title: "Comisión por Referencia de Licenciatario",
+benefitGroup4Item1:
+  "Los gimnasios afiliados aprobados pueden ganar el 10% de la tarifa de licencia cuando presentan a un licenciatario de evento calificado que es aprobado por BKFC y firma y paga correctamente.",
 
 
 selectionEyebrow: "Proceso de Selección",
@@ -455,6 +461,9 @@ benefitGroup3Item1: "Acesso potencial a ativações selecionadas relacionadas à
 benefitGroup3Item2: "Estrutura de oportunidades de merchandising e promoção",
 benefitGroup3Item3: "Possibilidades de seminários e aparições conectadas a talentos BKFC",
 benefitGroup3Item4: "Entrada em um programa estruturado para crescimento, não apenas afiliação",
+benefitGroup4Title: "Comissão por Indicação de Licenciado",
+benefitGroup4Item1:
+  "Academias afiliadas aprovadas podem ganhar 10% da taxa de licença quando apresentam um licenciado de evento qualificado que é aprovado pela BKFC e assina e paga com sucesso.",
 
 
 selectionEyebrow: "Processo de Seleção",
@@ -628,6 +637,9 @@ benefitGroup3Item1: "Потенциальный доступ к выбранны
 benefitGroup3Item2: "Структура возможностей для мерча и промо-активаций",
 benefitGroup3Item3: "Возможности семинаров и появлений, связанных с талантами BKFC",
 benefitGroup3Item4: "Вход в структурированную программу роста, а не просто получение статуса",
+benefitGroup4Title: "Комиссия за рекомендацию лицензиата",
+benefitGroup4Item1:
+  "Одобренные партнёрские залы могут получить 10% от лицензионного взноса, если они представят квалифицированного лицензиата события, который будет одобрен BKFC, успешно подпишет соглашение и произведёт оплату.",
 
 
 selectionEyebrow: "Процесс отбора",
@@ -801,6 +813,9 @@ footerLegal:
   benefitGroup3Item2: "Rahmen für Merchandising- und Promotion-Möglichkeiten",
   benefitGroup3Item3: "Seminar- und Auftrittsmöglichkeiten mit BKFC Talenten",
   benefitGroup3Item4: "Eintritt in ein strukturiertes Wachstumsprogramm, nicht nur in eine einfache Affiliation",
+  benefitGroup4Title: "Provision für Lizenznehmer-Empfehlung",
+  benefitGroup4Item1:
+    "Zugelassene Affiliate-Gyms können 10% der Lizenzgebühr erhalten, wenn sie einen qualifizierten Event-Lizenznehmer vorstellen, der von BKFC genehmigt wird und erfolgreich unterzeichnet und bezahlt.",
 
   selectionEyebrow: "Auswahlprozess",
   selectionTitle: "Wie Gyms in das Programm aufgenommen werden",
@@ -967,6 +982,9 @@ it: {
   benefitGroup3Item2: "Struttura per opportunità di merchandising e promozione",
   benefitGroup3Item3: "Possibilità di seminari e apparizioni con talenti BKFC",
   benefitGroup3Item4: "Ingresso in un programma strutturato per la crescita, non solo in una semplice affiliazione",
+  benefitGroup4Title: "Commissione per Referral di Licenziatario",
+  benefitGroup4Item1:
+    "Le palestre affiliate approvate possono guadagnare il 10% della fee di licenza quando presentano un licenziatario di evento qualificato che viene approvato da BKFC e firma e paga con successo.",
 
   selectionEyebrow: "Processo di selezione",
   selectionTitle: "Come le palestre entrano nel programma",
@@ -1133,6 +1151,9 @@ pl: {
   benefitGroup3Item2: "Ramy dla możliwości merchandisingu i promocji",
   benefitGroup3Item3: "Możliwości seminariów i wystąpień z talentami BKFC",
   benefitGroup3Item4: "Wejście do programu zbudowanego dla wzrostu, a nie tylko afiliacji",
+  benefitGroup4Title: "Prowizja za polecenie licencjobiorcy",
+  benefitGroup4Item1:
+    "Zatwierdzone kluby afiliacyjne mogą otrzymać 10% opłaty licencyjnej, gdy przedstawią kwalifikującego się licencjobiorcę wydarzenia, który zostanie zatwierdzony przez BKFC, skutecznie podpisze umowę i dokona płatności.",
 
   selectionEyebrow: "Proces selekcji",
   selectionTitle: "Jak kluby wchodzą do programu",

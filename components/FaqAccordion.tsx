@@ -75,6 +75,11 @@ const faqItems: Record<LanguageCode, FaqItem[]> = {
       answer:
         "For questions regarding applications, eligibility, or affiliate program details, contact affiliate@bkfc.com.",
     },
+    {
+      question: "Can an affiliate gym earn a referral commission?",
+      answer:
+        "Yes. If an approved BKFC Affiliate Gym introduces a qualified event licensee who is approved by BKFC and completes a paid licensing agreement, the gym may receive 10% of the license fee. This applies only to approved referrals and does not include event costs, sponsorships, ticketing, or other revenues.",
+    },
   ],
 
   es: [
@@ -142,6 +147,11 @@ const faqItems: Record<LanguageCode, FaqItem[]> = {
       question: "¿A quién contacto si necesito ayuda?",
       answer:
         "Para preguntas sobre solicitudes, elegibilidad o detalles del programa de afiliados, contacta a affiliate@bkfc.com.",
+    },
+    {
+      question: "¿Puede un gimnasio afiliado ganar una comisión por referencia?",
+      answer:
+        "Sí. Si un BKFC Affiliate Gym aprobado presenta a un licenciatario de evento calificado que es aprobado por BKFC y completa un acuerdo de licencia pagado, el gimnasio puede recibir el 10% de la tarifa de licencia. Esto aplica solo a referencias aprobadas y no incluye costos de evento, patrocinios, ticketing u otros ingresos.",
     },
   ],
 
@@ -211,6 +221,11 @@ const faqItems: Record<LanguageCode, FaqItem[]> = {
       answer:
         "Para perguntas sobre candidaturas, elegibilidade ou detalhes do programa de afiliados, entre em contato pelo affiliate@bkfc.com.",
     },
+    {
+      question: "Uma academia afiliada pode ganhar comissão por indicação?",
+      answer:
+        "Sim. Se uma BKFC Affiliate Gym aprovada apresentar um licenciado de evento qualificado que seja aprovado pela BKFC e conclua um contrato de licenciamento pago, a academia pode receber 10% da taxa de licença. Isso se aplica apenas a indicações aprovadas e não inclui custos de evento, patrocínios, bilheteria ou outras receitas.",
+    },
   ],
 
   ru: [
@@ -278,6 +293,11 @@ const faqItems: Record<LanguageCode, FaqItem[]> = {
       question: "К кому обратиться за помощью?",
       answer:
         "По вопросам заявок, eligibility или деталей партнёрской программы обращайтесь на affiliate@bkfc.com.",
+    },
+    {
+      question: "Может ли партнёрский зал получить комиссию за рекомендацию?",
+      answer:
+        "Да. Если одобренный BKFC Affiliate Gym представит квалифицированного лицензиата события, который будет одобрен BKFC и завершит оплачиваемое лицензионное соглашение, зал может получить 10% от лицензионного взноса. Это относится только к одобренным рекомендациям и не включает расходы на событие, спонсорство, билеты или другие доходы.",
     },
   ],
 
@@ -347,6 +367,11 @@ const faqItems: Record<LanguageCode, FaqItem[]> = {
     answer:
       "Bei Fragen zu Bewerbungen, Eignung oder Details des Affiliate-Programms kontaktieren Sie affiliate@bkfc.com.",
   },
+  {
+    question: "Kann ein Affiliate-Gym eine Empfehlungsprovision erhalten?",
+    answer:
+      "Ja. Wenn ein zugelassenes BKFC Affiliate Gym einen qualifizierten Event-Lizenznehmer vorstellt, der von BKFC genehmigt wird und eine bezahlte Lizenzvereinbarung abschließt, kann das Gym 10% der Lizenzgebühr erhalten. Dies gilt nur für genehmigte Empfehlungen und umfasst keine Eventkosten, Sponsorings, Ticketing oder andere Einnahmen.",
+  },
 ],
 
 it: [
@@ -415,6 +440,11 @@ it: [
     answer:
       "Per domande sulle candidature, sull’idoneità o sui dettagli del programma affiliati, contatta affiliate@bkfc.com.",
   },
+  {
+    question: "Una palestra affiliata può guadagnare una commissione per referral?",
+    answer:
+      "Sì. Se una BKFC Affiliate Gym approvata presenta un licenziatario di evento qualificato che viene approvato da BKFC e completa un accordo di licenza pagato, la palestra può ricevere il 10% della fee di licenza. Questo vale solo per referral approvati e non include costi evento, sponsorizzazioni, ticketing o altri ricavi.",
+  },
 ],
 pl: [
   {
@@ -481,6 +511,11 @@ pl: [
     question: "Z kim mam się skontaktować, jeśli potrzebuję pomocy?",
     answer:
       "W przypadku pytań dotyczących zgłoszeń, kwalifikacji lub szczegółów programu afiliacyjnego skontaktuj się z affiliate@bkfc.com.",
+  },
+  {
+    question: "Czy klub afiliacyjny może otrzymać prowizję za polecenie?",
+    answer:
+      "Tak. Jeśli zatwierdzony BKFC Affiliate Gym przedstawi kwalifikującego się licencjobiorcę wydarzenia, który zostanie zatwierdzony przez BKFC i zawrze opłaconą umowę licencyjną, klub może otrzymać 10% opłaty licencyjnej. Dotyczy to wyłącznie zatwierdzonych poleceń i nie obejmuje kosztów wydarzenia, sponsoringu, ticketingu ani innych przychodów.",
   },
 ],
 

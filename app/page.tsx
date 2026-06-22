@@ -81,6 +81,10 @@ const benefitGroups = [
       t.benefitGroup3Item4,
     ],
   },
+  {
+    title: t.benefitGroup4Title,
+    items: [t.benefitGroup4Item1],
+  },
 ];
 
 const selectionSteps = [
