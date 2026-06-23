@@ -1278,6 +1278,26 @@ h1 {
   accent-color: #fff;
 }
 
+.optional-interest-block {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid rgba(255, 215, 59, 0.16);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.optional-interest-block .checkbox-field {
+  margin-top: 0;
+}
+
+.checkbox-helper {
+  margin: 8px 0 0 30px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  opacity: 0.8;
+}
+
 .submit-row {
   display: grid;
   gap: 16px;

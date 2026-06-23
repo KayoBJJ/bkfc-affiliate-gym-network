@@ -50,6 +50,8 @@ const formCopy: Record<LanguageCode, {
   privacyCopy: string;
   reviewConsent: string;
   followUpConsent: string;
+  bkfcAppAccessInterest: string;
+  bkfcAppAccessInterestHelper: string;
   submitting: string;
   submit: string;
   successMessage: string;
@@ -79,6 +81,9 @@ const formCopy: Record<LanguageCode, {
     reviewConsent:
       "I agree to submit the provided information for review and internal processing.",
     followUpConsent: "I would like to receive follow-up communication.",
+    bkfcAppAccessInterest: "I am interested in BKFC App access for my gym.",
+    bkfcAppAccessInterestHelper:
+      "If your application is approved, BKFC will follow up separately with details about available app access options.",
     submitting: "Submitting...",
     submit: "Submit for Review",
     successMessage:
@@ -110,6 +115,9 @@ const formCopy: Record<LanguageCode, {
     reviewConsent:
       "Acepto enviar la información proporcionada para revisión y procesamiento interno.",
     followUpConsent: "Deseo recibir comunicación de seguimiento.",
+    bkfcAppAccessInterest: "Estoy interesado en acceso a la BKFC App para mi gimnasio.",
+    bkfcAppAccessInterestHelper:
+      "Si tu solicitud es aprobada, BKFC hará seguimiento por separado con detalles sobre las opciones disponibles de acceso a la app.",
     submitting: "Enviando...",
     submit: "Enviar para Revisión",
     successMessage:
@@ -141,6 +149,9 @@ const formCopy: Record<LanguageCode, {
     reviewConsent:
       "Concordo em enviar as informações fornecidas para revisão e processamento interno.",
     followUpConsent: "Gostaria de receber comunicação de acompanhamento.",
+    bkfcAppAccessInterest: "Tenho interesse em acesso à BKFC App para minha academia.",
+    bkfcAppAccessInterestHelper:
+      "Se sua candidatura for aprovada, a BKFC fará contato separadamente com detalhes sobre as opções disponíveis de acesso ao app.",
     submitting: "Enviando...",
     submit: "Enviar para Revisão",
     successMessage:
@@ -172,6 +183,9 @@ const formCopy: Record<LanguageCode, {
     reviewConsent:
       "Я согласен отправить предоставленную информацию для рассмотрения и внутренней обработки.",
     followUpConsent: "Я хотел бы получать последующую коммуникацию.",
+    bkfcAppAccessInterest: "Меня интересует доступ к BKFC App для моего зала.",
+    bkfcAppAccessInterestHelper:
+      "Если ваша заявка будет одобрена, BKFC отдельно свяжется с вами и предоставит детали доступных вариантов доступа к приложению.",
     submitting: "Отправка...",
     submit: "Отправить на рассмотрение",
     successMessage:
@@ -203,6 +217,9 @@ const formCopy: Record<LanguageCode, {
   reviewConsent:
     "Ich stimme zu, die bereitgestellten Informationen zur Prüfung und internen Verarbeitung einzureichen.",
   followUpConsent: "Ich möchte Folgekommunikation erhalten.",
+  bkfcAppAccessInterest: "Ich bin an BKFC App-Zugang für mein Gym interessiert.",
+  bkfcAppAccessInterestHelper:
+    "Wenn Ihre Bewerbung genehmigt wird, wird BKFC separat mit Details zu verfügbaren App-Zugangsoptionen nachfassen.",
   submitting: "Wird gesendet...",
   submit: "Zur Prüfung einreichen",
   successMessage:
@@ -234,6 +251,9 @@ it: {
   reviewConsent:
     "Accetto di inviare le informazioni fornite per revisione ed elaborazione interna.",
   followUpConsent: "Desidero ricevere comunicazioni di follow-up.",
+  bkfcAppAccessInterest: "Sono interessato all’accesso alla BKFC App per la mia palestra.",
+  bkfcAppAccessInterestHelper:
+    "Se la tua candidatura viene approvata, BKFC ti contatterà separatamente con i dettagli sulle opzioni disponibili di accesso all’app.",
   submitting: "Invio in corso...",
   submit: "Invia per revisione",
   successMessage:
@@ -265,6 +285,9 @@ pl: {
   reviewConsent:
     "Wyrażam zgodę na przesłanie podanych informacji do oceny i wewnętrznego przetwarzania.",
   followUpConsent: "Chcę otrzymywać dalszą komunikację.",
+  bkfcAppAccessInterest: "Interesuje mnie dostęp do BKFC App dla mojego klubu.",
+  bkfcAppAccessInterestHelper:
+    "Jeśli Twoje zgłoszenie zostanie zatwierdzone, BKFC skontaktuje się osobno ze szczegółami dostępnych opcji dostępu do aplikacji.",
   submitting: "Wysyłanie...",
   submit: "Wyślij do oceny",
   successMessage:
@@ -418,6 +441,14 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
           <h3 id="consent-heading">{t.consentTitle}</h3>
         </div>
         <p className="privacy-copy">{t.privacyCopy}</p>
+
+        <div className="optional-interest-block">
+          <label className="checkbox-field">
+            <input name="bkfcAppAccessInterest" type="checkbox" />
+            <span>{t.bkfcAppAccessInterest}</span>
+          </label>
+          <p className="checkbox-helper">{t.bkfcAppAccessInterestHelper}</p>
+        </div>
 
         <label className="checkbox-field">
           <input name="reviewConsent" type="checkbox" required />

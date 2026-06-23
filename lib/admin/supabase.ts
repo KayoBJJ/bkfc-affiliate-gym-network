@@ -29,6 +29,7 @@ const applicationSelect = `
   promo_video_link,
   review_consent,
   follow_up_consent,
+  bkfc_app_access_interest,
   status,
   review_stage,
   internal_notes

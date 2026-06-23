@@ -441,6 +441,7 @@ async function sendApplicationEmails({
   websiteInstagram,
   disciplinesOffered,
   promoVideoLink,
+  bkfcAppAccessInterest,
 }: {
   submissionId: string;
   submittedAt: string;
@@ -454,6 +455,7 @@ async function sendApplicationEmails({
   websiteInstagram: string;
   disciplinesOffered: string;
   promoVideoLink: string;
+  bkfcAppAccessInterest: boolean;
 }) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("Missing RESEND_API_KEY. Email notifications skipped.");
@@ -534,6 +536,7 @@ async function sendApplicationEmails({
             <p><strong>Promo Video Link:</strong> ${
               promoVideoLink ? escapeHtml(promoVideoLink) : "Not provided"
             }</p>
+            <p><strong>BKFC App Access Interest:</strong> ${bkfcAppAccessInterest ? "Yes" : "No"}</p>
           </td>
         </tr>
       </table>
@@ -605,6 +608,8 @@ export async function POST(request: Request) {
 
     const reviewConsent = formData.get("reviewConsent") === "on";
     const followUpConsent = formData.get("followUpConsent") === "on";
+    const bkfcAppAccessInterest =
+      formData.get("bkfcAppAccessInterest") === "on";
 
     const logoUpload = getFile(formData, "logoUpload");
     const gymPhotos = getFiles(formData, "gymPhotos");
@@ -661,6 +666,7 @@ export async function POST(request: Request) {
       promo_video_link: promoVideoLink || null,
       review_consent: reviewConsent,
       follow_up_consent: followUpConsent,
+      bkfc_app_access_interest: bkfcAppAccessInterest,
       status: "new",
       review_stage: "submitted",
     });
@@ -683,6 +689,7 @@ export async function POST(request: Request) {
     websiteInstagram,
     disciplinesOffered,
     promoVideoLink,
+    bkfcAppAccessInterest,
   });
 } catch (emailError) {
   console.error("Email notification failed", emailError);

@@ -16,6 +16,7 @@ export type AffiliateApplication = {
   promo_video_link: string | null;
   review_consent: boolean;
   follow_up_consent: boolean;
+  bkfc_app_access_interest: boolean;
   status: string;
   review_stage: string;
   internal_notes: string | null;

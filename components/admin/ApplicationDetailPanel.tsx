@@ -77,6 +77,9 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
         </Field>
         <Field label="Review consent">{application.review_consent ? "Yes" : "No"}</Field>
         <Field label="Follow-up consent">{application.follow_up_consent ? "Yes" : "No"}</Field>
+        <Field label="BKFC App access interest">
+          {application.bkfc_app_access_interest ? "Yes" : "No"}
+        </Field>
         <Field label="Status">{formatLabel(application.status)}</Field>
         <Field label="Review stage">{formatLabel(application.review_stage)}</Field>
       </div>
