@@ -130,7 +130,10 @@ const starterKitItems = [
  ]
 
   return (
-    <main className="page-shell">
+    <Fragment>
+      <div className="global-background-image" aria-hidden="true" />
+      <div className="global-background-overlay" aria-hidden="true" />
+      <main className="page-shell">
       <section className="hero" id="hero">
         <div className="hero-topbar">
   <img src="/bkfc-logo.png" alt="BKFC Logo" style={{ height: "80px" }} />
@@ -408,6 +411,7 @@ const starterKitItems = [
 
   <div className="footer-legal">{t.footerLegal}</div>
 </footer>
-    </main>
+      </main>
+    </Fragment>
   );
 }
