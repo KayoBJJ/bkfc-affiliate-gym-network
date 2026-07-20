@@ -5,6 +5,11 @@ import type {
   AffiliateApplication,
   ApplicationStageHistoryEntry,
 } from "@/lib/admin/types";
+import {
+  attachApplicationFileAccess,
+  normalizeAffiliateApplication,
+  queryAffiliateApplicationsCompatibly,
+} from "@/lib/admin/applicationCompatibility";
 import { getSupabaseServiceRoleKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { STORAGE_BUCKET } from "@/lib/application/policy";
 
@@ -25,57 +30,44 @@ function storagePathFromLegacyUrl(value: string | null) {
   }
 }
 
-const applicationSelect = `
-  id,
-  application_reference,
-  created_at,
-  gym_name,
-  city_country,
-  country,
-  region,
-  contact_person,
-  email,
-  phone,
-  website_instagram,
-  disciplines_offered,
-  logo_url,
-  gym_photo_urls,
-  fighter_list_url,
-  logo_path,
-  gym_photo_paths,
-  fighter_list_path,
-  promo_video_link,
-  review_consent,
-  follow_up_consent,
-  bkfc_app_access_interest,
-  status,
-  review_stage,
-  internal_notes
-`;
-
 export async function getAffiliateApplications() {
   const supabase = createAdminSupabaseClient();
-
-  const { data, error } = await supabase
-    .from("affiliate_applications")
-    .select(applicationSelect)
-    .order("created_at", { ascending: false });
+  const { data, error, schema } = await queryAffiliateApplicationsCompatibly(
+    async (selection) => {
+      const result = await supabase
+        .from("affiliate_applications")
+        .select(selection)
+        .order("created_at", { ascending: false });
+      return {
+        data: result.data as Record<string, unknown>[] | null,
+        error: result.error,
+      };
+    },
+  );
 
   if (error) {
     throw new Error(`Failed to load affiliate applications: ${error.message}`);
   }
 
-  return (data ?? []) as AffiliateApplication[];
+  return (data ?? []).map((row) => normalizeAffiliateApplication(row, schema));
 }
 
 export async function getAffiliateApplicationById(id: string) {
   const supabase = createAdminSupabaseClient();
 
-  const { data, error } = await supabase
-    .from("affiliate_applications")
-    .select(applicationSelect)
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error, schema } = await queryAffiliateApplicationsCompatibly(
+    async (selection) => {
+      const result = await supabase
+        .from("affiliate_applications")
+        .select(selection)
+        .eq("id", id)
+        .maybeSingle();
+      return {
+        data: result.data as Record<string, unknown> | null,
+        error: result.error,
+      };
+    },
+  );
 
   if (error) {
     throw new Error(`Failed to load affiliate application: ${error.message}`);
@@ -83,7 +75,7 @@ export async function getAffiliateApplicationById(id: string) {
 
   if (!data) return null;
 
-  const application = data as AffiliateApplication;
+  const application = normalizeAffiliateApplication(data, schema);
   const sign = async (path: string | null) => {
     if (!path) return null;
     const { data: signed } = await supabase.storage
@@ -92,25 +84,7 @@ export async function getAffiliateApplicationById(id: string) {
     return signed?.signedUrl ?? null;
   };
 
-  application.logo_access_url =
-    (await sign(application.logo_path || storagePathFromLegacyUrl(application.logo_url))) ||
-    application.logo_url;
-  application.fighter_list_access_url =
-    (await sign(application.fighter_list_path || storagePathFromLegacyUrl(application.fighter_list_url))) ||
-    application.fighter_list_url;
-  if (application.gym_photo_paths?.length) {
-    application.gym_photo_access_urls = (
-      await Promise.all(application.gym_photo_paths.map(sign))
-    ).filter((url): url is string => Boolean(url));
-  } else {
-    application.gym_photo_access_urls = await Promise.all(
-      (application.gym_photo_urls ?? []).map(async (url) =>
-        (await sign(storagePathFromLegacyUrl(url))) || url,
-      ),
-    );
-  }
-
-  return application;
+  return attachApplicationFileAccess(application, sign, storagePathFromLegacyUrl);
 }
 
 export async function getApplicationStageHistory(applicationId: string) {
