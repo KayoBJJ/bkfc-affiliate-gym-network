@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 
 export async function isAllowedAdminEmail(email: string | undefined | null) {

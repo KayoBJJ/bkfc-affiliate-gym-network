@@ -1,5 +1,6 @@
 export type AffiliateApplication = {
   id: string;
+  application_reference: string | null;
   created_at: string;
   gym_name: string;
   city_country: string;
@@ -13,6 +14,12 @@ export type AffiliateApplication = {
   logo_url: string | null;
   gym_photo_urls: string[] | null;
   fighter_list_url: string | null;
+  logo_path: string | null;
+  gym_photo_paths: string[] | null;
+  fighter_list_path: string | null;
+  logo_access_url?: string | null;
+  gym_photo_access_urls?: string[] | null;
+  fighter_list_access_url?: string | null;
   promo_video_link: string | null;
   review_consent: boolean;
   follow_up_consent: boolean;

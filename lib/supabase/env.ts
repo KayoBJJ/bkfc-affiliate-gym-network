@@ -1,22 +1,14 @@
-function getEnv(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY" | "SUPABASE_SERVICE_ROLE_KEY") {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
+import "server-only";
+import { getPrivilegedSupabaseConfig, getPublicSupabaseConfig } from "@/lib/config/server";
 
 export function getSupabaseUrl() {
-  return getEnv("NEXT_PUBLIC_SUPABASE_URL");
+  return getPublicSupabaseConfig().url;
 }
 
 export function getSupabaseAnonKey() {
-  return getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  return getPublicSupabaseConfig().anonKey;
 }
 
 export function getSupabaseServiceRoleKey() {
-  return getEnv("SUPABASE_SERVICE_ROLE_KEY");
+  return getPrivilegedSupabaseConfig().serviceRoleKey;
 }
-

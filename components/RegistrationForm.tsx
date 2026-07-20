@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import type { LanguageCode } from "@/lib/i18n/translations"
 
 type SubmissionState =
@@ -13,9 +13,29 @@ type SubmissionState =
       message: string;
     };
 
+type ApiPayload = {
+  code?: string;
+  field?: string;
+  applicationReference?: string;
+};
+
 const initialState: SubmissionState = {
   status: "idle",
   message: ""
+};
+
+const technicalCopy: Record<LanguageCode, {
+  logoHelp: string; photosHelp: string; fighterHelp: string; promoHelp: string;
+  received: string; reference: string; next: string; genericError: string;
+  validationError: string; duplicate: string; rateLimit: string; fileError: string;
+}> = {
+  en: { logoHelp: "Required: PNG, JPG or WebP; maximum 5 MB.", photosHelp: "Required: 1–6 PNG, JPG or WebP files; maximum 8 MB each.", fighterHelp: "Optional: PDF, DOC, DOCX, XLS or XLSX; maximum 10 MB.", promoHelp: "Optional URL only; video files cannot be uploaded here.", received: "Your application has been received for review.", reference: "Application reference", next: "The BKFC team will review the submission and contact you using the details provided.", genericError: "The application could not be processed. Your entered text has been preserved; please try again.", validationError: "Please check the highlighted field and try again.", duplicate: "An application with these details was recently received. Contact BKFC if you need help with a legitimate reapplication.", rateLimit: "The application cannot be submitted right now. Please wait and try again.", fileError: "This file does not meet the upload requirements and must be replaced." },
+  es: { logoHelp: "Obligatorio: PNG, JPG o WebP; máximo 5 MB.", photosHelp: "Obligatorio: 1–6 archivos PNG, JPG o WebP; máximo 8 MB cada uno.", fighterHelp: "Opcional: PDF, DOC, DOCX, XLS o XLSX; máximo 10 MB.", promoHelp: "Solo URL opcional; aquí no se pueden subir archivos de video.", received: "Tu solicitud ha sido recibida para revisión.", reference: "Referencia de la solicitud", next: "El equipo de BKFC revisará la solicitud y te contactará usando los datos proporcionados.", genericError: "No se pudo procesar la solicitud. El texto introducido se ha conservado; inténtalo de nuevo.", validationError: "Revisa el campo indicado e inténtalo de nuevo.", duplicate: "Se recibió recientemente una solicitud con estos datos. Contacta con BKFC si necesitas ayuda para volver a solicitar legítimamente.", rateLimit: "La solicitud no puede enviarse ahora. Espera e inténtalo de nuevo.", fileError: "Este archivo no cumple los requisitos y debe sustituirse." },
+  pt: { logoHelp: "Obrigatório: PNG, JPG ou WebP; máximo de 5 MB.", photosHelp: "Obrigatório: 1–6 arquivos PNG, JPG ou WebP; máximo de 8 MB cada.", fighterHelp: "Opcional: PDF, DOC, DOCX, XLS ou XLSX; máximo de 10 MB.", promoHelp: "Somente URL opcional; arquivos de vídeo não podem ser enviados aqui.", received: "Sua candidatura foi recebida para análise.", reference: "Referência da candidatura", next: "A equipe BKFC analisará o envio e entrará em contato usando os dados fornecidos.", genericError: "A candidatura não pôde ser processada. O texto digitado foi preservado; tente novamente.", validationError: "Verifique o campo indicado e tente novamente.", duplicate: "Uma candidatura com estes dados foi recebida recentemente. Contate a BKFC para uma recandidatura legítima.", rateLimit: "A candidatura não pode ser enviada agora. Aguarde e tente novamente.", fileError: "Este arquivo não atende aos requisitos e deve ser substituído." },
+  ru: { logoHelp: "Обязательно: PNG, JPG или WebP; максимум 5 МБ.", photosHelp: "Обязательно: 1–6 файлов PNG, JPG или WebP; максимум 8 МБ каждый.", fighterHelp: "Необязательно: PDF, DOC, DOCX, XLS или XLSX; максимум 10 МБ.", promoHelp: "Только необязательная URL-ссылка; видеофайлы здесь не загружаются.", received: "Ваша заявка получена на рассмотрение.", reference: "Номер заявки", next: "Команда BKFC рассмотрит заявку и свяжется с вами по предоставленным контактным данным.", genericError: "Не удалось обработать заявку. Введённый текст сохранён; попробуйте снова.", validationError: "Проверьте указанное поле и повторите попытку.", duplicate: "Заявка с этими данными недавно уже получена. Для повторной подачи свяжитесь с BKFC.", rateLimit: "Сейчас заявку отправить нельзя. Подождите и попробуйте снова.", fileError: "Файл не соответствует требованиям и должен быть заменён." },
+  de: { logoHelp: "Erforderlich: PNG, JPG oder WebP; maximal 5 MB.", photosHelp: "Erforderlich: 1–6 PNG-, JPG- oder WebP-Dateien; maximal 8 MB je Datei.", fighterHelp: "Optional: PDF, DOC, DOCX, XLS oder XLSX; maximal 10 MB.", promoHelp: "Nur optionale URL; Videodateien können hier nicht hochgeladen werden.", received: "Ihre Bewerbung wurde zur Prüfung erhalten.", reference: "Bewerbungsreferenz", next: "Das BKFC-Team prüft die Einreichung und kontaktiert Sie über die angegebenen Daten.", genericError: "Die Bewerbung konnte nicht verarbeitet werden. Ihre Texteingaben wurden beibehalten; versuchen Sie es erneut.", validationError: "Prüfen Sie das angegebene Feld und versuchen Sie es erneut.", duplicate: "Eine Bewerbung mit diesen Daten wurde kürzlich erhalten. Kontaktieren Sie BKFC bei einer berechtigten erneuten Bewerbung.", rateLimit: "Die Bewerbung kann derzeit nicht gesendet werden. Warten Sie und versuchen Sie es erneut.", fileError: "Diese Datei erfüllt die Anforderungen nicht und muss ersetzt werden." },
+  it: { logoHelp: "Obbligatorio: PNG, JPG o WebP; massimo 5 MB.", photosHelp: "Obbligatorio: 1–6 file PNG, JPG o WebP; massimo 8 MB ciascuno.", fighterHelp: "Opzionale: PDF, DOC, DOCX, XLS o XLSX; massimo 10 MB.", promoHelp: "Solo URL opzionale; qui non è possibile caricare file video.", received: "La candidatura è stata ricevuta per la revisione.", reference: "Riferimento candidatura", next: "Il team BKFC esaminerà l'invio e ti contatterà utilizzando i dati forniti.", genericError: "Impossibile elaborare la candidatura. Il testo inserito è stato conservato; riprova.", validationError: "Controlla il campo indicato e riprova.", duplicate: "Una candidatura con questi dati è stata ricevuta di recente. Contatta BKFC per una nuova candidatura legittima.", rateLimit: "La candidatura non può essere inviata ora. Attendi e riprova.", fileError: "Il file non soddisfa i requisiti e deve essere sostituito." },
+  pl: { logoHelp: "Wymagane: PNG, JPG lub WebP; maksymalnie 5 MB.", photosHelp: "Wymagane: 1–6 plików PNG, JPG lub WebP; maksymalnie 8 MB każdy.", fighterHelp: "Opcjonalne: PDF, DOC, DOCX, XLS lub XLSX; maksymalnie 10 MB.", promoHelp: "Tylko opcjonalny adres URL; plików wideo nie można tu przesyłać.", received: "Zgłoszenie zostało przyjęte do oceny.", reference: "Numer zgłoszenia", next: "Zespół BKFC oceni zgłoszenie i skontaktuje się przy użyciu podanych danych.", genericError: "Nie udało się przetworzyć zgłoszenia. Wpisany tekst został zachowany; spróbuj ponownie.", validationError: "Sprawdź wskazane pole i spróbuj ponownie.", duplicate: "Zgłoszenie z tymi danymi zostało niedawno odebrane. Skontaktuj się z BKFC w sprawie uzasadnionego ponownego zgłoszenia.", rateLimit: "Zgłoszenia nie można teraz wysłać. Poczekaj i spróbuj ponownie.", fileError: "Plik nie spełnia wymagań i należy go zastąpić." },
 };
 
 function RequiredMark() {
@@ -299,80 +319,131 @@ pl: {
 
 export function RegistrationForm({ language }: RegistrationFormProps) {
   const t = formCopy[language] ?? formCopy.en;
+  const tech = technicalCopy[language] ?? technicalCopy.en;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submissionState, setSubmissionState] =
     useState<SubmissionState>(initialState);
+  const resultRef = useRef<HTMLParagraphElement>(null);
+
+  function validateClientFiles(form: HTMLFormElement) {
+    const data = new FormData(form);
+    const logo = data.get("logoUpload");
+    const photos = data.getAll("gymPhotos").filter(
+      (value): value is File => value instanceof File && value.size > 0,
+    );
+    const fighterList = data.get("fighterListUpload");
+    const errors: Record<string, string> = {};
+    if (logo instanceof File && logo.size > 5 * 1024 * 1024) errors.logoUpload = tech.fileError;
+    if (photos.length > 6 || photos.some((file) => file.size > 8 * 1024 * 1024)) errors.gymPhotos = tech.fileError;
+    if (fighterList instanceof File && fighterList.size > 10 * 1024 * 1024) errors.fighterListUpload = tech.fileError;
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const form = event.currentTarget;
 
+    if (isSubmitting) return;
+
     if (!form.reportValidity()) {
+      return;
+    }
+
+    if (!validateClientFiles(form)) {
+      setSubmissionState({ status: "error", message: tech.fileError });
+      queueMicrotask(() => resultRef.current?.focus());
       return;
     }
 
     setIsSubmitting(true);
     setSubmissionState(initialState);
+    setFieldErrors({});
 
     try {
       const formData = new FormData(form);
+      formData.set("idempotencyKey", idempotencyKey);
       const response = await fetch("/api/affiliate-registration", {
         method: "POST",
         body: formData
       });
 
-      const payload = (await response.json()) as { message?: string };
+      const payload = (await response.json()) as ApiPayload;
 
       if (!response.ok) {
-        throw new Error(payload.message || t.fallbackError);
+        const fileCodes = new Set(["FILE_TOO_LARGE", "UNSUPPORTED_FILE_TYPE", "TOO_MANY_FILES"]);
+        const duplicateCodes = new Set(["DUPLICATE_SUBMISSION", "APPLICATION_ALREADY_RECEIVED"]);
+        const message = fileCodes.has(payload.code || "")
+          ? tech.fileError
+          : duplicateCodes.has(payload.code || "")
+            ? tech.duplicate
+            : payload.code === "RATE_LIMITED" || payload.code === "BOT_DETECTED"
+              ? tech.rateLimit
+              : payload.code?.startsWith("INVALID_") || payload.code === "FIELD_TOO_LONG" || payload.code === "REQUIRED_FIELD_MISSING"
+                ? tech.validationError
+                : tech.genericError;
+        if (payload.field) setFieldErrors({ [payload.field]: message });
+        setSubmissionState({ status: "error", message });
+        queueMicrotask(() => resultRef.current?.focus());
+        return;
+      }
+
+      if (!payload.applicationReference) {
+        throw new Error("invalid_success_response");
       }
 
       form.reset();
+      setIdempotencyKey(crypto.randomUUID());
       setSubmissionState({
         status: "success",
-        message:
-          payload.message || t.successMessage
+        message: `${tech.received} ${tech.reference}: ${payload.applicationReference}. ${tech.next}`
       });
-    } catch (error) {
+      queueMicrotask(() => resultRef.current?.focus());
+    } catch {
       setSubmissionState({
         status: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : t.fallbackError
+        message: tech.genericError
       });
+      queueMicrotask(() => resultRef.current?.focus());
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <form className="registration-form" onSubmit={handleSubmit}>
+    <form className="registration-form" onSubmit={handleSubmit} noValidate={false}>
+      <div className="form-honeypot" aria-hidden="true">
+        <label htmlFor="companyWebsite">Company website</label>
+        <input id="companyWebsite" name="companyWebsite" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
       <div className="form-grid">
         <label className="field">
           <span>{t.gymName}<RequiredMark /></span>
-          <input name="gymName" type="text" required />
+          <input name="gymName" type="text" required maxLength={160} autoComplete="organization" />
         </label>
 
         <label className="field">
           <span>{t.cityCountry}<RequiredMark /></span>
-          <input name="cityCountry" type="text" required />
+          <input name="cityCountry" type="text" required maxLength={160} autoComplete="address-level2" />
         </label>
 
         <label className="field">
           <span>{t.contactPerson}<RequiredMark /></span>
-          <input name="contactPerson" type="text" required />
+          <input name="contactPerson" type="text" required maxLength={160} autoComplete="name" />
         </label>
 
         <label className="field">
           <span>{t.email}<RequiredMark /></span>
-          <input name="email" type="email" required />
+          <input name="email" type="email" required maxLength={254} autoComplete="email" aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? "email-error" : undefined} />
+          {fieldErrors.email ? <small id="email-error" className="field-error">{fieldErrors.email}</small> : null}
         </label>
 
         <label className="field">
           <span>{t.phone}<RequiredMark /></span>
-          <input name="phone" type="tel" required />
+          <input name="phone" type="tel" required maxLength={40} autoComplete="tel" />
         </label>
 
         <label className="field">
@@ -381,8 +452,13 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
             name="websiteInstagram"
             type="text"
             required
+            maxLength={500}
+            autoComplete="url"
+            aria-invalid={Boolean(fieldErrors.websiteInstagram)}
+            aria-describedby={fieldErrors.websiteInstagram ? "website-error" : undefined}
             placeholder={t.websitePlaceholder}
           />
+          {fieldErrors.websiteInstagram ? <small id="website-error" className="field-error">{fieldErrors.websiteInstagram}</small> : null}
         </label>
 
         <label className="field field-full">
@@ -391,6 +467,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
             name="disciplinesOffered"
             rows={4}
             required
+            maxLength={2000}
             placeholder={t.disciplinesPlaceholder}
           />
         </label>
@@ -400,9 +477,13 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
           <input
             name="logoUpload"
             type="file"
-            accept="image/*,.pdf,.svg"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
             required
+            aria-invalid={Boolean(fieldErrors.logoUpload)}
+            aria-describedby={fieldErrors.logoUpload ? "logo-help logo-error" : "logo-help"}
           />
+          <small id="logo-help" className="field-helper">{tech.logoHelp}</small>
+          {fieldErrors.logoUpload ? <small id="logo-error" className="field-error">{fieldErrors.logoUpload}</small> : null}
         </label>
 
         <label className="field">
@@ -410,10 +491,14 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
           <input
             name="gymPhotos"
             type="file"
-            accept="image/*"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
             multiple
             required
+            aria-invalid={Boolean(fieldErrors.gymPhotos)}
+            aria-describedby={fieldErrors.gymPhotos ? "photos-help photos-error" : "photos-help"}
           />
+          <small id="photos-help" className="field-helper">{tech.photosHelp}</small>
+          {fieldErrors.gymPhotos ? <small id="photos-error" className="field-error">{fieldErrors.gymPhotos}</small> : null}
         </label>
 
         <label className="field">
@@ -421,8 +506,12 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
           <input
             name="fighterListUpload"
             type="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            accept=".pdf,.doc,.docx,.xls,.xlsx"
+            aria-invalid={Boolean(fieldErrors.fighterListUpload)}
+            aria-describedby={fieldErrors.fighterListUpload ? "fighter-help fighter-error" : "fighter-help"}
           />
+          <small id="fighter-help" className="field-helper">{tech.fighterHelp}</small>
+          {fieldErrors.fighterListUpload ? <small id="fighter-error" className="field-error">{fieldErrors.fighterListUpload}</small> : null}
         </label>
 
         <label className="field">
@@ -430,8 +519,14 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
   <input
     name="promoVideoLink"
     type="url"
+    maxLength={1000}
+    inputMode="url"
+    aria-invalid={Boolean(fieldErrors.promoVideoLink)}
+    aria-describedby={fieldErrors.promoVideoLink ? "promo-help promo-error" : "promo-help"}
     placeholder={t.promoVideoPlaceholder}
   />
+  <small id="promo-help" className="field-helper">{tech.promoHelp}</small>
+  {fieldErrors.promoVideoLink ? <small id="promo-error" className="field-error">{fieldErrors.promoVideoLink}</small> : null}
 </label>
       </div>
 
@@ -467,6 +562,8 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
         </button>
         {submissionState.status !== "idle" ? (
           <p
+            ref={resultRef}
+            tabIndex={-1}
             className={`submission-message ${submissionState.status}`}
             role="status"
             aria-live="polite"

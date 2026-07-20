@@ -2,9 +2,14 @@
   "name": "bkfc-affiliate-gym-network",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.14.0 <25"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "type-check": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
     "start": "next start"
   },
   "dependencies": {

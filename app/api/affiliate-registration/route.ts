@@ -1,715 +1,265 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
+import {
+  getPrivilegedSupabaseConfig,
+  getProxyTrustConfig,
+  getRateLimitConfig,
+} from "@/lib/config/server";
+import { ConfigurationError, type ProxyProvider } from "@/lib/config/policy";
+import { sendApplicationNotifications } from "@/lib/application/email";
+import { logApplicationEvent } from "@/lib/application/logging";
+import { removeRequestObjects, resolveIdempotency } from "@/lib/application/integrity";
+import { runNonCriticalNotification } from "@/lib/application/staged";
+import { rateLimitIdentifier, trustedRequestOrigin } from "@/lib/application/rate-limit";
+import {
+  ApplicationError,
+  MAX_REQUEST_BYTES,
+  STORAGE_BUCKET,
+  type ApiCode,
+} from "@/lib/application/policy";
+import {
+  validateApplicationForm,
+  type ValidatedApplication,
+  type ValidatedFile,
+} from "@/lib/application/validation";
 
 export const runtime = "nodejs";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+type StorageObject = { path: string };
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-function getString(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
+function createApplicationSupabaseClient(config: ReturnType<typeof getPrivilegedSupabaseConfig>) {
+  return createClient<any>(config.url, config.serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
-function getFile(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return value instanceof File && value.size > 0 ? value : null;
+type ApplicationSupabaseClient = ReturnType<typeof createApplicationSupabaseClient>;
+
+function jsonError(code: ApiCode, status: number, field?: string) {
+  return NextResponse.json({ success: false, code, ...(field ? { field } : {}) }, { status });
 }
 
-function getFiles(formData: FormData, key: string) {
-  return formData
-    .getAll(key)
-    .filter((value): value is File => value instanceof File && value.size > 0);
-}
-
-function sanitizeFileName(fileName: string) {
-  return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function success(applicationReference: string, reused = false) {
+  return NextResponse.json({
+    success: true,
+    code: reused ? "APPLICATION_ALREADY_RECEIVED" : "APPLICATION_RECEIVED",
+    applicationReference,
+  });
 }
 
 function extractCountry(cityCountry: string) {
-  const parts = cityCountry
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  return parts.length > 1 ? parts[parts.length - 1] : cityCountry.trim();
+  const parts = cityCountry.split(",").map((part) => part.trim()).filter(Boolean);
+  return parts.at(-1) || cityCountry;
 }
 
 function getRegionFromCountry(country: string) {
-  const normalizedCountry = country.trim().toLowerCase();
-
-  const europe = [
-    "bulgaria",
-    "spain",
-    "italy",
-    "serbia",
-    "poland",
-    "germany",
-    "france",
-    "netherlands",
-    "belgium",
-    "romania",
-    "greece",
-    "hungary",
-    "croatia",
-    "montenegro",
-    "albania",
-    "north macedonia",
-    "austria",
-    "switzerland",
-    "united kingdom",
-    "ireland",
-    "portugal",
-  ];
-
-  const mena = [
-    "uae",
-    "united arab emirates",
-    "saudi arabia",
-    "qatar",
-    "kuwait",
-    "bahrain",
-    "oman",
-    "egypt",
-    "morocco",
-    "tunisia",
-    "jordan",
-    "lebanon",
-  ];
-
-  const latam = [
-    "mexico",
-    "brazil",
-    "argentina",
-    "colombia",
-    "chile",
-    "peru",
-    "uruguay",
-    "paraguay",
-    "ecuador",
-    "venezuela",
-  ];
-
-  const northAmerica = [
-    "usa",
-    "united states",
-    "united states of america",
-    "canada",
-  ];
-
-  if (europe.includes(normalizedCountry)) return "Europe";
-  if (mena.includes(normalizedCountry)) return "MENA";
-  if (latam.includes(normalizedCountry)) return "LATAM";
-  if (northAmerica.includes(normalizedCountry)) return "North America";
-
-  return "Other";
+  const value = country.toLocaleLowerCase("en-US");
+  const regions: Record<string, string[]> = {
+    Europe: ["bulgaria", "spain", "italy", "serbia", "poland", "germany", "france", "netherlands", "belgium", "romania", "greece", "hungary", "croatia", "montenegro", "albania", "north macedonia", "austria", "switzerland", "united kingdom", "ireland", "portugal"],
+    MENA: ["uae", "united arab emirates", "saudi arabia", "qatar", "kuwait", "bahrain", "oman", "egypt", "morocco", "tunisia", "jordan", "lebanon"],
+    LATAM: ["mexico", "brazil", "argentina", "colombia", "chile", "peru", "uruguay", "paraguay", "ecuador", "venezuela"],
+    "North America": ["usa", "united states", "united states of america", "canada"],
+  };
+  return Object.entries(regions).find(([, countries]) => countries.includes(value))?.[0] ?? "Other";
 }
 
-async function uploadFile(file: File, folder: string) {
-  const safeName = sanitizeFileName(file.name || "upload");
-  const filePath = `${folder}/${Date.now()}-${safeName}`;
-
-  const { error } = await supabase.storage
-    .from("affiliate-applications")
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type || "application/octet-stream",
-    });
-
-  if (error) {
-    throw new Error(`File upload failed: ${error.message}`);
-  }
-
-  const { data } = supabase.storage
-    .from("affiliate-applications")
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
+function applicationReference(id: string) {
+  return `BKFC-GYM-${id.replaceAll("-", "").slice(0, 12).toLocaleUpperCase("en-US")}`;
 }
 
-function buildApplicantReceivedEmail({
-  contactPerson,
-  gymName,
-  cityCountry,
-  submissionId,
-}: {
-  contactPerson: string;
-  gymName: string;
-  cityCountry: string;
-  submissionId: string;
-}) {
-  return `
-<body style="margin:0;background:#080808;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:32px 12px;">
-    <tr>
-      <td align="center">
-
-        <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#111111;border:1px solid #262626;border-radius:14px;overflow:hidden;">
-
-          <tr>
-            <td style="background:#c8a45d;padding:14px 24px;">
-              <div style="margin:0;color:#000000;font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;">
-                BKFC Gym Network
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:32px 32px 18px;background:#111111;">
-              <div style="display:inline-block;margin:0 0 16px;padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#c8a45d;background:#1a1a1a;border:1px solid #3a3324;border-radius:999px;">
-                Application Received
-              </div>
-
-              <h1 style="margin:0 0 10px;color:#ffffff;font-size:30px;line-height:36px;font-weight:700;">
-                Welcome to the process.
-              </h1>
-
-              <p style="margin:0;color:#b5b5b5;font-size:16px;line-height:26px;">
-                We’re excited to see your interest in joining the BKFC Gym Network.
-              </p>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:0 32px 32px;">
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Dear ${escapeHtml(contactPerson)},
-              </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Thank you for submitting your application for <strong style="color:#ffffff;">${escapeHtml(gymName)}</strong>.
-              </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                We’re excited to see your interest in joining the BKFC Gym Network and becoming part of the international development pathway we are building with selected combat sports gyms around the world.
-              </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Your application has been received successfully, and our team will now begin reviewing your gym profile, location, training environment, and role inside the BKFC Gym Network.
-              </p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#171717;border:1px solid #2a2a2a;border-radius:12px;">
-                <tr>
-                  <td style="padding:20px;">
-                    <div style="margin:0 0 14px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
-                      Application Summary
-                    </div>
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Status:</strong> Submitted
-                    </p>
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Gym:</strong> ${escapeHtml(gymName)}
-                    </p>
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Location:</strong> ${escapeHtml(cityCountry)}
-                    </p>
-
-                    <p style="margin:0;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Application ID:</strong> ${escapeHtml(submissionId)}
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#141414;border-left:3px solid #c8a45d;border-radius:10px;">
-                <tr>
-                  <td style="padding:20px;">
-                    <div style="margin:0 0 14px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
-                      What happens next
-                    </div>
-
-                   
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:24px;">
-                      If we need any additional information, photos, fighter details, or clarification, we will contact you directly.
-                    </p>
-
-                    <p style="margin:0;color:#d4d4d4;font-size:14px;line-height:24px;">
-                      If approved, we will guide you through the next steps, including membership activation, starter kit preparation, and official affiliate onboarding.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                There is no need to submit another application. Your gym is now in the review pipeline.
-              </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Thank you again for your interest in the BKFC Gym Network.
-              </p>
-
-              <p style="margin:28px 0 0;color:#ffffff;font-size:15px;font-weight:600;">
-                BKFC International Development
-              </p>
-
-            </td>
-          </tr>
-
-          <tr>
-            <td style="border-top:1px solid #262626;padding:20px 32px 28px;">
-              <div style="margin:0 0 6px;color:#c8a45d;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
-                BKFC Gym Network
-              </div>
-
-              <p style="margin:0;color:#8a8a8a;font-size:12px;line-height:20px;">
-                Official communication from BKFC International Development.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-  </table>
-</body>
-`;
+function generatedPath(applicationId: string, kind: "logo" | "gym-photos" | "fighter-list", file: ValidatedFile) {
+  return `${applicationId}/${kind}/${randomUUID()}.${file.extension}`;
 }
 
-function buildApplicationUnderReviewEmail({
-  contactPerson,
-  gymName,
-  cityCountry,
-  submissionId,
-}: {
-  contactPerson: string;
-  gymName: string;
-  cityCountry: string;
-  submissionId: string;
-}) {
-  return `
-<body style="margin:0;background:#080808;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:32px 12px;">
-    <tr>
-      <td align="center">
-
-        <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;background:#111111;border:1px solid #262626;border-radius:14px;overflow:hidden;">
-
-          <tr>
-            <td style="background:#c8a45d;padding:14px 24px;">
-              <div style="margin:0;color:#000000;font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;">
-                BKFC Gym Network - Application Update
-              </div>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:32px 32px 18px;background:#111111;">
-              <div style="display:inline-block;margin:0 0 16px;padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#c8a45d;background:#1a1a1a;border:1px solid #3a3324;border-radius:999px;">
-                In Progress
-              </div>
-
-              <h1 style="margin:0 0 10px;color:#ffffff;font-size:30px;line-height:36px;font-weight:700;">
-                Your application is moving forward.
-              </h1>
-
-              <p style="margin:0;color:#b5b5b5;font-size:16px;line-height:26px;">
-                Our team has started checking the submitted details.
-              </p>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:0 32px 32px;">
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-               Dear ${escapeHtml(contactPerson)},
-              </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Thank you again for your application for <strong style="color:#ffffff;">${escapeHtml(gymName)}</strong>.
-             </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Our team has started checking the submitted details and will contact you directly if anything else is needed.
-            </p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#171717;border:1px solid #2a2a2a;border-radius:12px;">
-                <tr>
-                  <td style="padding:20px;">
-                    <div style="margin:0 0 14px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
-                      Review Summary
-                    </div>
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Status:</strong> In Progress
-                    </p>
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Gym:</strong> ${escapeHtml(gymName)}
-                    </p>
-
-                    <p style="margin:0 0 10px;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Location:</strong> ${escapeHtml(cityCountry)}
-                    </p>
-
-                    <p style="margin:0;color:#d4d4d4;font-size:14px;line-height:22px;">
-                      <strong style="color:#c8a45d;">Application ID:</strong> ${escapeHtml(submissionId)}
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-               <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#141414;border-left:3px solid #c8a45d;border-radius:10px;">
-                <tr>
-                  <td style="padding:20px;">
-                    <div style="margin:0 0 14px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
-                      Current Step
-                    </div>
-
-                    <p style="margin:0;color:#d4d4d4;font-size:14px;line-height:24px;">
-                      At this stage, no action is required from your side. If anything else is needed, our team will contact you directly.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                If your application is approved, we will guide you through the next steps for membership activation, starter kit preparation, and official affiliate onboarding.
-              </p>
-
-              <p style="margin:0 0 18px;color:#e5e5e5;font-size:15px;line-height:26px;">
-                Thank you for your patience while we complete the review.
-              </p>
-
-              <p style="margin:28px 0 0;color:#ffffff;font-size:15px;font-weight:600;">
-                BKFC International Development
-              </p>
-
-            </td>
-          </tr>
-
-          <tr>
-            <td style="border-top:1px solid #262626;padding:20px 32px 28px;">
-              <div style="margin:0 0 6px;color:#c8a45d;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
-                BKFC Gym Network
-              </div>
-
-              <p style="margin:0;color:#8a8a8a;font-size:12px;line-height:20px;">
-                Official communication from BKFC International Development.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-  </table>
-</body>
-`;
+function contentType(extension: string) {
+  return ({
+    png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", pdf: "application/pdf",
+    doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  } as Record<string, string>)[extension] || "application/octet-stream";
 }
 
-async function sendApplicationEmails({
-  submissionId,
-  submittedAt,
-  gymName,
-  cityCountry,
-  country,
-  region,
-  contactPerson,
-  email,
-  phone,
-  websiteInstagram,
-  disciplinesOffered,
-  promoVideoLink,
-  bkfcAppAccessInterest,
-}: {
-  submissionId: string;
-  submittedAt: string;
-  gymName: string;
-  cityCountry: string;
-  country: string;
-  region: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  websiteInstagram: string;
-  disciplinesOffered: string;
-  promoVideoLink: string;
-  bkfcAppAccessInterest: boolean;
-}) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn("Missing RESEND_API_KEY. Email notifications skipped.");
-    return;
-  }
+async function checkRateLimit(
+  supabase: ApplicationSupabaseClient,
+  request: Request,
+  application: ValidatedApplication,
+  rateSecret: string,
+  proxyProvider: ProxyProvider,
+) {
+  const { data, error } = await supabase.rpc("check_affiliate_application_rate_limit", {
+    p_origin_hash: rateLimitIdentifier(trustedRequestOrigin(request, proxyProvider), rateSecret),
+    p_idempotency_hash: rateLimitIdentifier(application.idempotencyKey, rateSecret),
+    p_email_hash: rateLimitIdentifier(application.normalizedEmail, rateSecret),
+  });
+  if (error) throw new Error("rate_limit_unavailable");
+  if (data !== true) throw new ApplicationError("RATE_LIMITED", 429);
+}
 
- const internalEmail = await resend.emails.send({
-  from: "BKFC Affiliate Intake <onboarding@resend.dev>",
-  to: "kkaloyanov@lgsports-ent.com",
-  subject: `New BKFC Affiliate Gym Application: ${gymName}`,
-  html: `
-<div style="margin:0;background:#000000 !important;padding:32px;font-family:Arial,Helvetica,sans-serif;color:#ffffff !important;">
-  <div style="max-width:680px;margin:0 auto;background:#0b0b0b !important;border:1px solid #2a2a2a;">
+async function upload(
+  supabase: ApplicationSupabaseClient,
+  applicationId: string,
+  kind: "logo" | "gym-photos" | "fighter-list",
+  validatedFile: ValidatedFile,
+  uploaded: StorageObject[],
+) {
+  const path = generatedPath(applicationId, kind, validatedFile);
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, validatedFile.file, {
+    cacheControl: "3600",
+    contentType: contentType(validatedFile.extension),
+    upsert: false,
+  });
+  if (error) throw new Error("storage_upload_failed");
+  uploaded.push({ path });
+  return path;
+}
 
-    <div style="text-align:center;padding:32px 24px 22px;border-bottom:3px solid #ffffff;">
-      <div style="font-size:54px;font-weight:900;letter-spacing:2px;color:#ffffff !important;">
-        BKFC
-      </div>
-      <div style="margin-top:10px;font-size:12px;letter-spacing:4px;color:#f2c94c !important;text-transform:uppercase;">
-        Affiliate Gym Network
-      </div>
-    </div>
-
-    <div style="padding:12px 30px 0;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#050505 !important;border:1px solid #333333;">
-    <tr>
-      <td style="padding:14px;color:#f2c94c !important;font-size:12px;letter-spacing:2px;text-transform:uppercase;">
-        Application ID
-      </td>
-      <td style="padding:14px;color:#ffffff !important;font-size:13px;text-align:right;">
-        ${submissionId}
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding:14px;color:#f2c94c !important;font-size:12px;letter-spacing:2px;text-transform:uppercase;">
-        Submitted
-      </td>
-      <td style="padding:14px;color:#ffffff !important;font-size:13px;text-align:right;">
-        ${submittedAt}
-      </td>
-    </tr>
-  </table>
-</div>
-
-    <div style="padding:28px 30px 18px;">
-      <div style="font-size:13px;letter-spacing:3px;color:#f2c94c !important;text-transform:uppercase;margin-bottom:10px;">
-        New Application Received
-      </div>
-
-      <h1 style="margin:0 0 12px;font-size:30px;color:#ffffff !important;text-transform:uppercase;">
-        ${escapeHtml(gymName)}
-      </h1>
-
-      <p style="margin:0;font-size:16px;color:#d6d6d6 !important;">
-        A new gym has submitted an application for review by BKFC International Development.
-      </p>
-    </div>
-
-    <div style="padding:10px 30px 0;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#151515 !important;border:1px solid #333333;">
-        <tr>
-          <td style="padding:18px;border-bottom:1px solid #333333;color:#f2c94c !important;font-size:13px;letter-spacing:2px;text-transform:uppercase;">
-            Application Details
-          </td>
-        </tr>
-
-        <tr>
-          <td style="padding:18px;color:#ffffff !important;">
-            <p><strong>Gym:</strong> ${escapeHtml(gymName)}</p>
-            <p><strong>Location:</strong> ${escapeHtml(cityCountry)}</p>
-            <p><strong>Country:</strong> ${escapeHtml(country)}</p>
-            <p><strong>Region:</strong> ${escapeHtml(region)}</p>
-            <p><strong>Contact:</strong> ${escapeHtml(contactPerson)}</p>
-            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-            <p><strong>Website / Social:</strong> ${escapeHtml(websiteInstagram)}</p>
-            <p><strong>Promo Video Link:</strong> ${
-              promoVideoLink ? escapeHtml(promoVideoLink) : "Not provided"
-            }</p>
-            <p><strong>BKFC App Access Interest:</strong> ${bkfcAppAccessInterest ? "Yes" : "No"}</p>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    <div style="padding:18px 30px 0;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background:#101010 !important;border:1px solid #333333;">
-        <tr>
-          <td style="padding:18px;border-bottom:1px solid #333333;color:#f2c94c !important;font-size:13px;letter-spacing:2px;text-transform:uppercase;">
-            Disciplines Offered
-          </td>
-        </tr>
-
-        <tr>
-          <td style="padding:18px;font-size:15px;color:#ffffff !important;">
-            ${escapeHtml(disciplinesOffered).replace(/\n/g, "<br />")}
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    <div style="padding:24px 30px 30px;text-align:center;">
-      <div style="display:inline-block;border:2px solid #ffffff;padding:13px 24px;font-size:14px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#ffffff !important;">
-        Review in Supabase
-      </div>
-
-      <p style="margin:20px 0 0;font-size:13px;color:#999999 !important;">
-        Full uploaded assets are stored in Supabase Storage under the affiliate application record.
-      </p>
-    </div>
-
-  </div>
-</div>
-  `,
-});
-
-console.log("Internal email response:", internalEmail);
-
-
-const applicantEmail = await resend.emails.send({
-  from: "BKFC Affiliate Intake <onboarding@resend.dev>",
-  to: "kkaloyanov@lgsports-ent.com", // TEMP for testing. Later change to: email
-  subject: "BKFC Gym Network — Application Received",
-  html: buildApplicantReceivedEmail({
-    contactPerson,
-    gymName,
-    cityCountry,
-    submissionId,
-  }),
-});
-
-console.log("Applicant email response:", applicantEmail);
+async function cleanup(supabase: ApplicationSupabaseClient, uploaded: StorageObject[], reference: string) {
+  const result = await removeRequestObjects(
+    uploaded.map(({ path }) => path),
+    (paths) => supabase.storage.from(STORAGE_BUCKET).remove(paths),
+  );
+  if (result === "not_required") return result;
+  logApplicationEvent(result === "failed" ? "error" : "info", { applicationReference: reference, stage: "cleanup", code: result === "failed" ? "CLEANUP_FAILED" : "CLEANUP_SUCCEEDED", cleanup: result });
+  return result;
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) return jsonError("REQUEST_TOO_LARGE", 413);
+
+  let privilegedConfig: ReturnType<typeof getPrivilegedSupabaseConfig>;
+  let rateConfig: ReturnType<typeof getRateLimitConfig>;
+  let proxyConfig: ReturnType<typeof getProxyTrustConfig>;
   try {
-    const formData = await request.formData();
+    privilegedConfig = getPrivilegedSupabaseConfig();
+    rateConfig = getRateLimitConfig();
+    proxyConfig = getProxyTrustConfig();
+  } catch (error) {
+    const code = error instanceof ConfigurationError ? error.code : "CONFIG_SUPABASE_INVALID";
+    logApplicationEvent("error", { stage: "configuration", code, durationMs: Date.now() - startedAt });
+    return jsonError("VALIDATION_FAILED", 503);
+  }
+  if (!proxyConfig.valid) {
+    logApplicationEvent("warn", { stage: "configuration", code: "CONFIG_PROXY_INVALID", durationMs: Date.now() - startedAt });
+  }
 
-    const gymName = getString(formData, "gymName");
-    const cityCountry = getString(formData, "cityCountry");
-    const country = extractCountry(cityCountry);
-    const region = getRegionFromCountry(country);
-    const contactPerson = getString(formData, "contactPerson");
-    const email = getString(formData, "email");
-    const phone = getString(formData, "phone");
-    const websiteInstagram = getString(formData, "websiteInstagram");
-    const disciplinesOffered = getString(formData, "disciplinesOffered");
-    const promoVideoLink = getString(formData, "promoVideoLink");
-
-    const reviewConsent = formData.get("reviewConsent") === "on";
-    const followUpConsent = formData.get("followUpConsent") === "on";
-    const bkfcAppAccessInterest =
-      formData.get("bkfcAppAccessInterest") === "on";
-
-    const logoUpload = getFile(formData, "logoUpload");
-    const gymPhotos = getFiles(formData, "gymPhotos");
-    const fighterListUpload = getFile(formData, "fighterListUpload");
-
-    if (
-      !gymName ||
-      !cityCountry ||
-      !contactPerson ||
-      !email ||
-      !phone ||
-      !websiteInstagram ||
-      !disciplinesOffered ||
-      !reviewConsent ||
-      !logoUpload ||
-      gymPhotos.length === 0
-    ) {
-      return NextResponse.json(
-        { message: "Please complete all required fields before submitting." },
-        { status: 400 }
-      );
+  let application: ValidatedApplication;
+  try {
+    application = await validateApplicationForm(await request.formData());
+  } catch (error) {
+    if (error instanceof ApplicationError) {
+      logApplicationEvent("warn", { stage: "validation", code: error.code, durationMs: Date.now() - startedAt });
+      return jsonError(error.code, error.status, error.field);
     }
+    logApplicationEvent("error", { stage: "validation", code: "VALIDATION_FAILED", durationMs: Date.now() - startedAt });
+    return jsonError("VALIDATION_FAILED", 400);
+  }
 
-    const submissionId = crypto.randomUUID();
-    const submittedAt = new Date().toISOString();
-    const folder = `${slugify(gymName)}-${submissionId}`;
+  const supabase = createApplicationSupabaseClient(privilegedConfig);
+  const uploaded: StorageObject[] = [];
+  const applicationId = randomUUID();
+  const reference = applicationReference(applicationId);
 
-    const logoUrl = await uploadFile(logoUpload, `${folder}/logo`);
+  try {
+    const { data: prior, error: priorError } = await supabase
+      .from("affiliate_applications")
+      .select("application_reference,payload_hash")
+      .eq("idempotency_key", application.idempotencyKey)
+      .maybeSingle();
+    if (priorError) throw new Error("idempotency_lookup_failed");
+    const idempotency = resolveIdempotency(prior ? { applicationReference: prior.application_reference, payloadHash: prior.payload_hash } : null, application.payloadHash);
+    if (idempotency.outcome === "conflict") throw new ApplicationError("IDEMPOTENCY_CONFLICT", 409);
+    if (idempotency.outcome === "reuse") return success(idempotency.applicationReference, true);
 
-    const gymPhotoUrls = await Promise.all(
-      gymPhotos.map((file) => uploadFile(file, `${folder}/gym-photos`))
-    );
+    await checkRateLimit(supabase, request, application, rateConfig.secret, proxyConfig.provider);
 
-    const fighterListUrl = fighterListUpload
-      ? await uploadFile(fighterListUpload, `${folder}/fighter-list`)
-      : null;
+    const duplicateWindow = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: duplicate, error: duplicateError } = await supabase
+      .from("affiliate_applications")
+      .select("id")
+      .eq("normalized_gym_name", application.normalizedGymName)
+      .eq("normalized_email", application.normalizedEmail)
+      .neq("status", "rejected")
+      .gte("created_at", duplicateWindow)
+      .limit(1);
+    if (duplicateError) throw new Error("duplicate_lookup_failed");
+    if (duplicate?.length) throw new ApplicationError("DUPLICATE_SUBMISSION", 409);
 
-    
+    const logoPath = await upload(supabase, applicationId, "logo", application.logo, uploaded);
+    const gymPhotoPaths: string[] = [];
+    for (const photo of application.gymPhotos) gymPhotoPaths.push(await upload(supabase, applicationId, "gym-photos", photo, uploaded));
+    const fighterListPath = application.fighterList ? await upload(supabase, applicationId, "fighter-list", application.fighterList, uploaded) : null;
+    const country = extractCountry(application.cityCountry);
 
-    const { error } = await supabase.from("affiliate_applications").insert({
-      id: submissionId,
-      gym_name: gymName,
-      city_country: cityCountry,
+    const { error: insertError } = await supabase.from("affiliate_applications").insert({
+      id: applicationId,
+      application_reference: reference,
+      idempotency_key: application.idempotencyKey,
+      payload_hash: application.payloadHash,
+      normalized_gym_name: application.normalizedGymName,
+      normalized_email: application.normalizedEmail,
+      gym_name: application.gymName,
+      city_country: application.cityCountry,
       country,
-      region,
-      contact_person: contactPerson,
-      email,
-      phone,
-      website_instagram: websiteInstagram,
-      disciplines_offered: disciplinesOffered,
-      logo_url: logoUrl,
-      gym_photo_urls: gymPhotoUrls,
-      fighter_list_url: fighterListUrl,
-      promo_video_link: promoVideoLink || null,
-      review_consent: reviewConsent,
-      follow_up_consent: followUpConsent,
-      bkfc_app_access_interest: bkfcAppAccessInterest,
+      region: getRegionFromCountry(country),
+      contact_person: application.contactPerson,
+      email: application.email,
+      phone: application.phone,
+      website_instagram: application.websiteInstagram,
+      disciplines_offered: application.disciplinesOffered,
+      logo_path: logoPath,
+      gym_photo_paths: gymPhotoPaths,
+      fighter_list_path: fighterListPath,
+      promo_video_link: application.promoVideoLink || null,
+      review_consent: application.reviewConsent,
+      follow_up_consent: application.followUpConsent,
+      bkfc_app_access_interest: application.bkfcAppAccessInterest,
       status: "new",
       review_stage: "submitted",
     });
-
-    if (error) {
-      throw new Error(`Database insert failed: ${error.message}`);
+    if (insertError) {
+      if (insertError.code === "23505") {
+        await cleanup(supabase, uploaded, reference);
+        const { data: raced } = await supabase.from("affiliate_applications").select("application_reference,payload_hash").eq("idempotency_key", application.idempotencyKey).maybeSingle();
+        if (raced?.payload_hash === application.payloadHash) return success(raced.application_reference, true);
+        throw new ApplicationError("IDEMPOTENCY_CONFLICT", 409);
+      }
+      throw new Error("database_insert_failed");
     }
-
-    try {
-  await sendApplicationEmails({
-    submissionId,
-    submittedAt,
-    gymName,
-    cityCountry,
-    country,
-    region,
-    contactPerson,
-    email,
-    phone,
-    websiteInstagram,
-    disciplinesOffered,
-    promoVideoLink,
-    bkfcAppAccessInterest,
-  });
-} catch (emailError) {
-  console.error("Email notification failed", emailError);
-}
-
-    return NextResponse.json({
-      message:
-        "Registration submitted successfully. Your materials have been received for review by BKFC International Development. Applications are typically reviewed within 5–10 business days. If additional information is required during evaluation, you will be contacted at the email provided.",
-    });
   } catch (error) {
-    console.error("Affiliate registration submission failed", error);
-
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : "The registration could not be processed at this time. Please try again.",
-      },
-      { status: 500 }
-    );
+    await cleanup(supabase, uploaded, reference);
+    if (error instanceof ApplicationError) {
+      logApplicationEvent("warn", { applicationReference: reference, stage: "persistence", code: error.code, durationMs: Date.now() - startedAt });
+      return jsonError(error.code, error.status, error.field);
+    }
+    logApplicationEvent("error", { applicationReference: reference, stage: "persistence", code: "VALIDATION_FAILED", durationMs: Date.now() - startedAt });
+    return jsonError("VALIDATION_FAILED", 503);
   }
+
+  const notificationResult = await runNonCriticalNotification(() =>
+    sendApplicationNotifications({
+      applicationReference: reference,
+      gymName: application.gymName,
+      cityCountry: application.cityCountry,
+      contactPerson: application.contactPerson,
+      email: application.email,
+      phone: application.phone,
+      websiteInstagram: application.websiteInstagram,
+      disciplinesOffered: application.disciplinesOffered,
+      promoVideoLink: application.promoVideoLink,
+      bkfcAppAccessInterest: application.bkfcAppAccessInterest,
+      reviewConsent: application.reviewConsent,
+      followUpConsent: application.followUpConsent,
+      facilityPhotoCount: application.gymPhotos.length,
+      fighterListSupplied: Boolean(application.fighterList),
+    }),
+  );
+  if (notificationResult === "failed") {
+    logApplicationEvent("warn", { applicationReference: reference, stage: "notification", code: "EMAIL_NOTIFICATION_FAILED", notification: "failed" });
+  }
+
+  logApplicationEvent("info", { applicationReference: reference, stage: "complete", code: "APPLICATION_RECEIVED", durationMs: Date.now() - startedAt });
+  return success(reference);
 }

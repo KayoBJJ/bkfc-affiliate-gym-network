@@ -38,6 +38,10 @@ function formatLocationValue(value: string | null) {
 }
 
 export function ApplicationDetailPanel({ application }: ApplicationDetailPanelProps) {
+  const logoAccessUrl = application.logo_access_url || application.logo_url;
+  const photoAccessUrls = application.gym_photo_access_urls || application.gym_photo_urls;
+  const fighterListAccessUrl = application.fighter_list_access_url || application.fighter_list_url;
+
   return (
     <section className="panel admin-detail-panel">
       <div className="section-heading">
@@ -55,6 +59,9 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
       </div>
 
       <div className="admin-detail-grid">
+        <Field label="Application reference">
+          {application.application_reference || application.id}
+        </Field>
         <Field label="City / Country">{application.city_country}</Field>
         <Field label="Country">{formatLocationValue(application.country)}</Field>
         <Field label="Region">{formatLocationValue(application.region)}</Field>
@@ -68,7 +75,7 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
           <MaybeLink href={application.promo_video_link} />
         </Field>
         <Field label="Fighter list link">
-          <MaybeLink href={application.fighter_list_url} />
+          <MaybeLink href={fighterListAccessUrl} />
         </Field>
         <Field label="Disciplines offered">
           {application.disciplines_offered || (
@@ -87,14 +94,14 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
       <div className="admin-media-grid">
         <article className="admin-media-card">
           <p className="admin-detail-label">Logo preview</p>
-          {application.logo_url ? (
+          {logoAccessUrl ? (
             <>
               <img
-                src={application.logo_url}
+                src={logoAccessUrl}
                 alt={`${application.gym_name} logo`}
                 className="admin-media-image admin-logo-image"
               />
-              <a href={application.logo_url} target="_blank" rel="noreferrer" className="admin-inline-link">
+              <a href={logoAccessUrl} target="_blank" rel="noreferrer" className="admin-inline-link">
                 Open logo file
               </a>
             </>
@@ -105,9 +112,9 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
 
         <article className="admin-media-card">
           <p className="admin-detail-label">Gym photos</p>
-          {application.gym_photo_urls && application.gym_photo_urls.length > 0 ? (
+          {photoAccessUrls && photoAccessUrls.length > 0 ? (
             <div className="admin-photo-grid">
-              {application.gym_photo_urls.map((photoUrl) => (
+              {photoAccessUrls.map((photoUrl) => (
                 <a
                   key={photoUrl}
                   href={photoUrl}

@@ -1220,7 +1220,27 @@ h1 {
 .registration-form {
   display: grid;
   gap: 24px;
+  position: relative;
 }
+
+.form-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.field-helper,
+.field-error {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.field-helper { color: #a8a8a8; }
+.field-error { color: #ff8a8a; }
 
 .form-grid {
   display: grid;
