@@ -6,10 +6,12 @@ import {
   storagePathFromLegacyValue,
 } from "../lib/admin/applicationCompatibility.ts";
 import { clientErrorPayload } from "../lib/application/diagnostics.ts";
+import { ApplicationError } from "../lib/application/policy.ts";
 import {
   BATCH_1A_INSERT_COLUMNS,
   buildLegacyFallbackLogEvent,
   buildLegacyInsertPayload,
+  buildPersistenceClassifierDiagnostic,
   compensateFailedInsert,
   extractBatch1AMissingColumn,
   getLegacyFallbackTrigger,
@@ -47,6 +49,101 @@ const values: PersistenceValues = {
   bkfcAppAccessInterest: false,
 };
 
+const directPgrstError = {
+  code: "PGRST204",
+  message: "Could not find the 'application_reference' column of 'affiliate_applications' in the schema cache",
+  details: "private database details",
+  hint: "private database hint",
+};
+
+const eligibleClassifierDiagnostic = {
+  stage: "persistence_classifier",
+  providerCode: "PGRST204",
+  compatibilityMode: "full_schema",
+  extractedColumn: "application_reference",
+  extractionSource: "message_pattern",
+  isAllowlistedBatch1AColumn: true,
+  fallbackEligible: true,
+  fallbackDenialReason: "none",
+};
+
+test("direct PostgREST errors produce safe classifier metadata", () => {
+  assert.deepEqual(buildPersistenceClassifierDiagnostic(directPgrstError), eligibleClassifierDiagnostic);
+});
+
+test("response-nested PostgREST errors are inspected but remain fallback-ineligible", () => {
+  assert.deepEqual(buildPersistenceClassifierDiagnostic({ error: directPgrstError }), {
+    ...eligibleClassifierDiagnostic,
+    fallbackEligible: false,
+    fallbackDenialReason: "malformed_error",
+  });
+});
+
+test("ApplicationError-wrapped PostgREST errors are inspected but remain fallback-ineligible", () => {
+  const wrapper = new ApplicationError("PERSISTENCE_UNAVAILABLE", 503);
+  Object.defineProperty(wrapper, "cause", { value: directPgrstError });
+  assert.deepEqual(buildPersistenceClassifierDiagnostic(wrapper), {
+    ...eligibleClassifierDiagnostic,
+    fallbackEligible: false,
+    fallbackDenialReason: "malformed_error",
+  });
+});
+
+test("structured PGRST204 columns are reported without parsing raw text", () => {
+  assert.deepEqual(buildPersistenceClassifierDiagnostic({
+    code: "PGRST204",
+    column: "logo_path",
+    message: "unparsed private message",
+  }), {
+    ...eligibleClassifierDiagnostic,
+    extractedColumn: "logo_path",
+    extractionSource: "structured",
+  });
+});
+
+test("unknown provider codes and non-allowlisted columns explain fallback denial", () => {
+  assert.deepEqual(buildPersistenceClassifierDiagnostic({
+    code: "SOME UNSAFE/PROVIDER/CODE THAT IS LONGER THAN THIRTY TWO CHARACTERS",
+    message: directPgrstError.message,
+  }), {
+    ...eligibleClassifierDiagnostic,
+    providerCode: "SOME_UNSAFE_PROVIDER_CODE_THAT_I",
+    fallbackEligible: false,
+    fallbackDenialReason: "unsupported_error_code",
+  });
+
+  assert.deepEqual(buildPersistenceClassifierDiagnostic({
+    code: "PGRST204",
+    message: "Could not find the 'legacy_unknown' column of 'affiliate_applications' in the schema cache",
+  }), {
+    ...eligibleClassifierDiagnostic,
+    extractedColumn: "legacy_unknown",
+    isAllowlistedBatch1AColumn: false,
+    fallbackEligible: false,
+    fallbackDenialReason: "missing_column_not_allowlisted",
+  });
+});
+
+test("classifier diagnostics distinguish missing, unrelated, and malformed errors", () => {
+  assert.equal(buildPersistenceClassifierDiagnostic({ code: "PGRST204" }).fallbackDenialReason, "missing_column_not_extracted");
+  assert.equal(buildPersistenceClassifierDiagnostic({
+    code: "PGRST204",
+    message: "Could not find the 'application_reference' column of 'other_table' in the schema cache",
+  }).fallbackDenialReason, "unrelated_table");
+  assert.equal(buildPersistenceClassifierDiagnostic({
+    code: "PGRST204",
+    message: "unrecognized provider prose",
+  }).fallbackDenialReason, "malformed_error");
+});
+
+test("classifier diagnostics never contain raw message details or hints", () => {
+  const serialized = JSON.stringify(buildPersistenceClassifierDiagnostic(directPgrstError));
+  for (const rawValue of [directPgrstError.message, directPgrstError.details, directPgrstError.hint]) {
+    assert.equal(serialized.includes(rawValue), false);
+  }
+  assert.equal(serialized.length < 500, true);
+});
+
 test("full-schema insert succeeds without fallback", async () => {
   const attempts: Record<string, unknown>[] = [];
   const result = await insertApplicationCompatibly(values, async (payload) => {
@@ -56,7 +153,32 @@ test("full-schema insert succeeds without fallback", async () => {
 
   assert.equal(attempts.length, 1);
   assert.equal(result.compatibilityMode, "full_schema");
+  assert.equal(result.classifierDiagnostic, null);
   assert.equal(result.storedReference, values.applicationReference);
+});
+
+test("internal insert results include safe diagnostics without changing classifier decisions", async () => {
+  const errors = [
+    directPgrstError,
+    { code: "PGRST204", message: "malformed provider message" },
+    { code: "PGRST204", column: "unrelated_column" },
+    { code: "PGRST301", message: directPgrstError.message },
+    { code: "42703", message: "redacted PostgreSQL message" },
+  ];
+
+  for (const error of errors) {
+    let attempts = 0;
+    const result = await insertApplicationCompatibly(values, async () => {
+      attempts += 1;
+      return attempts === 1 ? { error } : { error: null };
+    });
+    assert.ok(result.classifierDiagnostic);
+    assert.equal(
+      result.classifierDiagnostic.fallbackEligible,
+      getLegacyFallbackTrigger(error) !== null,
+    );
+    assert.equal(attempts, result.classifierDiagnostic.fallbackEligible ? 2 : 1);
+  }
 });
 
 test("42703 triggers one allowlisted legacy retry and creates exactly one row", async () => {

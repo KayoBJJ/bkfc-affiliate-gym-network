@@ -24,10 +24,129 @@ export type LegacyFallbackTrigger = {
   triggerCode: "42703" | "PGRST204";
   missingColumn: Batch1AInsertColumn | "batch_1a_column";
 };
+export type PersistenceClassifierDiagnostic = {
+  stage: "persistence_classifier";
+  providerCode: string;
+  compatibilityMode: "full_schema";
+  extractedColumn: string | null;
+  extractionSource: "structured" | "message_pattern" | "none";
+  isAllowlistedBatch1AColumn: boolean;
+  fallbackEligible: boolean;
+  fallbackDenialReason:
+    | "unsupported_error_code"
+    | "missing_column_not_extracted"
+    | "missing_column_not_allowlisted"
+    | "unrelated_table"
+    | "malformed_error"
+    | "none";
+};
 
 const BATCH_1A_INSERT_COLUMN_SET = new Set<string>(BATCH_1A_INSERT_COLUMNS);
 const POSTGREST_SCHEMA_CACHE_COLUMN_PATTERN =
   /^Could not find the '([a-z][a-z0-9_]*)' column of 'affiliate_applications' in the schema cache$/;
+const POSTGREST_SCHEMA_CACHE_DIAGNOSTIC_PATTERN =
+  /^Could not find the '([a-z][a-z0-9_]*)' column of '([a-z][a-z0-9_]*)' in the schema cache$/;
+const SAFE_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_]{0,62}$/;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function diagnosticErrorCandidate(value: unknown): {
+  candidate: Record<string, unknown> | null;
+  isDirect: boolean;
+} {
+  if (!isRecord(value)) return { candidate: null, isDirect: false };
+
+  const isApplicationError = value.name === "ApplicationError";
+  if (isApplicationError) {
+    const nested = isRecord(value.cause) ? value.cause : isRecord(value.error) ? value.error : null;
+    return { candidate: nested ?? value, isDirect: false };
+  }
+  if (isRecord(value.error)) return { candidate: value.error, isDirect: false };
+  return { candidate: value, isDirect: true };
+}
+
+function sanitizedProviderCode(value: unknown): string {
+  if (typeof value !== "string") return "unknown";
+  const sanitized = value.trim().replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 32);
+  return sanitized || "unknown";
+}
+
+function safeIdentifier(value: unknown): string | null {
+  return typeof value === "string" && SAFE_IDENTIFIER_PATTERN.test(value) ? value : null;
+}
+
+function diagnosticColumn(candidate: Record<string, unknown> | null): {
+  column: string | null;
+  source: "structured" | "message_pattern" | "none";
+  table: string | null;
+  malformed: boolean;
+} {
+  if (!candidate) return { column: null, source: "none", table: null, malformed: true };
+
+  for (const key of ["column", "column_name", "missing_column"] as const) {
+    if (typeof candidate[key] === "string") {
+      const column = safeIdentifier(candidate[key]);
+      return { column, source: column ? "structured" : "none", table: null, malformed: !column };
+    }
+  }
+
+  let sawMessageText = false;
+  let unrelatedMatch: { column: string | null; table: string | null } | null = null;
+  for (const key of ["message", "details"] as const) {
+    const value = candidate[key];
+    if (typeof value !== "string" || value.length === 0) continue;
+    sawMessageText = true;
+    const match = POSTGREST_SCHEMA_CACHE_DIAGNOSTIC_PATTERN.exec(value);
+    if (!match) continue;
+    const parsed = {
+      column: safeIdentifier(match[1]),
+      table: safeIdentifier(match[2]),
+    };
+    if (parsed.table === "affiliate_applications") {
+      return { ...parsed, source: "message_pattern", malformed: false };
+    }
+    unrelatedMatch ??= parsed;
+  }
+  if (unrelatedMatch) return { ...unrelatedMatch, source: "message_pattern", malformed: false };
+  return { column: null, source: "none", table: null, malformed: sawMessageText };
+}
+
+export function buildPersistenceClassifierDiagnostic(error: unknown): PersistenceClassifierDiagnostic {
+  const { candidate, isDirect } = diagnosticErrorCandidate(error);
+  const rawCode = candidate?.code;
+  const providerCode = sanitizedProviderCode(rawCode);
+  const extraction = diagnosticColumn(candidate);
+  const isAllowlistedBatch1AColumn = extraction.column !== null
+    && BATCH_1A_INSERT_COLUMN_SET.has(extraction.column);
+  const actualFallbackEligible = isDirect && candidate !== null
+    && getLegacyFallbackTrigger(candidate as PersistenceError) !== null;
+
+  let fallbackEligible = false;
+  let fallbackDenialReason: PersistenceClassifierDiagnostic["fallbackDenialReason"] = "none";
+  if (!isDirect) fallbackDenialReason = "malformed_error";
+  else if (rawCode !== "42703" && rawCode !== "PGRST204") {
+    fallbackDenialReason = "unsupported_error_code";
+  } else if (actualFallbackEligible) fallbackEligible = true;
+  else if (extraction.malformed) fallbackDenialReason = "malformed_error";
+  else if (!extraction.column) fallbackDenialReason = "missing_column_not_extracted";
+  else if (extraction.table && extraction.table !== "affiliate_applications") {
+    fallbackDenialReason = "unrelated_table";
+  } else if (!isAllowlistedBatch1AColumn) fallbackDenialReason = "missing_column_not_allowlisted";
+  else fallbackEligible = true;
+
+  return {
+    stage: "persistence_classifier",
+    providerCode,
+    compatibilityMode: "full_schema",
+    extractedColumn: extraction.column,
+    extractionSource: extraction.source,
+    isAllowlistedBatch1AColumn,
+    fallbackEligible,
+    fallbackDenialReason,
+  };
+}
 
 function asBatch1AInsertColumn(value: unknown): Batch1AInsertColumn | null {
   return typeof value === "string" && BATCH_1A_INSERT_COLUMN_SET.has(value)
@@ -189,16 +308,19 @@ export async function insertApplicationCompatibly(
       error: null,
       compatibilityMode: "full_schema" as const,
       fallbackTrigger: null,
+      classifierDiagnostic: null,
       storedReference: values.applicationReference,
       storedRowId: values.id,
     };
   }
+  const classifierDiagnostic = buildPersistenceClassifierDiagnostic(fullResult.error);
   const fallbackTrigger = getLegacyFallbackTrigger(fullResult.error);
   if (!fallbackTrigger) {
     return {
       error: fullResult.error,
       compatibilityMode: "full_schema" as const,
       fallbackTrigger: null,
+      classifierDiagnostic,
       storedReference: null,
       storedRowId: null,
     };
@@ -209,6 +331,7 @@ export async function insertApplicationCompatibly(
     error: legacyResult.error,
     compatibilityMode: "legacy_schema" as const,
     fallbackTrigger,
+    classifierDiagnostic,
     storedReference: legacyResult.error ? null : values.id,
     storedRowId: legacyResult.error ? null : values.id,
   };
