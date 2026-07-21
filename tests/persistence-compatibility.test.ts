@@ -146,15 +146,74 @@ test("classifier diagnostics never contain raw message details or hints", () => 
 
 test("full-schema insert succeeds without fallback", async () => {
   const attempts: Record<string, unknown>[] = [];
+  const classifierLogs: unknown[] = [];
   const result = await insertApplicationCompatibly(values, async (payload) => {
     attempts.push(payload);
     return { error: null };
-  });
+  }, (event) => classifierLogs.push(event));
 
   assert.equal(attempts.length, 1);
+  assert.equal(classifierLogs.length, 0);
   assert.equal(result.compatibilityMode, "full_schema");
   assert.equal(result.classifierDiagnostic, null);
   assert.equal(result.storedReference, values.applicationReference);
+});
+
+test("a failed primary insert emits exactly one complete classifier log with null extraction", async () => {
+  const rawError = {
+    code: "PGRST999",
+    message: "private raw database message",
+    details: "private raw details",
+    hint: "private raw hint",
+  };
+  const classifierLogs: unknown[] = [];
+  const result = await insertApplicationCompatibly(values, async () => ({ error: rawError }),
+    (event) => classifierLogs.push(event));
+
+  assert.equal(result.compatibilityMode, "full_schema");
+  assert.equal(classifierLogs.length, 1);
+  assert.deepEqual(classifierLogs[0], {
+    stage: "persistence_classifier",
+    providerCode: "PGRST999",
+    compatibilityMode: "full_schema",
+    extractedColumn: null,
+    extractionSource: "none",
+    isAllowlistedBatch1AColumn: false,
+    fallbackEligible: false,
+    fallbackDenialReason: "unsupported_error_code",
+    durationMs: (classifierLogs[0] as { durationMs: number }).durationMs,
+  });
+  assert.equal(Number.isFinite((classifierLogs[0] as { durationMs: number }).durationMs), true);
+
+  const serialized = JSON.stringify(classifierLogs[0]);
+  for (const privateValue of [
+    rawError.message,
+    rawError.details,
+    rawError.hint,
+    values.email,
+    values.phone,
+    values.gymName,
+    logoPath,
+    photoPath,
+    "applicant-logo.png",
+  ]) {
+    assert.equal(serialized.includes(privateValue), false);
+  }
+});
+
+test("eligible fallback emits one classifier log and preserves the existing retry decision", async () => {
+  const classifierLogs: Array<{ fallbackEligible: boolean }> = [];
+  let attempts = 0;
+  const result = await insertApplicationCompatibly(values, async () => {
+    attempts += 1;
+    return attempts === 1 ? { error: directPgrstError } : { error: null };
+  }, (event) => classifierLogs.push(event));
+
+  assert.equal(classifierLogs.length, 1);
+  assert.equal(classifierLogs[0].fallbackEligible, true);
+  assert.equal(attempts, 2);
+  assert.equal(result.compatibilityMode, "legacy_schema");
+  assert.equal(result.storedRowId, applicationId);
 });
 
 test("internal insert results include safe diagnostics without changing classifier decisions", async () => {

@@ -40,6 +40,9 @@ export type PersistenceClassifierDiagnostic = {
     | "malformed_error"
     | "none";
 };
+export type PersistenceClassifierLogEvent = PersistenceClassifierDiagnostic & {
+  durationMs: number;
+};
 
 const BATCH_1A_INSERT_COLUMN_SET = new Set<string>(BATCH_1A_INSERT_COLUMNS);
 const POSTGREST_SCHEMA_CACHE_COLUMN_PATTERN =
@@ -113,15 +116,20 @@ function diagnosticColumn(candidate: Record<string, unknown> | null): {
   return { column: null, source: "none", table: null, malformed: sawMessageText };
 }
 
-export function buildPersistenceClassifierDiagnostic(error: unknown): PersistenceClassifierDiagnostic {
+export function buildPersistenceClassifierDiagnostic(
+  error: unknown,
+  evaluatedFallbackTrigger?: LegacyFallbackTrigger | null,
+): PersistenceClassifierDiagnostic {
   const { candidate, isDirect } = diagnosticErrorCandidate(error);
   const rawCode = candidate?.code;
   const providerCode = sanitizedProviderCode(rawCode);
   const extraction = diagnosticColumn(candidate);
   const isAllowlistedBatch1AColumn = extraction.column !== null
     && BATCH_1A_INSERT_COLUMN_SET.has(extraction.column);
-  const actualFallbackEligible = isDirect && candidate !== null
-    && getLegacyFallbackTrigger(candidate as PersistenceError) !== null;
+  const fallbackTrigger = evaluatedFallbackTrigger === undefined
+    ? isRecord(error) ? getLegacyFallbackTrigger(error as PersistenceError) : null
+    : evaluatedFallbackTrigger;
+  const actualFallbackEligible = isDirect && fallbackTrigger !== null;
 
   let fallbackEligible = false;
   let fallbackDenialReason: PersistenceClassifierDiagnostic["fallbackDenialReason"] = "none";
@@ -301,7 +309,9 @@ type InsertResult = {
 export async function insertApplicationCompatibly(
   values: PersistenceValues,
   insert: (payload: Record<string, unknown>) => Promise<InsertResult>,
+  logPrimaryFailure?: (event: PersistenceClassifierLogEvent) => void,
 ) {
+  const primaryInsertStartedAt = Date.now();
   const fullResult = await insert(buildFullInsertPayload(values));
   if (!fullResult.error) {
     return {
@@ -313,8 +323,15 @@ export async function insertApplicationCompatibly(
       storedRowId: values.id,
     };
   }
-  const classifierDiagnostic = buildPersistenceClassifierDiagnostic(fullResult.error);
   const fallbackTrigger = getLegacyFallbackTrigger(fullResult.error);
+  const classifierDiagnostic = buildPersistenceClassifierDiagnostic(
+    fullResult.error,
+    fallbackTrigger,
+  );
+  logPrimaryFailure?.({
+    ...classifierDiagnostic,
+    durationMs: Date.now() - primaryInsertStartedAt,
+  });
   if (!fallbackTrigger) {
     return {
       error: fullResult.error,

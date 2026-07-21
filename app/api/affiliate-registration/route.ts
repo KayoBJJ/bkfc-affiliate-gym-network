@@ -229,14 +229,13 @@ export async function POST(request: Request) {
     }, async (payload) => {
       const { error } = await supabase.from("affiliate_applications").insert(payload);
       return { error };
+    }, (event) => {
+      logApplicationEvent("warn", event);
     }), async () => {
       insertCleanupPerformed = true;
       await cleanup(supabase, uploaded, reference);
     });
     compatibilityMode = insertResult.compatibilityMode;
-    if (insertResult.classifierDiagnostic) {
-      logApplicationEvent("warn", insertResult.classifierDiagnostic);
-    }
     if (insertResult.fallbackTrigger) {
       logApplicationEvent("warn", buildLegacyFallbackLogEvent(
         insertResult.fallbackTrigger,

@@ -1,4 +1,5 @@
 import "server-only";
+import type { PersistenceClassifierLogEvent } from "./persistence";
 
 type LogLevel = "info" | "warn" | "error";
 type RegularApplicationLogEvent = {
@@ -20,23 +21,6 @@ type CompatibilityFallbackLogEvent = {
   triggerCode: "42703" | "PGRST204";
   missingColumn: string;
   durationMs: number;
-};
-
-type PersistenceClassifierLogEvent = {
-  stage: "persistence_classifier";
-  providerCode: string;
-  compatibilityMode: "full_schema";
-  extractedColumn: string | null;
-  extractionSource: "structured" | "message_pattern" | "none";
-  isAllowlistedBatch1AColumn: boolean;
-  fallbackEligible: boolean;
-  fallbackDenialReason:
-    | "unsupported_error_code"
-    | "missing_column_not_extracted"
-    | "missing_column_not_allowlisted"
-    | "unrelated_table"
-    | "malformed_error"
-    | "none";
 };
 
 export function logApplicationEvent(
