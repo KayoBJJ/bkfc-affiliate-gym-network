@@ -6,6 +6,12 @@ import {
   BOT_TRAP_FIELD,
   FORM_STARTED_AT_FIELD,
 } from "@/lib/application/bot-policy";
+import type { UploadSessionResponse } from "@/lib/application/direct-upload-contract";
+import {
+  anonymousUploadAccess,
+  resumableUpload,
+  selectedUploadFiles,
+} from "@/lib/application/resumable-upload-client";
 
 type SubmissionState =
   | {
@@ -22,6 +28,8 @@ type ApiPayload = {
   field?: string;
   applicationReference?: string;
 };
+
+type UploadSessionPayload = ApiPayload & Partial<UploadSessionResponse>;
 
 const initialState: SubmissionState = {
   status: "idle",
@@ -325,6 +333,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
   const t = formCopy[language] ?? formCopy.en;
   const tech = technicalCopy[language] ?? technicalCopy.en;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
   const [formStartedAt, setFormStartedAt] = useState(() => String(Date.now()));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -367,31 +376,90 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
     setIsSubmitting(true);
     setSubmissionState(initialState);
     setFieldErrors({});
+    setUploadProgress(0);
 
     try {
       const formData = new FormData(form);
       formData.set("idempotencyKey", idempotencyKey);
       formData.set(FORM_STARTED_AT_FIELD, formStartedAt);
-      const response = await fetch("/api/affiliate-registration", {
+      const files = selectedUploadFiles(formData);
+      const formPayload: Record<string, string> = {};
+      for (const [key, value] of formData.entries()) {
+        if (typeof value === "string") formPayload[key] = value;
+      }
+      const { accessToken, anonKey } = await anonymousUploadAccess();
+      const sessionResponse = await fetch("/api/affiliate-registration/upload-session", {
         method: "POST",
-        body: formData
+        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          form: formPayload,
+          files: files.map(({ field, file }) => ({ field, name: file.name, size: file.size, type: file.type })),
+        }),
       });
-
-      const payload = (await response.json()) as ApiPayload;
-
-      if (!response.ok) {
+      const sessionPayload = (await sessionResponse.json()) as UploadSessionPayload;
+      if (!sessionResponse.ok || !sessionPayload.sessionId || !sessionPayload.storageEndpoint ||
+        !sessionPayload.bucket || !sessionPayload.uploads) {
         const fileCodes = new Set(["FILE_TOO_LARGE", "UNSUPPORTED_FILE_TYPE", "INVALID_FILE_SIGNATURE", "TOO_MANY_FILES"]);
         const duplicateCodes = new Set(["DUPLICATE_SUBMISSION", "APPLICATION_ALREADY_RECEIVED"]);
-        const message = fileCodes.has(payload.code || "")
+        const message = fileCodes.has(sessionPayload.code || "")
           ? tech.fileError
-          : duplicateCodes.has(payload.code || "")
+          : duplicateCodes.has(sessionPayload.code || "")
             ? tech.duplicate
-            : payload.code === "RATE_LIMITED" || payload.code === "BOT_DETECTED"
+            : sessionPayload.code === "RATE_LIMITED" || sessionPayload.code === "BOT_DETECTED"
               ? tech.rateLimit
-              : payload.code?.startsWith("INVALID_") || payload.code === "FIELD_TOO_LONG" || payload.code === "REQUIRED_FIELD_MISSING" || payload.code === "UNEXPECTED_FIELD" || payload.code === "VALIDATION_FAILED"
+              : sessionPayload.code?.startsWith("INVALID_") || sessionPayload.code === "FIELD_TOO_LONG" || sessionPayload.code === "REQUIRED_FIELD_MISSING" || sessionPayload.code === "UNEXPECTED_FIELD" || sessionPayload.code === "VALIDATION_FAILED"
                 ? tech.validationError
                 : tech.genericError;
+        if (sessionPayload.field) setFieldErrors({ [sessionPayload.field]: message });
+        setSubmissionState({ status: "error", message });
+        queueMicrotask(() => resultRef.current?.focus());
+        return;
+      }
+
+      const totalBytes = files.reduce((sum, { file }) => sum + file.size, 0);
+      let completedBytes = 0;
+      for (let index = 0; index < files.length; index += 1) {
+        const selected = files[index];
+        const issued = sessionPayload.uploads[index];
+        if (!issued || issued.field !== selected.field || issued.size !== selected.file.size) {
+          throw new Error("upload_manifest_mismatch");
+        }
+        if (issued.uploaded) {
+          completedBytes += selected.file.size;
+          setUploadProgress(Math.min(99, Math.round((completedBytes / totalBytes) * 100)));
+          continue;
+        }
+        await resumableUpload(
+          sessionPayload.storageEndpoint,
+          sessionPayload.bucket,
+          accessToken,
+          anonKey,
+          issued,
+          selected.file,
+          (uploaded) => setUploadProgress(Math.min(99, Math.round(((completedBytes + uploaded) / totalBytes) * 100))),
+        );
+        completedBytes += selected.file.size;
+      }
+      setUploadProgress(100);
+
+      const response = await fetch("/api/affiliate-registration/finalize", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ sessionId: sessionPayload.sessionId }),
+      });
+      const payload = (await response.json()) as ApiPayload;
+      if (!response.ok) {
+        const fileCodes = new Set(["FILE_TOO_LARGE", "UNSUPPORTED_FILE_TYPE", "INVALID_FILE_SIGNATURE", "TOO_MANY_FILES"]);
+        const message = fileCodes.has(payload.code || "")
+          ? tech.fileError
+          : payload.code?.startsWith("INVALID_") || payload.code === "VALIDATION_FAILED"
+            ? tech.validationError
+            : tech.genericError;
         if (payload.field) setFieldErrors({ [payload.field]: message });
+        if (payload.field) {
+          setIdempotencyKey(crypto.randomUUID());
+          setFormStartedAt(String(Date.now()));
+        }
         setSubmissionState({ status: "error", message });
         queueMicrotask(() => resultRef.current?.focus());
         return;
@@ -417,6 +485,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       queueMicrotask(() => resultRef.current?.focus());
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   }
 
@@ -575,7 +644,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
 
       <div className="submit-row">
         <button type="submit" className="submit-button" disabled={isSubmitting}>
-          {isSubmitting ? t.submitting : t.submit}
+          {isSubmitting ? `${t.submitting}${uploadProgress ? ` ${uploadProgress}%` : ""}` : t.submit}
         </button>
         {submissionState.status !== "idle" ? (
           <p

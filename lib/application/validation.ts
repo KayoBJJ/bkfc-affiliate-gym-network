@@ -27,7 +27,7 @@ const ALLOWED_FIELDS = new Set([
 ]);
 
 export type ValidatedFile = { file: File; extension: string };
-export type ValidatedApplication = {
+export type ValidatedApplicationMetadata = {
   gymName: string;
   cityCountry: string;
   contactPerson: string;
@@ -42,6 +42,8 @@ export type ValidatedApplication = {
   idempotencyKey: string;
   normalizedGymName: string;
   normalizedEmail: string;
+};
+export type ValidatedApplication = ValidatedApplicationMetadata & {
   logo: ValidatedFile;
   gymPhotos: ValidatedFile[];
   fighterList: ValidatedFile | null;
@@ -129,7 +131,7 @@ function extensionFamily(extension: string) {
   return extension;
 }
 
-async function validateFile(file: File, field: keyof typeof FILE_RULES): Promise<ValidatedFile> {
+export async function validateFile(file: File, field: keyof typeof FILE_RULES): Promise<ValidatedFile> {
   const rule = FILE_RULES[field];
   if (file.size > rule.maxBytes) throw new ApplicationError("FILE_TOO_LARGE", 400, field);
   const extension = extensionOf(file.name);
@@ -190,7 +192,7 @@ async function hashPayload(parts: Array<string | File>) {
   return hash.digest("hex");
 }
 
-export async function validateApplicationForm(formData: FormData): Promise<ValidatedApplication> {
+export function validateApplicationMetadata(formData: FormData): ValidatedApplicationMetadata {
   for (const key of formData.keys()) {
     if (!ALLOWED_FIELDS.has(key)) {
       throw new ApplicationError("UNEXPECTED_FIELD", 400, safeFieldIdentifier(key));
@@ -218,6 +220,20 @@ export async function validateApplicationForm(formData: FormData): Promise<Valid
   const disciplines = disciplinesOffered.split(/[,;\n]+/).map((item) => item.trim()).filter(Boolean);
   if (disciplines.length > 20) throw new ApplicationError("FIELD_TOO_LONG", 400, "disciplinesOffered");
 
+  const reviewConsent = parseConsent(formData, "reviewConsent", true);
+  const followUpConsent = parseConsent(formData, "followUpConsent");
+  const bkfcAppAccessInterest = parseConsent(formData, "bkfcAppAccessInterest");
+  const normalizedGymName = normalizeIdentity(gymName);
+  const normalizedEmail = normalizeIdentity(email);
+  return {
+    gymName, cityCountry, contactPerson, email, phone, websiteInstagram, disciplinesOffered,
+    promoVideoLink, reviewConsent: true, followUpConsent, bkfcAppAccessInterest, idempotencyKey,
+    normalizedGymName, normalizedEmail,
+  };
+}
+
+export async function validateApplicationForm(formData: FormData): Promise<ValidatedApplication> {
+  const metadata = validateApplicationMetadata(formData);
   const logos = filesFor(formData, "logoUpload");
   const photos = filesFor(formData, "gymPhotos");
   const fighterLists = filesFor(formData, "fighterListUpload");
@@ -234,20 +250,14 @@ export async function validateApplicationForm(formData: FormData): Promise<Valid
   const logo = await validateFile(logos[0], "logoUpload");
   const gymPhotos = await Promise.all(photos.map((file) => validateFile(file, "gymPhotos")));
   const fighterList = fighterLists[0] ? await validateFile(fighterLists[0], "fighterListUpload") : null;
-  const reviewConsent = parseConsent(formData, "reviewConsent", true);
-  const followUpConsent = parseConsent(formData, "followUpConsent");
-  const bkfcAppAccessInterest = parseConsent(formData, "bkfcAppAccessInterest");
-  const normalizedGymName = normalizeIdentity(gymName);
-  const normalizedEmail = normalizeIdentity(email);
   const payloadHash = await hashPayload([
-    gymName, cityCountry, contactPerson, email, phone, websiteInstagram, disciplinesOffered,
-    promoVideoLink, String(reviewConsent), String(followUpConsent), String(bkfcAppAccessInterest),
+    metadata.gymName, metadata.cityCountry, metadata.contactPerson, metadata.email, metadata.phone,
+    metadata.websiteInstagram, metadata.disciplinesOffered, metadata.promoVideoLink,
+    String(metadata.reviewConsent), String(metadata.followUpConsent), String(metadata.bkfcAppAccessInterest),
     logo.file, ...gymPhotos.map(({ file }) => file), ...(fighterList ? [fighterList.file] : []),
   ]);
 
   return {
-    gymName, cityCountry, contactPerson, email, phone, websiteInstagram, disciplinesOffered,
-    promoVideoLink, reviewConsent: true, followUpConsent, bkfcAppAccessInterest, idempotencyKey,
-    normalizedGymName, normalizedEmail, logo, gymPhotos, fighterList, payloadHash,
+    ...metadata, logo, gymPhotos, fighterList, payloadHash,
   };
 }
