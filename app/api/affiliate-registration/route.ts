@@ -13,6 +13,7 @@ import { logApplicationEvent } from "@/lib/application/logging";
 import { removeRequestObjects, resolveIdempotency } from "@/lib/application/integrity";
 import { runNonCriticalNotification } from "@/lib/application/staged";
 import { rateLimitIdentifier, trustedRequestOrigin } from "@/lib/application/rate-limit";
+import { compensateFailedInsert, insertApplicationCompatibly } from "@/lib/application/persistence";
 import {
   ApplicationError,
   MAX_REQUEST_BYTES,
@@ -167,6 +168,9 @@ export async function POST(request: Request) {
   const uploaded: StorageObject[] = [];
   const applicationId = randomUUID();
   const reference = applicationReference(applicationId);
+  let storedReference = reference;
+  let compatibilityMode: "full_schema" | "legacy_schema" = "full_schema";
+  let insertCleanupPerformed = false;
 
   try {
     const { data: prior, error: priorError } = await supabase
@@ -199,54 +203,67 @@ export async function POST(request: Request) {
     const fighterListPath = application.fighterList ? await upload(supabase, applicationId, "fighter-list", application.fighterList, uploaded) : null;
     const country = extractCountry(application.cityCountry);
 
-    const { error: insertError } = await supabase.from("affiliate_applications").insert({
+    const insertResult = await compensateFailedInsert(await insertApplicationCompatibly({
       id: applicationId,
-      application_reference: reference,
-      idempotency_key: application.idempotencyKey,
-      payload_hash: application.payloadHash,
-      normalized_gym_name: application.normalizedGymName,
-      normalized_email: application.normalizedEmail,
-      gym_name: application.gymName,
-      city_country: application.cityCountry,
+      applicationReference: reference,
+      idempotencyKey: application.idempotencyKey,
+      payloadHash: application.payloadHash,
+      normalizedGymName: application.normalizedGymName,
+      normalizedEmail: application.normalizedEmail,
+      gymName: application.gymName,
+      cityCountry: application.cityCountry,
       country,
       region: getRegionFromCountry(country),
-      contact_person: application.contactPerson,
+      contactPerson: application.contactPerson,
       email: application.email,
       phone: application.phone,
-      website_instagram: application.websiteInstagram,
-      disciplines_offered: application.disciplinesOffered,
-      logo_path: logoPath,
-      gym_photo_paths: gymPhotoPaths,
-      fighter_list_path: fighterListPath,
-      promo_video_link: application.promoVideoLink || null,
-      review_consent: application.reviewConsent,
-      follow_up_consent: application.followUpConsent,
-      bkfc_app_access_interest: application.bkfcAppAccessInterest,
-      status: "new",
-      review_stage: "submitted",
+      websiteInstagram: application.websiteInstagram,
+      disciplinesOffered: application.disciplinesOffered,
+      logoPath,
+      gymPhotoPaths,
+      fighterListPath,
+      promoVideoLink: application.promoVideoLink,
+      reviewConsent: application.reviewConsent,
+      followUpConsent: application.followUpConsent,
+      bkfcAppAccessInterest: application.bkfcAppAccessInterest,
+    }, async (payload) => {
+      const { error } = await supabase.from("affiliate_applications").insert(payload);
+      return { error };
+    }), async () => {
+      insertCleanupPerformed = true;
+      await cleanup(supabase, uploaded, reference);
     });
+    compatibilityMode = insertResult.compatibilityMode;
+    const insertError = insertResult.error;
     if (insertError) {
-      if (insertError.code === "23505") {
-        await cleanup(supabase, uploaded, reference);
+      if (insertError.code === "23505" && compatibilityMode === "full_schema") {
         const { data: raced } = await supabase.from("affiliate_applications").select("application_reference,payload_hash").eq("idempotency_key", application.idempotencyKey).maybeSingle();
         if (raced?.payload_hash === application.payloadHash) return success(raced.application_reference, true);
         throw new ApplicationError("IDEMPOTENCY_CONFLICT", 409);
       }
       throw new Error("database_insert_failed");
     }
+    storedReference = insertResult.storedReference ?? applicationId;
+    logApplicationEvent("info", {
+      applicationReference: storedReference,
+      stage: "persistence",
+      code: "APPLICATION_PERSISTED",
+      compatibilityMode,
+      durationMs: Date.now() - startedAt,
+    });
   } catch (error) {
-    await cleanup(supabase, uploaded, reference);
+    if (!insertCleanupPerformed) await cleanup(supabase, uploaded, reference);
     if (error instanceof ApplicationError) {
-      logApplicationEvent("warn", { applicationReference: reference, stage: "persistence", code: error.code, durationMs: Date.now() - startedAt });
+      logApplicationEvent("warn", { applicationReference: reference, stage: "persistence", code: error.code, compatibilityMode, durationMs: Date.now() - startedAt });
       return jsonError(error.code, error.status, error.field);
     }
-    logApplicationEvent("error", { applicationReference: reference, stage: "persistence", code: "VALIDATION_FAILED", durationMs: Date.now() - startedAt });
-    return jsonError("VALIDATION_FAILED", 503);
+    logApplicationEvent("error", { applicationReference: reference, stage: "persistence", code: "PERSISTENCE_UNAVAILABLE", compatibilityMode, durationMs: Date.now() - startedAt });
+    return jsonError("PERSISTENCE_UNAVAILABLE", 503);
   }
 
   const notificationResult = await runNonCriticalNotification(() =>
     sendApplicationNotifications({
-      applicationReference: reference,
+      applicationReference: storedReference,
       gymName: application.gymName,
       cityCountry: application.cityCountry,
       contactPerson: application.contactPerson,
@@ -263,9 +280,9 @@ export async function POST(request: Request) {
     }),
   );
   if (notificationResult === "failed") {
-    logApplicationEvent("warn", { applicationReference: reference, stage: "notification", code: "EMAIL_NOTIFICATION_FAILED", notification: "failed" });
+    logApplicationEvent("warn", { applicationReference: storedReference, stage: "notification", code: "EMAIL_NOTIFICATION_FAILED", notification: "failed" });
   }
 
-  logApplicationEvent("info", { applicationReference: reference, stage: "complete", code: "APPLICATION_RECEIVED", durationMs: Date.now() - startedAt });
-  return success(reference);
+  logApplicationEvent("info", { applicationReference: storedReference, stage: "complete", code: "APPLICATION_RECEIVED", compatibilityMode, durationMs: Date.now() - startedAt });
+  return success(storedReference);
 }

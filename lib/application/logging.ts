@@ -10,6 +10,7 @@ export function logApplicationEvent(
     code: string;
     field?: string;
     fileCategory?: string;
+    compatibilityMode?: "full_schema" | "legacy_schema";
     cleanup?: "not_required" | "succeeded" | "failed";
     notification?: "sent" | "skipped" | "failed";
     notificationType?: "internal" | "applicant_template";

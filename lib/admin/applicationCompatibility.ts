@@ -1,5 +1,32 @@
 import type { AffiliateApplication } from "./types.ts";
 
+export function storagePathFromLegacyValue(
+  value: string | null,
+  applicationId: string,
+  supabaseUrl: string,
+  storageBucket: string,
+) {
+  if (!value) return null;
+  const parts = value.split("/");
+  if (
+    parts.length === 3 &&
+    parts[0] === applicationId &&
+    ["logo", "gym-photos", "fighter-list"].includes(parts[1]) &&
+    /^[0-9a-f-]{36}\.[a-z0-9]+$/i.test(parts[2])
+  ) {
+    return value;
+  }
+  try {
+    const url = new URL(value);
+    if (url.origin !== new URL(supabaseUrl).origin) return null;
+    const prefix = `/storage/v1/object/public/${storageBucket}/`;
+    if (!url.pathname.startsWith(prefix)) return null;
+    return decodeURIComponent(url.pathname.slice(prefix.length));
+  } catch {
+    return null;
+  }
+}
+
 export const FULL_APPLICATION_SELECT = `
   id,
   application_reference,

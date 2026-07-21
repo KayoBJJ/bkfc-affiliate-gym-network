@@ -367,7 +367,7 @@ test("route and admin source enforce safe contracts", async () => {
   assert.ok(route.indexOf("await checkRateLimit") < route.indexOf("const logoPath = await upload"));
   assert.ok(route.indexOf("const logoPath = await upload") < route.indexOf('.from("affiliate_applications").insert'));
   assert.match(admin, /createSignedUrl\(path, 10 \* 60\)/);
-  assert.match(admin, /storagePathFromLegacyUrl/);
+  assert.match(admin, /storagePathFromLegacyValue/);
   assert.match(form, /applicationReference/);
   assert.doesNotMatch(form, /payload\.message/);
   for (const language of ["en", "es", "pt", "ru", "de", "it", "pl"]) {

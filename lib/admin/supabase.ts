@@ -9,25 +9,13 @@ import {
   attachApplicationFileAccess,
   normalizeAffiliateApplication,
   queryAffiliateApplicationsCompatibly,
+  storagePathFromLegacyValue,
 } from "@/lib/admin/applicationCompatibility";
 import { getSupabaseServiceRoleKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { STORAGE_BUCKET } from "@/lib/application/policy";
 
 export function createAdminSupabaseClient() {
   return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey());
-}
-
-function storagePathFromLegacyUrl(value: string | null) {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.origin !== new URL(getSupabaseUrl()).origin) return null;
-    const prefix = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
-    if (!url.pathname.startsWith(prefix)) return null;
-    return decodeURIComponent(url.pathname.slice(prefix.length));
-  } catch {
-    return null;
-  }
 }
 
 export async function getAffiliateApplications() {
@@ -84,7 +72,16 @@ export async function getAffiliateApplicationById(id: string) {
     return signed?.signedUrl ?? null;
   };
 
-  return attachApplicationFileAccess(application, sign, storagePathFromLegacyUrl);
+  return attachApplicationFileAccess(
+    application,
+    sign,
+    (value) => storagePathFromLegacyValue(
+      value,
+      application.id,
+      getSupabaseUrl(),
+      STORAGE_BUCKET,
+    ),
+  );
 }
 
 export async function getApplicationStageHistory(applicationId: string) {
