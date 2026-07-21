@@ -11,6 +11,7 @@ import {
   enforceBotSignals,
   FORM_STARTED_AT_FIELD,
 } from "./bot-policy.ts";
+import { safeFieldIdentifier } from "./diagnostics.ts";
 
 const ALLOWED_FIELDS = new Set([
   ...Object.keys(TEXT_RULES),
@@ -57,13 +58,17 @@ export function normalizeIdentity(value: string) {
 
 function requireString(formData: FormData, key: keyof typeof TEXT_RULES) {
   const values = formData.getAll(key);
+  const rule = TEXT_RULES[key];
+  if (values.length === 0) {
+    if (rule.required) throw new ApplicationError("REQUIRED_FIELD_MISSING", 400, key);
+    return "";
+  }
   if (values.length !== 1) throw new ApplicationError("VALIDATION_FAILED", 400, key);
   const raw = values[0];
   if (typeof raw !== "string") {
     throw new ApplicationError("VALIDATION_FAILED", 400, key);
   }
   const value = normalizeWhitespace(raw);
-  const rule = TEXT_RULES[key];
   if (rule.required && !value) {
     throw new ApplicationError("REQUIRED_FIELD_MISSING", 400, key);
   }
@@ -135,9 +140,14 @@ async function validateFile(file: File, field: keyof typeof FILE_RULES): Promise
   if (suppliedMime && suppliedMime !== "application/octet-stream" && !(rule.mimeTypes as readonly string[]).includes(suppliedMime)) {
     throw new ApplicationError("UNSUPPORTED_FILE_TYPE", 400, field);
   }
-  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  } catch {
+    throw new ApplicationError("VALIDATION_FAILED", 400, field);
+  }
   if (signatureFamily(bytes) !== extensionFamily(extension)) {
-    throw new ApplicationError("UNSUPPORTED_FILE_TYPE", 400, field);
+    throw new ApplicationError("INVALID_FILE_SIGNATURE", 400, field);
   }
   const exactMime: Record<string, string[]> = {
     png: ["image/png"], jpg: ["image/jpeg"], jpeg: ["image/jpeg"], webp: ["image/webp"],
@@ -150,9 +160,14 @@ async function validateFile(file: File, field: keyof typeof FILE_RULES): Promise
     throw new ApplicationError("UNSUPPORTED_FILE_TYPE", 400, field);
   }
   if (extension === "docx" || extension === "xlsx") {
-    const archive = Buffer.from(await file.arrayBuffer());
+    let archive: Buffer;
+    try {
+      archive = Buffer.from(await file.arrayBuffer());
+    } catch {
+      throw new ApplicationError("VALIDATION_FAILED", 400, field);
+    }
     const marker = extension === "docx" ? Buffer.from("word/") : Buffer.from("xl/");
-    if (!archive.includes(marker)) throw new ApplicationError("UNSUPPORTED_FILE_TYPE", 400, field);
+    if (!archive.includes(marker)) throw new ApplicationError("INVALID_FILE_SIGNATURE", 400, field);
   }
   return { file, extension };
 }
@@ -177,7 +192,9 @@ async function hashPayload(parts: Array<string | File>) {
 
 export async function validateApplicationForm(formData: FormData): Promise<ValidatedApplication> {
   for (const key of formData.keys()) {
-    if (!ALLOWED_FIELDS.has(key)) throw new ApplicationError("VALIDATION_FAILED", 400, key);
+    if (!ALLOWED_FIELDS.has(key)) {
+      throw new ApplicationError("UNEXPECTED_FIELD", 400, safeFieldIdentifier(key));
+    }
   }
   enforceBotSignals(formData);
   const idempotencyKey = formData.get("idempotencyKey");

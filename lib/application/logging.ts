@@ -8,6 +8,8 @@ export function logApplicationEvent(
     applicationReference?: string;
     stage: string;
     code: string;
+    field?: string;
+    fileCategory?: string;
     cleanup?: "not_required" | "succeeded" | "failed";
     notification?: "sent" | "skipped" | "failed";
     notificationType?: "internal" | "applicant_template";

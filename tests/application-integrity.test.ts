@@ -5,8 +5,11 @@ import test from "node:test";
 import { promisify } from "node:util";
 import { buildInternalNotificationEmail } from "../lib/application/email-content.ts";
 import {
+  clientErrorPayload,
+  validationDiagnostic,
+} from "../lib/application/diagnostics.ts";
+import {
   BOT_TRAP_FIELD,
-  CLEARLY_IMPOSSIBLE_COMPLETION_MS,
   FORM_STARTED_AT_FIELD,
 } from "../lib/application/bot-policy.ts";
 import { ApplicationError } from "../lib/application/policy.ts";
@@ -68,6 +71,16 @@ async function expectCode(form: FormData, code: string) {
   });
 }
 
+async function getValidationError(form: FormData) {
+  try {
+    await validateApplicationForm(form);
+    assert.fail("Expected validation to reject the form");
+  } catch (error) {
+    assert.ok(error instanceof ApplicationError);
+    return error;
+  }
+}
+
 test("a valid submission normalizes values and passes controlled policy", async () => {
   const result = await validateApplicationForm(validForm());
   assert.equal(result.gymName, "Example Gym");
@@ -83,6 +96,86 @@ test("invalid email and URL are rejected", async () => {
   const url = validForm();
   url.set("promoVideoLink", "javascript:alert(1)");
   await expectCode(url, "INVALID_URL");
+});
+
+test("validation errors identify missing text and invalid URL fields", async () => {
+  const missing = validForm();
+  missing.delete("gymName");
+  const missingError = await getValidationError(missing);
+  assert.equal(missingError.code, "REQUIRED_FIELD_MISSING");
+  assert.equal(missingError.field, "gymName");
+
+  const invalidUrl = validForm();
+  invalidUrl.set("websiteInstagram", "not a valid URL");
+  const urlError = await getValidationError(invalidUrl);
+  assert.equal(urlError.code, "INVALID_URL");
+  assert.equal(urlError.field, "websiteInstagram");
+});
+
+test("invalid logo and gym photo errors identify only their file category", async () => {
+  const invalidLogo = validForm();
+  invalidLogo.set("logoUpload", new File(["GIF89a"], "private-logo.gif", { type: "image/gif" }));
+  const logoError = await getValidationError(invalidLogo);
+  assert.equal(logoError.code, "UNSUPPORTED_FILE_TYPE");
+  assert.equal(logoError.field, "logoUpload");
+
+  const invalidPhoto = validForm();
+  invalidPhoto.set("gymPhotos", new File(["GIF89a"], "private-photo.gif", { type: "image/gif" }));
+  const photoError = await getValidationError(invalidPhoto);
+  assert.equal(photoError.code, "UNSUPPORTED_FILE_TYPE");
+  assert.equal(photoError.field, "gymPhotos");
+});
+
+test("file signature mismatches use a stable field-aware code", async () => {
+  const mismatch = validForm();
+  mismatch.set("logoUpload", new File(["not a png"], "private-logo.png", { type: "image/png" }));
+  const error = await getValidationError(mismatch);
+  assert.equal(error.code, "INVALID_FILE_SIGNATURE");
+  assert.equal(error.field, "logoUpload");
+});
+
+test("unexpected and generic validation failures retain safe field identifiers", async () => {
+  const unexpected = validForm();
+  unexpected.set("unexpectedProbe", "applicant-private-value");
+  const unexpectedError = await getValidationError(unexpected);
+  assert.equal(unexpectedError.code, "UNEXPECTED_FIELD");
+  assert.equal(unexpectedError.field, "unexpectedProbe");
+
+  const unsafeUnexpected = validForm();
+  unsafeUnexpected.set("applicant@example.com", "private value");
+  const unsafeUnexpectedError = await getValidationError(unsafeUnexpected);
+  assert.equal(unsafeUnexpectedError.code, "UNEXPECTED_FIELD");
+  assert.equal(unsafeUnexpectedError.field, "unknownField");
+
+  const generic = validForm();
+  generic.append("gymName", "duplicate applicant value");
+  const genericError = await getValidationError(generic);
+  assert.equal(genericError.code, "VALIDATION_FAILED");
+  assert.equal(genericError.field, "gymName");
+});
+
+test("validation response and log diagnostics exclude applicant values and filenames", async () => {
+  const form = validForm();
+  form.set("logoUpload", new File(["not a png"], "sensitive-applicant-filename.png", { type: "image/png" }));
+  const error = await getValidationError(form);
+  const response = JSON.stringify(clientErrorPayload(error.code, error.field));
+  const log = JSON.stringify({ stage: "validation", code: error.code, ...validationDiagnostic(error.field) });
+
+  assert.deepEqual(JSON.parse(response), {
+    success: false,
+    code: "INVALID_FILE_SIGNATURE",
+    field: "logoUpload",
+  });
+  assert.deepEqual(JSON.parse(log), {
+    stage: "validation",
+    code: "INVALID_FILE_SIGNATURE",
+    field: "logoUpload",
+    fileCategory: "logoUpload",
+  });
+  for (const privateValue of ["applicant@example.com", "+359 88 123 4567", "sensitive-applicant-filename.png"]) {
+    assert.equal(response.includes(privateValue), false);
+    assert.equal(log.includes(privateValue), false);
+  }
 });
 
 test("oversized, unsupported, and excessive image files are rejected", async () => {
@@ -125,12 +218,12 @@ test("a meaningful honeypot value returns BOT_DETECTED", async () => {
 test("rapid timing rejects only when the rendered trap field is also missing", async () => {
   const now = Date.now();
   const rapidRenderedForm = validForm();
-  rapidRenderedForm.set(FORM_STARTED_AT_FIELD, String(now - CLEARLY_IMPOSSIBLE_COMPLETION_MS + 1));
+  rapidRenderedForm.set(FORM_STARTED_AT_FIELD, String(now - 100));
   await validateApplicationForm(rapidRenderedForm);
 
   const rapidScriptedForm = validForm();
   rapidScriptedForm.delete(BOT_TRAP_FIELD);
-  rapidScriptedForm.set(FORM_STARTED_AT_FIELD, String(now - CLEARLY_IMPOSSIBLE_COMPLETION_MS + 1));
+  rapidScriptedForm.set(FORM_STARTED_AT_FIELD, String(now - 100));
   await expectCode(rapidScriptedForm, "BOT_DETECTED");
 });
 

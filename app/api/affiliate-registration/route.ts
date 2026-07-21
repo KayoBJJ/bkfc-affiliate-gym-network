@@ -7,6 +7,7 @@ import {
   getRateLimitConfig,
 } from "@/lib/config/server";
 import { ConfigurationError, type ProxyProvider } from "@/lib/config/policy";
+import { clientErrorPayload, validationDiagnostic } from "@/lib/application/diagnostics";
 import { sendApplicationNotifications } from "@/lib/application/email";
 import { logApplicationEvent } from "@/lib/application/logging";
 import { removeRequestObjects, resolveIdempotency } from "@/lib/application/integrity";
@@ -37,7 +38,7 @@ function createApplicationSupabaseClient(config: ReturnType<typeof getPrivileged
 type ApplicationSupabaseClient = ReturnType<typeof createApplicationSupabaseClient>;
 
 function jsonError(code: ApiCode, status: number, field?: string) {
-  return NextResponse.json({ success: false, code, ...(field ? { field } : {}) }, { status });
+  return NextResponse.json(clientErrorPayload(code, field), { status });
 }
 
 function success(applicationReference: string, reused = false) {
@@ -150,7 +151,12 @@ export async function POST(request: Request) {
     application = await validateApplicationForm(await request.formData());
   } catch (error) {
     if (error instanceof ApplicationError) {
-      logApplicationEvent("warn", { stage: "validation", code: error.code, durationMs: Date.now() - startedAt });
+      logApplicationEvent("warn", {
+        stage: "validation",
+        code: error.code,
+        ...validationDiagnostic(error.field),
+        durationMs: Date.now() - startedAt,
+      });
       return jsonError(error.code, error.status, error.field);
     }
     logApplicationEvent("error", { stage: "validation", code: "VALIDATION_FAILED", durationMs: Date.now() - startedAt });

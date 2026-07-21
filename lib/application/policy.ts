@@ -52,6 +52,7 @@ export type ApiCode =
   | "IDEMPOTENCY_CONFLICT"
   | "INVALID_CONSENT"
   | "INVALID_EMAIL"
+  | "INVALID_FILE_SIGNATURE"
   | "INVALID_PHONE"
   | "INVALID_URL"
   | "RATE_LIMITED"
@@ -59,6 +60,7 @@ export type ApiCode =
   | "REQUIRED_FIELD_MISSING"
   | "TOO_MANY_FILES"
   | "UNSUPPORTED_FILE_TYPE"
+  | "UNEXPECTED_FIELD"
   | "VALIDATION_FAILED";
 
 export class ApplicationError extends Error {

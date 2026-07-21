@@ -380,7 +380,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       const payload = (await response.json()) as ApiPayload;
 
       if (!response.ok) {
-        const fileCodes = new Set(["FILE_TOO_LARGE", "UNSUPPORTED_FILE_TYPE", "TOO_MANY_FILES"]);
+        const fileCodes = new Set(["FILE_TOO_LARGE", "UNSUPPORTED_FILE_TYPE", "INVALID_FILE_SIGNATURE", "TOO_MANY_FILES"]);
         const duplicateCodes = new Set(["DUPLICATE_SUBMISSION", "APPLICATION_ALREADY_RECEIVED"]);
         const message = fileCodes.has(payload.code || "")
           ? tech.fileError
@@ -388,7 +388,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
             ? tech.duplicate
             : payload.code === "RATE_LIMITED" || payload.code === "BOT_DETECTED"
               ? tech.rateLimit
-              : payload.code?.startsWith("INVALID_") || payload.code === "FIELD_TOO_LONG" || payload.code === "REQUIRED_FIELD_MISSING"
+              : payload.code?.startsWith("INVALID_") || payload.code === "FIELD_TOO_LONG" || payload.code === "REQUIRED_FIELD_MISSING" || payload.code === "UNEXPECTED_FIELD" || payload.code === "VALIDATION_FAILED"
                 ? tech.validationError
                 : tech.genericError;
         if (payload.field) setFieldErrors({ [payload.field]: message });
