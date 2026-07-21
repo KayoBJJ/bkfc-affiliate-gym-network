@@ -6,6 +6,11 @@ import {
   MAX_REQUEST_BYTES,
   TEXT_RULES,
 } from "./policy.ts";
+import {
+  BOT_TRAP_FIELD,
+  enforceBotSignals,
+  FORM_STARTED_AT_FIELD,
+} from "./bot-policy.ts";
 
 const ALLOWED_FIELDS = new Set([
   ...Object.keys(TEXT_RULES),
@@ -16,7 +21,8 @@ const ALLOWED_FIELDS = new Set([
   "followUpConsent",
   "bkfcAppAccessInterest",
   "idempotencyKey",
-  "companyWebsite",
+  BOT_TRAP_FIELD,
+  FORM_STARTED_AT_FIELD,
 ]);
 
 export type ValidatedFile = { file: File; extension: string };
@@ -173,8 +179,7 @@ export async function validateApplicationForm(formData: FormData): Promise<Valid
   for (const key of formData.keys()) {
     if (!ALLOWED_FIELDS.has(key)) throw new ApplicationError("VALIDATION_FAILED", 400, key);
   }
-  const honeypot = formData.get("companyWebsite");
-  if (typeof honeypot !== "string" || honeypot.trim()) throw new ApplicationError("BOT_DETECTED", 400);
+  enforceBotSignals(formData);
   const idempotencyKey = formData.get("idempotencyKey");
   if (typeof idempotencyKey !== "string" || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
     throw new ApplicationError("VALIDATION_FAILED", 400, "idempotencyKey");

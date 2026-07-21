@@ -2,6 +2,10 @@
 
 import { FormEvent, useRef, useState } from "react";
 import type { LanguageCode } from "@/lib/i18n/translations"
+import {
+  BOT_TRAP_FIELD,
+  FORM_STARTED_AT_FIELD,
+} from "@/lib/application/bot-policy";
 
 type SubmissionState =
   | {
@@ -322,6 +326,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
   const tech = technicalCopy[language] ?? technicalCopy.en;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [formStartedAt, setFormStartedAt] = useState(() => String(Date.now()));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submissionState, setSubmissionState] =
     useState<SubmissionState>(initialState);
@@ -366,6 +371,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
     try {
       const formData = new FormData(form);
       formData.set("idempotencyKey", idempotencyKey);
+      formData.set(FORM_STARTED_AT_FIELD, formStartedAt);
       const response = await fetch("/api/affiliate-registration", {
         method: "POST",
         body: formData
@@ -397,6 +403,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
 
       form.reset();
       setIdempotencyKey(crypto.randomUUID());
+      setFormStartedAt(String(Date.now()));
       setSubmissionState({
         status: "success",
         message: `${tech.received} ${tech.reference}: ${payload.applicationReference}. ${tech.next}`
@@ -416,9 +423,19 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
   return (
     <form className="registration-form" onSubmit={handleSubmit} noValidate={false}>
       <div className="form-honeypot" aria-hidden="true">
-        <label htmlFor="companyWebsite">Company website</label>
-        <input id="companyWebsite" name="companyWebsite" type="text" tabIndex={-1} autoComplete="off" />
+        <input
+          name={BOT_TRAP_FIELD}
+          type="text"
+          value=""
+          readOnly
+          tabIndex={-1}
+          aria-hidden="true"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+        />
       </div>
+      <input name={FORM_STARTED_AT_FIELD} type="hidden" value={formStartedAt} readOnly />
       <div className="form-grid">
         <label className="field">
           <span>{t.gymName}<RequiredMark /></span>

@@ -4,6 +4,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { promisify } from "node:util";
 import { buildInternalNotificationEmail } from "../lib/application/email-content.ts";
+import {
+  BOT_TRAP_FIELD,
+  CLEARLY_IMPOSSIBLE_COMPLETION_MS,
+  FORM_STARTED_AT_FIELD,
+} from "../lib/application/bot-policy.ts";
 import { ApplicationError } from "../lib/application/policy.ts";
 import { removeRequestObjects, resolveIdempotency } from "../lib/application/integrity.ts";
 import { runNonCriticalNotification } from "../lib/application/staged.ts";
@@ -47,7 +52,8 @@ function validForm() {
   form.set("disciplinesOffered", "Boxing, MMA");
   form.set("promoVideoLink", "https://video.example.com/watch/1");
   form.set("reviewConsent", "on");
-  form.set("companyWebsite", "");
+  form.set(BOT_TRAP_FIELD, "");
+  form.set(FORM_STARTED_AT_FIELD, String(Date.now() - 5_000));
   form.set("idempotencyKey", "58b3b08f-582f-4a1a-a11b-30b738532a23");
   form.set("logoUpload", imageFile());
   form.append("gymPhotos", imageFile("gym.png"));
@@ -91,13 +97,63 @@ test("oversized, unsupported, and excessive image files are rejected", async () 
   await expectCode(excessive, "TOO_MANY_FILES");
 });
 
-test("oversized fighter list and honeypot submissions are rejected", async () => {
+test("oversized fighter lists are rejected", async () => {
   const fighter = validForm();
   fighter.set("fighterListUpload", oleFile("fighters.xls", 10 * 1024 * 1024 + 1));
   await expectCode(fighter, "FILE_TOO_LARGE");
+});
+
+test("empty, missing, and whitespace-only honeypot values pass", async () => {
+  const empty = validForm();
+  await validateApplicationForm(empty);
+
+  const missing = validForm();
+  missing.delete(BOT_TRAP_FIELD);
+  await validateApplicationForm(missing);
+
+  const whitespace = validForm();
+  whitespace.set(BOT_TRAP_FIELD, "  \n\t  ");
+  await validateApplicationForm(whitespace);
+});
+
+test("a meaningful honeypot value returns BOT_DETECTED", async () => {
   const bot = validForm();
-  bot.set("companyWebsite", "https://spam.example");
+  bot.set(BOT_TRAP_FIELD, "automated value");
   await expectCode(bot, "BOT_DETECTED");
+});
+
+test("rapid timing rejects only when the rendered trap field is also missing", async () => {
+  const now = Date.now();
+  const rapidRenderedForm = validForm();
+  rapidRenderedForm.set(FORM_STARTED_AT_FIELD, String(now - CLEARLY_IMPOSSIBLE_COMPLETION_MS + 1));
+  await validateApplicationForm(rapidRenderedForm);
+
+  const rapidScriptedForm = validForm();
+  rapidScriptedForm.delete(BOT_TRAP_FIELD);
+  rapidScriptedForm.set(FORM_STARTED_AT_FIELD, String(now - CLEARLY_IMPOSSIBLE_COMPLETION_MS + 1));
+  await expectCode(rapidScriptedForm, "BOT_DETECTED");
+});
+
+test("honeypot input resists autofill and stays outside interaction and layout", async () => {
+  const form = await readFile(new URL("../components/RegistrationForm.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(form, /name=\{BOT_TRAP_FIELD\}/);
+  assert.match(form, /type="text"[\s\S]*value=""[\s\S]*readOnly[\s\S]*tabIndex=\{-1\}[\s\S]*aria-hidden="true"[\s\S]*autoComplete="off"[\s\S]*data-lpignore="true"[\s\S]*data-1p-ignore="true"/);
+  assert.doesNotMatch(form, /companyWebsite|Company website/);
+  const honeypotCss = css.match(/\.form-honeypot\s*\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(honeypotCss, /position:\s*absolute/);
+  assert.match(honeypotCss, /pointer-events:\s*none/);
+  assert.match(honeypotCss, /clip-path:\s*inset\(50%\)/);
+  assert.doesNotMatch(honeypotCss, /display:\s*none/);
+});
+
+test("honeypot data cannot enter structured application logs", async () => {
+  const validation = await readFile(new URL("../lib/application/validation.ts", import.meta.url), "utf8");
+  const botPolicy = await readFile(new URL("../lib/application/bot-policy.ts", import.meta.url), "utf8");
+  const logging = await readFile(new URL("../lib/application/logging.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(validation, /console\.|logApplicationEvent/);
+  assert.doesNotMatch(botPolicy, /console\.|logApplicationEvent|JSON\.stringify/);
+  assert.doesNotMatch(logging, /honeypot|BOT_TRAP_FIELD|q7m2_delta/);
 });
 
 test("controlled email routing never targets the applicant", () => {
