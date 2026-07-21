@@ -13,7 +13,7 @@ import { logApplicationEvent } from "@/lib/application/logging";
 import { removeRequestObjects, resolveIdempotency } from "@/lib/application/integrity";
 import { runNonCriticalNotification } from "@/lib/application/staged";
 import { rateLimitIdentifier, trustedRequestOrigin } from "@/lib/application/rate-limit";
-import { compensateFailedInsert, insertApplicationCompatibly } from "@/lib/application/persistence";
+import { buildLegacyFallbackLogEvent, compensateFailedInsert, insertApplicationCompatibly } from "@/lib/application/persistence";
 import {
   ApplicationError,
   MAX_REQUEST_BYTES,
@@ -234,6 +234,12 @@ export async function POST(request: Request) {
       await cleanup(supabase, uploaded, reference);
     });
     compatibilityMode = insertResult.compatibilityMode;
+    if (insertResult.fallbackTrigger) {
+      logApplicationEvent("warn", buildLegacyFallbackLogEvent(
+        insertResult.fallbackTrigger,
+        Date.now() - startedAt,
+      ));
+    }
     const insertError = insertResult.error;
     if (insertError) {
       if (insertError.code === "23505" && compatibilityMode === "full_schema") {

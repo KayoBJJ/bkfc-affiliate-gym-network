@@ -1,7 +1,79 @@
 export type PersistenceError = {
   code?: string;
   message?: string;
+  details?: string | null;
+  hint?: string | null;
+  column?: unknown;
+  column_name?: unknown;
+  missing_column?: unknown;
 };
+
+export const BATCH_1A_INSERT_COLUMNS = [
+  "application_reference",
+  "idempotency_key",
+  "payload_hash",
+  "normalized_gym_name",
+  "normalized_email",
+  "logo_path",
+  "gym_photo_paths",
+  "fighter_list_path",
+] as const;
+
+export type Batch1AInsertColumn = (typeof BATCH_1A_INSERT_COLUMNS)[number];
+export type LegacyFallbackTrigger = {
+  triggerCode: "42703" | "PGRST204";
+  missingColumn: Batch1AInsertColumn | "batch_1a_column";
+};
+
+const BATCH_1A_INSERT_COLUMN_SET = new Set<string>(BATCH_1A_INSERT_COLUMNS);
+const POSTGREST_SCHEMA_CACHE_COLUMN_PATTERN =
+  /^Could not find the '([a-z][a-z0-9_]*)' column of 'affiliate_applications' in the schema cache$/;
+
+function asBatch1AInsertColumn(value: unknown): Batch1AInsertColumn | null {
+  return typeof value === "string" && BATCH_1A_INSERT_COLUMN_SET.has(value)
+    ? value as Batch1AInsertColumn
+    : null;
+}
+
+export function extractBatch1AMissingColumn(error: PersistenceError): Batch1AInsertColumn | null {
+  for (const value of [error.column, error.column_name, error.missing_column]) {
+    if (typeof value === "string") return asBatch1AInsertColumn(value);
+  }
+
+  for (const value of [error.message, error.details]) {
+    if (typeof value !== "string") continue;
+    const match = POSTGREST_SCHEMA_CACHE_COLUMN_PATTERN.exec(value);
+    const column = asBatch1AInsertColumn(match?.[1]);
+    if (column) return column;
+  }
+  return null;
+}
+
+export function getLegacyFallbackTrigger(error: PersistenceError): LegacyFallbackTrigger | null {
+  if (error.code === "42703") {
+    return {
+      triggerCode: "42703",
+      missingColumn: extractBatch1AMissingColumn(error) ?? "batch_1a_column",
+    };
+  }
+  if (error.code !== "PGRST204") return null;
+
+  const missingColumn = extractBatch1AMissingColumn(error);
+  return missingColumn ? { triggerCode: "PGRST204", missingColumn } : null;
+}
+
+export function buildLegacyFallbackLogEvent(
+  trigger: LegacyFallbackTrigger,
+  durationMs: number,
+) {
+  return {
+    stage: "persistence" as const,
+    compatibilityMode: "legacy_schema" as const,
+    triggerCode: trigger.triggerCode,
+    missingColumn: trigger.missingColumn,
+    durationMs,
+  };
+}
 
 export type PersistenceValues = {
   id: string;
@@ -116,14 +188,17 @@ export async function insertApplicationCompatibly(
     return {
       error: null,
       compatibilityMode: "full_schema" as const,
+      fallbackTrigger: null,
       storedReference: values.applicationReference,
       storedRowId: values.id,
     };
   }
-  if (fullResult.error.code !== "42703") {
+  const fallbackTrigger = getLegacyFallbackTrigger(fullResult.error);
+  if (!fallbackTrigger) {
     return {
       error: fullResult.error,
       compatibilityMode: "full_schema" as const,
+      fallbackTrigger: null,
       storedReference: null,
       storedRowId: null,
     };
@@ -133,6 +208,7 @@ export async function insertApplicationCompatibly(
   return {
     error: legacyResult.error,
     compatibilityMode: "legacy_schema" as const,
+    fallbackTrigger,
     storedReference: legacyResult.error ? null : values.id,
     storedRowId: legacyResult.error ? null : values.id,
   };
