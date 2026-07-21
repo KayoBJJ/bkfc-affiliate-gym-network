@@ -13,7 +13,12 @@ import { logApplicationEvent } from "@/lib/application/logging";
 import { removeRequestObjects, resolveIdempotency } from "@/lib/application/integrity";
 import { runNonCriticalNotification } from "@/lib/application/staged";
 import { rateLimitIdentifier, trustedRequestOrigin } from "@/lib/application/rate-limit";
-import { buildLegacyFallbackLogEvent, compensateFailedInsert, insertApplicationCompatibly } from "@/lib/application/persistence";
+import {
+  buildLegacyFallbackLogEvent,
+  compensateFailedInsert,
+  insertApplicationCompatibly,
+  sanitizedPersistenceProviderCode,
+} from "@/lib/application/persistence";
 import {
   ApplicationError,
   MAX_REQUEST_BYTES,
@@ -37,6 +42,29 @@ function createApplicationSupabaseClient(config: ReturnType<typeof getPrivileged
 }
 
 type ApplicationSupabaseClient = ReturnType<typeof createApplicationSupabaseClient>;
+
+type PersistencePipelineStage =
+  | "idempotency_lookup"
+  | "rate_limit"
+  | "duplicate_lookup"
+  | "storage_upload"
+  | "database_insert";
+
+function safeProviderCode(error: unknown) {
+  if (typeof error !== "object" || error === null || !("code" in error)) return undefined;
+  const code = sanitizedPersistenceProviderCode((error as { code?: unknown }).code);
+  return code === "unknown" ? undefined : code;
+}
+
+class PersistencePipelineError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, providerError?: unknown) {
+    super(message);
+    this.name = "PersistencePipelineError";
+    this.code = safeProviderCode(providerError);
+  }
+}
 
 function jsonError(code: ApiCode, status: number, field?: string) {
   return NextResponse.json(clientErrorPayload(code, field), { status });
@@ -94,7 +122,7 @@ async function checkRateLimit(
     p_idempotency_hash: rateLimitIdentifier(application.idempotencyKey, rateSecret),
     p_email_hash: rateLimitIdentifier(application.normalizedEmail, rateSecret),
   });
-  if (error) throw new Error("rate_limit_unavailable");
+  if (error) throw new PersistencePipelineError("rate_limit_unavailable", error);
   if (data !== true) throw new ApplicationError("RATE_LIMITED", 429);
 }
 
@@ -111,7 +139,7 @@ async function upload(
     contentType: contentType(validatedFile.extension),
     upsert: false,
   });
-  if (error) throw new Error("storage_upload_failed");
+  if (error) throw new PersistencePipelineError("storage_upload_failed", error);
   uploaded.push({ path });
   return path;
 }
@@ -171,6 +199,8 @@ export async function POST(request: Request) {
   let storedReference = reference;
   let compatibilityMode: "full_schema" | "legacy_schema" = "full_schema";
   let insertCleanupPerformed = false;
+  let pipelineStage: PersistencePipelineStage = "idempotency_lookup";
+  let providerCode: string | undefined;
 
   try {
     const { data: prior, error: priorError } = await supabase
@@ -178,13 +208,18 @@ export async function POST(request: Request) {
       .select("application_reference,payload_hash")
       .eq("idempotency_key", application.idempotencyKey)
       .maybeSingle();
-    if (priorError) throw new Error("idempotency_lookup_failed");
+    if (priorError) {
+      providerCode = safeProviderCode(priorError);
+      throw new Error("idempotency_lookup_failed");
+    }
     const idempotency = resolveIdempotency(prior ? { applicationReference: prior.application_reference, payloadHash: prior.payload_hash } : null, application.payloadHash);
     if (idempotency.outcome === "conflict") throw new ApplicationError("IDEMPOTENCY_CONFLICT", 409);
     if (idempotency.outcome === "reuse") return success(idempotency.applicationReference, true);
 
+    pipelineStage = "rate_limit";
     await checkRateLimit(supabase, request, application, rateConfig.secret, proxyConfig.provider);
 
+    pipelineStage = "duplicate_lookup";
     const duplicateWindow = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: duplicate, error: duplicateError } = await supabase
       .from("affiliate_applications")
@@ -194,15 +229,20 @@ export async function POST(request: Request) {
       .neq("status", "rejected")
       .gte("created_at", duplicateWindow)
       .limit(1);
-    if (duplicateError) throw new Error("duplicate_lookup_failed");
+    if (duplicateError) {
+      providerCode = safeProviderCode(duplicateError);
+      throw new Error("duplicate_lookup_failed");
+    }
     if (duplicate?.length) throw new ApplicationError("DUPLICATE_SUBMISSION", 409);
 
+    pipelineStage = "storage_upload";
     const logoPath = await upload(supabase, applicationId, "logo", application.logo, uploaded);
     const gymPhotoPaths: string[] = [];
     for (const photo of application.gymPhotos) gymPhotoPaths.push(await upload(supabase, applicationId, "gym-photos", photo, uploaded));
     const fighterListPath = application.fighterList ? await upload(supabase, applicationId, "fighter-list", application.fighterList, uploaded) : null;
     const country = extractCountry(application.cityCountry);
 
+    pipelineStage = "database_insert";
     const insertResult = await compensateFailedInsert(await insertApplicationCompatibly({
       id: applicationId,
       applicationReference: reference,
@@ -260,12 +300,21 @@ export async function POST(request: Request) {
       durationMs: Date.now() - startedAt,
     });
   } catch (error) {
+    providerCode ??= safeProviderCode(error);
     if (!insertCleanupPerformed) await cleanup(supabase, uploaded, reference);
     if (error instanceof ApplicationError) {
       logApplicationEvent("warn", { applicationReference: reference, stage: "persistence", code: error.code, compatibilityMode, durationMs: Date.now() - startedAt });
       return jsonError(error.code, error.status, error.field);
     }
-    logApplicationEvent("error", { applicationReference: reference, stage: "persistence", code: "PERSISTENCE_UNAVAILABLE", compatibilityMode, durationMs: Date.now() - startedAt });
+    logApplicationEvent("error", {
+      applicationReference: reference,
+      stage: "persistence",
+      code: "PERSISTENCE_UNAVAILABLE",
+      compatibilityMode,
+      pipelineStage,
+      providerCode,
+      durationMs: Date.now() - startedAt,
+    });
     return jsonError("PERSISTENCE_UNAVAILABLE", 503);
   }
 

@@ -13,6 +13,13 @@ type RegularApplicationLogEvent = {
   notification?: "sent" | "skipped" | "failed";
   notificationType?: "internal" | "applicant_template";
   durationMs?: number;
+  pipelineStage?:
+    | "idempotency_lookup"
+    | "rate_limit"
+    | "duplicate_lookup"
+    | "storage_upload"
+    | "database_insert";
+  providerCode?: string;
 };
 
 type CompatibilityFallbackLogEvent = {

@@ -70,10 +70,10 @@ function diagnosticErrorCandidate(value: unknown): {
   return { candidate: value, isDirect: true };
 }
 
-function sanitizedProviderCode(value: unknown): string {
+export function sanitizedPersistenceProviderCode(value: unknown): string {
   if (typeof value !== "string") return "unknown";
-  const sanitized = value.trim().replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 32);
-  return sanitized || "unknown";
+  const trimmed = value.trim();
+  return /^[A-Za-z0-9_-]{1,32}$/.test(trimmed) ? trimmed : "unknown";
 }
 
 function safeIdentifier(value: unknown): string | null {
@@ -122,7 +122,7 @@ export function buildPersistenceClassifierDiagnostic(
 ): PersistenceClassifierDiagnostic {
   const { candidate, isDirect } = diagnosticErrorCandidate(error);
   const rawCode = candidate?.code;
-  const providerCode = sanitizedProviderCode(rawCode);
+  const providerCode = sanitizedPersistenceProviderCode(rawCode);
   const extraction = diagnosticColumn(candidate);
   const isAllowlistedBatch1AColumn = extraction.column !== null
     && BATCH_1A_INSERT_COLUMN_SET.has(extraction.column);

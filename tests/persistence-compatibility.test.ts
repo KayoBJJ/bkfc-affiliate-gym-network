@@ -17,6 +17,7 @@ import {
   getLegacyFallbackTrigger,
   insertApplicationCompatibly,
   LEGACY_INSERT_COLUMNS,
+  sanitizedPersistenceProviderCode,
   type PersistenceValues,
 } from "../lib/application/persistence.ts";
 
@@ -107,7 +108,7 @@ test("unknown provider codes and non-allowlisted columns explain fallback denial
     message: directPgrstError.message,
   }), {
     ...eligibleClassifierDiagnostic,
-    providerCode: "SOME_UNSAFE_PROVIDER_CODE_THAT_I",
+    providerCode: "unknown",
     fallbackEligible: false,
     fallbackDenialReason: "unsupported_error_code",
   });
@@ -142,6 +143,16 @@ test("classifier diagnostics never contain raw message details or hints", () => 
     assert.equal(serialized.includes(rawValue), false);
   }
   assert.equal(serialized.length < 500, true);
+});
+
+test("pre-insert provider codes are sanitized without exposing provider prose", () => {
+  assert.equal(sanitizedPersistenceProviderCode("42703"), "42703");
+  assert.equal(sanitizedPersistenceProviderCode("PGRST202"), "PGRST202");
+  assert.equal(
+    sanitizedPersistenceProviderCode("42703 raw database prose with spaces"),
+    "unknown",
+  );
+  assert.equal(sanitizedPersistenceProviderCode(null), "unknown");
 });
 
 test("full-schema insert succeeds without fallback", async () => {
@@ -505,7 +516,10 @@ test("persistence failures expose only a stable code and notifications follow pe
   }
 
   const route = await readFile(new URL("../app/api/affiliate-registration/route.ts", import.meta.url), "utf8");
-  assert.match(route, /stage: "persistence", code: "PERSISTENCE_UNAVAILABLE"/);
+  assert.match(route, /stage: "persistence",[\s\S]*?code: "PERSISTENCE_UNAVAILABLE"/);
+  assert.match(route, /pipelineStage: PersistencePipelineStage = "idempotency_lookup"/);
+  assert.match(route, /providerCode = safeProviderCode\(priorError\)/);
+  assert.match(route, /providerCode \?\?= safeProviderCode\(error\)/);
   assert.doesNotMatch(route, /stage: "persistence", code: "VALIDATION_FAILED"/);
   assert.ok(route.indexOf("insertApplicationCompatibly") < route.lastIndexOf("sendApplicationNotifications"));
   assert.ok(route.lastIndexOf("sendApplicationNotifications") < route.lastIndexOf("return success(storedReference)"));
