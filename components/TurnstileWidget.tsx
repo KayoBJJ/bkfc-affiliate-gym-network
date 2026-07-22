@@ -38,6 +38,7 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, Props>(function
       action: TURNSTILE_ACTION,
       theme: "dark",
       appearance: "interaction-only",
+      "response-field": false,
       callback: (token: string) => {
         onToken(token);
         onStateChange("ready");

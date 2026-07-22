@@ -92,6 +92,11 @@ test("Turnstile proof is short-lived and bound to idempotency key and request ho
   }
 });
 
+test("Turnstile does not inject its response field into the strict application form", async () => {
+  const widget = await readFile("components/TurnstileWidget.tsx", "utf8");
+  assert.match(widget, /["']response-field["']:\s*false/);
+});
+
 const cleanupPolicy: CleanupPolicy = {
   dryRun: true,
   abandonedSessionHours: 24,
