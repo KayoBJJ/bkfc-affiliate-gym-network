@@ -1353,6 +1353,31 @@ h1 {
   gap: 16px;
 }
 
+.turnstile-field {
+  display: grid;
+  gap: 10px;
+  min-height: 74px;
+}
+
+.turnstile-label {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.turnstile-shell,
+.turnstile-widget {
+  min-height: 1px;
+}
+
+.turnstile-error {
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 120, 120, 0.42);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffcbcb;
+  font-size: 0.9rem;
+}
+
 .submission-message {
   padding: 14px 16px;
   border-radius: var(--radius-sm);

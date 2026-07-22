@@ -69,6 +69,6 @@ drop table if exists public.affiliate_application_upload_sessions;
 
 Disabling anonymous sign-ins is safe after the old deployment is restored. Do not delete application objects or `affiliate_applications` rows during rollback.
 
-## Residual operational risk
+## Broad-traffic follow-up
 
-Anonymous Supabase Auth accounts are created before application rate limiting runs. Before broad paid traffic, configure an approved Supabase Auth CAPTCHA/Turnstile flow or an equivalent abuse control and define anonymous-user retention. The current implementation is suitable for staging and controlled production verification; this Auth-layer control remains a condition for large-scale promotion.
+The Turnstile-before-anonymous-auth flow and scheduled retention policy are implemented by the next migration and application release. Complete [TURNSTILE_CLEANUP_OPERATIONS.md](TURNSTILE_CLEANUP_OPERATIONS.md) before broad promotional traffic.

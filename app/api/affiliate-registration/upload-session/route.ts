@@ -1,14 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { getPrivilegedSupabaseConfig, getProxyTrustConfig, getRateLimitConfig } from "@/lib/config/server";
+import {
+  getPrivilegedSupabaseConfig,
+  getProxyTrustConfig,
+  getRateLimitConfig,
+  getTurnstileConfig,
+} from "@/lib/config/server";
 import { clientErrorPayload } from "@/lib/application/diagnostics";
 import { directStorageEndpoint, formDataFromPayload, formPayloadFrom, issueUploadManifest, uploadSessionRequestHash, UPLOAD_SESSION_TTL_MS } from "@/lib/application/direct-upload";
 import type { UploadSessionResponse } from "@/lib/application/direct-upload-contract";
 import { logApplicationEvent } from "@/lib/application/logging";
 import { ApplicationError, STORAGE_BUCKET, type ApiCode } from "@/lib/application/policy";
 import { rateLimitIdentifier, trustedRequestOrigin } from "@/lib/application/rate-limit";
+import { verifyTurnstileProof } from "@/lib/application/turnstile";
 import { validateApplicationMetadata } from "@/lib/application/validation";
-import { cleanupExpiredUploadSessions } from "@/lib/application/upload-session-cleanup";
 
 export const runtime = "nodejs";
 
@@ -17,8 +22,7 @@ function error(code: ApiCode, status: number, field?: string) {
 }
 
 function bearerToken(request: Request) {
-  const value = request.headers.get("authorization") ?? "";
-  return value.match(/^Bearer ([A-Za-z0-9._~-]+)$/)?.[1];
+  return (request.headers.get("authorization") ?? "").match(/^Bearer ([A-Za-z0-9._~-]+)$/)?.[1];
 }
 
 function reference(id: string) {
@@ -44,6 +48,7 @@ export async function POST(request: Request) {
   const startedAt = Date.now();
   const contentLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > 128 * 1024) return error("REQUEST_TOO_LARGE", 413);
+
   try {
     const config = getPrivilegedSupabaseConfig();
     const rateConfig = getRateLimitConfig();
@@ -51,18 +56,28 @@ export async function POST(request: Request) {
     const supabase = createClient<any>(config.url, config.serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const token = bearerToken(request);
-    if (!token) return error("VALIDATION_FAILED", 401);
-    const { data: authData, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !authData.user) return error("VALIDATION_FAILED", 401);
 
-    const body = await request.json() as { form?: unknown; files?: unknown };
+    const body = await request.json() as { form?: unknown; files?: unknown; turnstileProof?: unknown };
     const formData = formDataFromPayload(body.form);
     const application = validateApplicationMetadata(formData);
     const sessionId = crypto.randomUUID();
     const uploads = issueUploadManifest(sessionId, body.files);
     const storedFormPayload = formPayloadFrom(formData);
     const requestHash = uploadSessionRequestHash(storedFormPayload, uploads);
+    const origin = trustedRequestOrigin(request, proxyConfig.provider);
+
+    verifyTurnstileProof(
+      body.turnstileProof,
+      application.idempotencyKey,
+      new URL(request.url).hostname,
+      getTurnstileConfig().proofSecret,
+    );
+
+    const token = bearerToken(request);
+    if (!token) return error("VALIDATION_FAILED", 401);
+    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !authData.user || authData.user.is_anonymous !== true) return error("VALIDATION_FAILED", 401);
+    const uploaderId = authData.user.id;
 
     const { data: priorApplication, error: priorApplicationError } = await supabase
       .from("affiliate_applications")
@@ -79,9 +94,8 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (priorSessionError) return error("PERSISTENCE_UNAVAILABLE", 503);
     if (priorSession) {
-      if (priorSession.uploader_id !== authData.user.id || priorSession.request_hash !== requestHash ||
-        priorSession.status !== "pending" ||
-        new Date(priorSession.expires_at).getTime() <= Date.now()) {
+      if (priorSession.uploader_id !== uploaderId || priorSession.request_hash !== requestHash ||
+        priorSession.status !== "pending" || new Date(priorSession.expires_at).getTime() <= Date.now()) {
         return error("IDEMPOTENCY_CONFLICT", 409);
       }
       const response: UploadSessionResponse = {
@@ -96,7 +110,7 @@ export async function POST(request: Request) {
     }
 
     const { data: allowed, error: rateError } = await supabase.rpc("check_affiliate_application_rate_limit", {
-      p_origin_hash: rateLimitIdentifier(trustedRequestOrigin(request, proxyConfig.provider), rateConfig.secret),
+      p_origin_hash: rateLimitIdentifier(origin, rateConfig.secret),
       p_idempotency_hash: rateLimitIdentifier(application.idempotencyKey, rateConfig.secret),
       p_email_hash: rateLimitIdentifier(application.normalizedEmail, rateConfig.secret),
     });
@@ -114,16 +128,11 @@ export async function POST(request: Request) {
     if (duplicateError) return error("PERSISTENCE_UNAVAILABLE", 503);
     if (duplicate?.length) return error("DUPLICATE_SUBMISSION", 409);
 
-    const expiredCleanup = await cleanupExpiredUploadSessions(supabase);
-    if (expiredCleanup.failed) {
-      logApplicationEvent("warn", { stage: "cleanup", code: "EXPIRED_UPLOAD_CLEANUP_FAILED" });
-    }
-
     const applicationReference = reference(sessionId);
     const expiresAt = new Date(Date.now() + UPLOAD_SESSION_TTL_MS).toISOString();
     const { error: insertError } = await supabase.from("affiliate_application_upload_sessions").insert({
       id: sessionId,
-      uploader_id: authData.user.id,
+      uploader_id: uploaderId,
       application_reference: applicationReference,
       idempotency_key: application.idempotencyKey,
       request_hash: requestHash,
@@ -131,7 +140,7 @@ export async function POST(request: Request) {
       upload_manifest: uploads,
       expires_at: expiresAt,
     });
-    if (insertError) return error("PERSISTENCE_UNAVAILABLE", 503);
+    if (insertError) throw new Error("upload_session_insert_failed");
 
     logApplicationEvent("info", {
       applicationReference,
@@ -149,7 +158,11 @@ export async function POST(request: Request) {
     };
     return NextResponse.json(response);
   } catch (caught) {
-    if (caught instanceof ApplicationError) return error(caught.code, caught.status, caught.field);
+    if (caught instanceof ApplicationError) {
+      const stage = caught.code.startsWith("CAPTCHA_") ? "captcha" : "request";
+      logApplicationEvent("warn", { stage, code: caught.code, durationMs: Date.now() - startedAt });
+      return error(caught.code, caught.status, caught.field);
+    }
     logApplicationEvent("error", { stage: "upload_session", code: "PERSISTENCE_UNAVAILABLE", durationMs: Date.now() - startedAt });
     return error("PERSISTENCE_UNAVAILABLE", 503);
   }

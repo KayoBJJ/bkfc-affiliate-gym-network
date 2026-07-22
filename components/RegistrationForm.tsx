@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useCallback, useRef, useState } from "react";
 import type { LanguageCode } from "@/lib/i18n/translations"
 import {
   BOT_TRAP_FIELD,
@@ -12,6 +12,7 @@ import {
   resumableUpload,
   selectedUploadFiles,
 } from "@/lib/application/resumable-upload-client";
+import { TurnstileWidget, type TurnstileWidgetHandle } from "@/components/TurnstileWidget";
 
 type SubmissionState =
   | {
@@ -48,6 +49,16 @@ const technicalCopy: Record<LanguageCode, {
   de: { logoHelp: "Erforderlich: PNG, JPG oder WebP; maximal 5 MB.", photosHelp: "Erforderlich: 1–6 PNG-, JPG- oder WebP-Dateien; maximal 8 MB je Datei.", fighterHelp: "Optional: PDF, DOC, DOCX, XLS oder XLSX; maximal 10 MB.", promoHelp: "Nur optionale URL; Videodateien können hier nicht hochgeladen werden.", received: "Ihre Bewerbung wurde zur Prüfung erhalten.", reference: "Bewerbungsreferenz", next: "Das BKFC-Team prüft die Einreichung und kontaktiert Sie über die angegebenen Daten.", genericError: "Die Bewerbung konnte nicht verarbeitet werden. Ihre Texteingaben wurden beibehalten; versuchen Sie es erneut.", validationError: "Prüfen Sie das angegebene Feld und versuchen Sie es erneut.", duplicate: "Eine Bewerbung mit diesen Daten wurde kürzlich erhalten. Kontaktieren Sie BKFC bei einer berechtigten erneuten Bewerbung.", rateLimit: "Die Bewerbung kann derzeit nicht gesendet werden. Warten Sie und versuchen Sie es erneut.", fileError: "Diese Datei erfüllt die Anforderungen nicht und muss ersetzt werden." },
   it: { logoHelp: "Obbligatorio: PNG, JPG o WebP; massimo 5 MB.", photosHelp: "Obbligatorio: 1–6 file PNG, JPG o WebP; massimo 8 MB ciascuno.", fighterHelp: "Opzionale: PDF, DOC, DOCX, XLS o XLSX; massimo 10 MB.", promoHelp: "Solo URL opzionale; qui non è possibile caricare file video.", received: "La candidatura è stata ricevuta per la revisione.", reference: "Riferimento candidatura", next: "Il team BKFC esaminerà l'invio e ti contatterà utilizzando i dati forniti.", genericError: "Impossibile elaborare la candidatura. Il testo inserito è stato conservato; riprova.", validationError: "Controlla il campo indicato e riprova.", duplicate: "Una candidatura con questi dati è stata ricevuta di recente. Contatta BKFC per una nuova candidatura legittima.", rateLimit: "La candidatura non può essere inviata ora. Attendi e riprova.", fileError: "Il file non soddisfa i requisiti e deve essere sostituito." },
   pl: { logoHelp: "Wymagane: PNG, JPG lub WebP; maksymalnie 5 MB.", photosHelp: "Wymagane: 1–6 plików PNG, JPG lub WebP; maksymalnie 8 MB każdy.", fighterHelp: "Opcjonalne: PDF, DOC, DOCX, XLS lub XLSX; maksymalnie 10 MB.", promoHelp: "Tylko opcjonalny adres URL; plików wideo nie można tu przesyłać.", received: "Zgłoszenie zostało przyjęte do oceny.", reference: "Numer zgłoszenia", next: "Zespół BKFC oceni zgłoszenie i skontaktuje się przy użyciu podanych danych.", genericError: "Nie udało się przetworzyć zgłoszenia. Wpisany tekst został zachowany; spróbuj ponownie.", validationError: "Sprawdź wskazane pole i spróbuj ponownie.", duplicate: "Zgłoszenie z tymi danymi zostało niedawno odebrane. Skontaktuj się z BKFC w sprawie uzasadnionego ponownego zgłoszenia.", rateLimit: "Zgłoszenia nie można teraz wysłać. Poczekaj i spróbuj ponownie.", fileError: "Plik nie spełnia wymagań i należy go zastąpić." },
+};
+
+const captchaCopy: Record<LanguageCode, { label: string; required: string; expired: string; unavailable: string }> = {
+  en: { label: "Security verification", required: "Complete the security verification before submitting.", expired: "The security verification expired. Please complete it again.", unavailable: "Security verification is unavailable. Please try again later." },
+  es: { label: "Verificación de seguridad", required: "Completa la verificación de seguridad antes de enviar.", expired: "La verificación de seguridad caducó. Complétala de nuevo.", unavailable: "La verificación de seguridad no está disponible. Inténtalo más tarde." },
+  pt: { label: "Verificação de segurança", required: "Conclua a verificação de segurança antes de enviar.", expired: "A verificação de segurança expirou. Conclua-a novamente.", unavailable: "A verificação de segurança está indisponível. Tente novamente mais tarde." },
+  ru: { label: "Проверка безопасности", required: "Пройдите проверку безопасности перед отправкой.", expired: "Срок проверки безопасности истёк. Пройдите её ещё раз.", unavailable: "Проверка безопасности недоступна. Повторите попытку позже." },
+  de: { label: "Sicherheitsprüfung", required: "Schließen Sie vor dem Absenden die Sicherheitsprüfung ab.", expired: "Die Sicherheitsprüfung ist abgelaufen. Bitte führen Sie sie erneut durch.", unavailable: "Die Sicherheitsprüfung ist nicht verfügbar. Versuchen Sie es später erneut." },
+  it: { label: "Verifica di sicurezza", required: "Completa la verifica di sicurezza prima dell'invio.", expired: "La verifica di sicurezza è scaduta. Completala di nuovo.", unavailable: "La verifica di sicurezza non è disponibile. Riprova più tardi." },
+  pl: { label: "Weryfikacja bezpieczeństwa", required: "Przed wysłaniem ukończ weryfikację bezpieczeństwa.", expired: "Weryfikacja bezpieczeństwa wygasła. Wykonaj ją ponownie.", unavailable: "Weryfikacja bezpieczeństwa jest niedostępna. Spróbuj ponownie później." },
 };
 
 function RequiredMark() {
@@ -332,6 +343,7 @@ pl: {
 export function RegistrationForm({ language }: RegistrationFormProps) {
   const t = formCopy[language] ?? formCopy.en;
   const tech = technicalCopy[language] ?? technicalCopy.en;
+  const captcha = captchaCopy[language] ?? captchaCopy.en;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
@@ -340,6 +352,11 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
   const [submissionState, setSubmissionState] =
     useState<SubmissionState>(initialState);
   const resultRef = useRef<HTMLParagraphElement>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileState, setTurnstileState] = useState<"loading" | "ready" | "error" | "expired">("loading");
+  const handleTurnstileToken = useCallback((token: string | null) => setTurnstileToken(token), []);
+  const handleTurnstileState = useCallback((state: "loading" | "ready" | "error" | "expired") => setTurnstileState(state), []);
 
   function validateClientFiles(form: HTMLFormElement) {
     const data = new FormData(form);
@@ -373,6 +390,14 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       return;
     }
 
+    if (!turnstileToken) {
+      const message = turnstileState === "expired" ? captcha.expired :
+        turnstileState === "error" ? captcha.unavailable : captcha.required;
+      setSubmissionState({ status: "error", message });
+      queueMicrotask(() => resultRef.current?.focus());
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmissionState(initialState);
     setFieldErrors({});
@@ -387,6 +412,20 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       for (const [key, value] of formData.entries()) {
         if (typeof value === "string") formPayload[key] = value;
       }
+      const challengeResponse = await fetch("/api/affiliate-registration/challenge", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ turnstileToken, idempotencyKey }),
+      });
+      const challengePayload = await challengeResponse.json() as ApiPayload & { proof?: string };
+      if (!challengeResponse.ok || !challengePayload.proof) {
+        const message = challengePayload.code === "CAPTCHA_UNAVAILABLE" ? captcha.unavailable : captcha.expired;
+        setSubmissionState({ status: "error", message });
+        turnstileRef.current?.reset();
+        queueMicrotask(() => resultRef.current?.focus());
+        return;
+      }
+
       const { accessToken, anonKey } = await anonymousUploadAccess();
       const sessionResponse = await fetch("/api/affiliate-registration/upload-session", {
         method: "POST",
@@ -394,6 +433,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
         body: JSON.stringify({
           form: formPayload,
           files: files.map(({ field, file }) => ({ field, name: file.name, size: file.size, type: file.type })),
+          turnstileProof: challengePayload.proof,
         }),
       });
       const sessionPayload = (await sessionResponse.json()) as UploadSessionPayload;
@@ -405,13 +445,22 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
           ? tech.fileError
           : duplicateCodes.has(sessionPayload.code || "")
             ? tech.duplicate
-            : sessionPayload.code === "RATE_LIMITED" || sessionPayload.code === "BOT_DETECTED"
+            : sessionPayload.code === "CAPTCHA_REQUIRED" || sessionPayload.code === "CAPTCHA_INVALID"
+              ? captcha.expired
+              : sessionPayload.code === "CAPTCHA_UNAVAILABLE"
+                ? captcha.unavailable
+                : sessionPayload.code === "RATE_LIMITED" || sessionPayload.code === "BOT_DETECTED"
               ? tech.rateLimit
               : sessionPayload.code?.startsWith("INVALID_") || sessionPayload.code === "FIELD_TOO_LONG" || sessionPayload.code === "REQUIRED_FIELD_MISSING" || sessionPayload.code === "UNEXPECTED_FIELD" || sessionPayload.code === "VALIDATION_FAILED"
                 ? tech.validationError
                 : tech.genericError;
         if (sessionPayload.field) setFieldErrors({ [sessionPayload.field]: message });
         setSubmissionState({ status: "error", message });
+        turnstileRef.current?.reset();
+        if (sessionPayload.code === "IDEMPOTENCY_CONFLICT") {
+          setIdempotencyKey(crypto.randomUUID());
+          setFormStartedAt(String(Date.now()));
+        }
         queueMicrotask(() => resultRef.current?.focus());
         return;
       }
@@ -461,6 +510,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
           setFormStartedAt(String(Date.now()));
         }
         setSubmissionState({ status: "error", message });
+        turnstileRef.current?.reset();
         queueMicrotask(() => resultRef.current?.focus());
         return;
       }
@@ -470,6 +520,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       }
 
       form.reset();
+      turnstileRef.current?.reset();
       setIdempotencyKey(crypto.randomUUID());
       setFormStartedAt(String(Date.now()));
       setSubmissionState({
@@ -478,6 +529,7 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       });
       queueMicrotask(() => resultRef.current?.focus());
     } catch {
+      turnstileRef.current?.reset();
       setSubmissionState({
         status: "error",
         message: tech.genericError
@@ -643,6 +695,15 @@ export function RegistrationForm({ language }: RegistrationFormProps) {
       </section>
 
       <div className="submit-row">
+        <div className="turnstile-field" aria-label={captcha.label}>
+          <span className="turnstile-label">{captcha.label}<RequiredMark /></span>
+          <TurnstileWidget
+            ref={turnstileRef}
+            onToken={handleTurnstileToken}
+            onStateChange={handleTurnstileState}
+            unavailableMessage={captcha.unavailable}
+          />
+        </div>
         <button type="submit" className="submit-button" disabled={isSubmitting}>
           {isSubmitting ? `${t.submitting}${uploadProgress ? ` ${uploadProgress}%` : ""}` : t.submit}
         </button>

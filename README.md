@@ -1,68 +1,41 @@
 # BKFC Affiliate Gym Network
 
-Single-page Next.js intake site for selected gyms submitting affiliate network registration details and uploaded materials.
+Production Next.js intake site for gym affiliate applications, backed by Supabase Postgres, private Supabase Storage, anonymous upload sessions, and controlled email delivery.
 
-## Stack
+## Local development
 
-- Next.js App Router
-- React
-- TypeScript
-- Local file storage for uploads and JSON submission records
+1. Copy `.env.example` to `.env.local` and supply local/test credentials.
+2. Install dependencies with `npm install`.
+3. Run `npm run dev` and open `http://localhost:3000`.
 
-## Run locally
+Cloudflare publishes always-pass and always-fail Turnstile test keys for local automated testing. Never use production secrets in local files or commits.
 
-1. Install dependencies:
+## Production submission flow
+
+1. The browser renders Cloudflare Turnstile explicitly in the existing registration form.
+2. The challenge API verifies the single-use, five-minute Turnstile token with Cloudflare, including its action and exact hostname, then returns a short-lived signed proof bound to the form idempotency key and hostname.
+3. Only after successful verification does the browser create or reuse its Supabase anonymous identity. The upload-session API validates the signed proof, form/file metadata, rate limits, and duplicates before issuing exact private Storage paths.
+4. The browser uploads directly to Supabase Storage with resumable TUS uploads.
+5. The finalize API re-downloads and validates each object, persists the application, marks the session finalized, and triggers controlled notifications.
+
+## Abandoned-data cleanup
+
+Vercel Cron calls `GET /api/cron/application-cleanup` daily with `Authorization: Bearer $CRON_SECRET`. Cleanup defaults to dry-run and uses configurable retention windows. Before deleting an abandoned session's objects, it calls a service-role-only database function that checks all permanent application asset columns. Linked assets are retained and logged. Finalized session metadata may age out, but its application assets are never removed by this job.
+
+See [docs/TURNSTILE_CLEANUP_OPERATIONS.md](docs/TURNSTILE_CLEANUP_OPERATIONS.md) for migration order, dashboard configuration, dry-run verification, rollout, and rollback.
+
+## Verification
 
 ```bash
-npm install
+npm test
+npm run type-check
+npm run build
 ```
 
-2. Start the development server:
+## Security notes
 
-```bash
-npm run dev
-```
-
-3. Open [http://localhost:3000](http://localhost:3000).
-
-## What is included
-
-- Premium monochrome landing page with BKFC logo placeholder slots
-- Responsive intake form with client-side validation
-- Upload-capable API route at `/api/affiliate-registration`
-- Structured local persistence:
-  - submission metadata is written to `data/submissions.json`
-  - uploaded files are written to `uploads/<submission-id>/...`
-
-## Submission handling notes
-
-The current backend is set up for local development and internal review workflows:
-
-- Required text fields and required uploads are validated in the browser and again in the API route.
-- Files are stored on the local filesystem to keep the initial setup simple.
-- Submission records are saved as structured JSON objects for easy inspection or later migration.
-
-## Where to connect production services
-
-The API route is implemented in [app/api/affiliate-registration/route.ts](/Users/KayoBJJ/Documents/BKFC/bkfc-affiliate-gym-network/app/api/affiliate-registration/route.ts).
-
-Replace or extend the local persistence block to connect:
-
-- Cloud object storage for uploads, such as S3, Cloudflare R2, or Supabase Storage
-- A database for submission records, such as Postgres or Supabase
-- Email notifications or CRM/webhook triggers after a successful submission
-
-Suggested production split:
-
-- Keep the frontend form as-is.
-- Swap `persistFile` to upload to cloud storage and return permanent asset URLs.
-- Replace JSON append logic with a database insert.
-- Add server-side authentication or signed access if this form should remain restricted beyond invitation-only distribution.
-
-## Branding placeholders
-
-Logo slots are clearly marked in the UI through the reusable placeholder component:
-
-- [components/LogoPlaceholder.tsx](/Users/KayoBJJ/Documents/BKFC/bkfc-affiliate-gym-network/components/LogoPlaceholder.tsx)
-
-Replace that component with real image assets or wire it to a CMS/asset pipeline later.
+- The browser receives only the public Supabase anon key and its own short-lived anonymous session.
+- The Supabase service-role key, Turnstile secret/proof secret, rate-limit secret, and cron secret are server-only and independent.
+- Private applicant files have no applicant SELECT policy.
+- Structured application and cleanup logs omit applicant values, filenames, tokens, IPs, and provider responses.
+- The legacy multipart endpoint remains available only for transition compatibility; the current UI uses resumable direct uploads.

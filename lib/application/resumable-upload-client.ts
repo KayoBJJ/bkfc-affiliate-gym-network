@@ -4,18 +4,22 @@ import type { IssuedUpload } from "./direct-upload-contract";
 
 type BrowserFile = { field: "logoUpload" | "gymPhotos" | "fighterListUpload"; file: File };
 
-export async function anonymousUploadAccess() {
+function browserSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error("upload_configuration_unavailable");
-  const supabase = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } });
+  return { supabase: createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } }), anonKey: key };
+}
+
+export async function anonymousUploadAccess() {
+  const { supabase, anonKey } = browserSupabase();
   let { data: { session } } = await supabase.auth.getSession();
   if (!session) {
     const result = await supabase.auth.signInAnonymously();
     if (result.error || !result.data.session) throw new Error("anonymous_upload_session_failed");
     session = result.data.session;
   }
-  return { accessToken: session.access_token, anonKey: key };
+  return { accessToken: session.access_token, anonKey };
 }
 
 export function resumableUpload(

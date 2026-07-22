@@ -2,10 +2,12 @@ import "server-only";
 
 import {
   resolveEmailRouting,
+  resolveCleanupConfig,
   resolvePrivilegedSupabaseConfig,
   resolveProxyTrustConfig,
   resolvePublicSupabaseConfig,
   resolveRateLimitConfig,
+  resolveTurnstileConfig,
 } from "./policy";
 
 export function getPrivilegedSupabaseConfig() {
@@ -22,6 +24,14 @@ export function getRateLimitConfig() {
 
 export function getProxyTrustConfig() {
   return resolveProxyTrustConfig(process.env);
+}
+
+export function getTurnstileConfig() {
+  return resolveTurnstileConfig(process.env);
+}
+
+export function getCleanupConfig() {
+  return resolveCleanupConfig(process.env);
 }
 
 export function getEmailRouting(applicantEmail: string) {

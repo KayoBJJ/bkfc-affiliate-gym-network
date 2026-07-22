@@ -4,7 +4,9 @@ export type ConfigCode =
   | "CONFIG_SUPABASE_INVALID"
   | "CONFIG_RATE_LIMIT_INVALID"
   | "CONFIG_EMAIL_INVALID"
-  | "CONFIG_PROXY_INVALID";
+  | "CONFIG_PROXY_INVALID"
+  | "CONFIG_TURNSTILE_INVALID"
+  | "CONFIG_CLEANUP_INVALID";
 
 export class ConfigurationError extends Error {
   readonly code: ConfigCode;
@@ -100,6 +102,48 @@ function enabledFlag(value: string | undefined) {
   if (!normalized || normalized === "false") return { enabled: false, valid: true };
   if (normalized === "true") return { enabled: true, valid: true };
   return { enabled: false, valid: false };
+}
+
+function positiveInteger(value: string | undefined, fallback: number, min: number, max: number) {
+  if (!clean(value)) return fallback;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
+    throw new ConfigurationError("CONFIG_CLEANUP_INVALID");
+  }
+  return parsed;
+}
+
+export function resolveTurnstileConfig(env: EnvironmentSource) {
+  const secretKey = clean(env.TURNSTILE_SECRET_KEY);
+  const proofSecret = clean(env.TURNSTILE_PROOF_SECRET);
+  const expectedHostnames = (clean(env.TURNSTILE_EXPECTED_HOSTNAMES) ?? "")
+    .split(",")
+    .map((value) => value.trim().toLocaleLowerCase("en-US"))
+    .filter(Boolean);
+  if (!secretKey || secretKey.length < 20 || isPlaceholder(secretKey) ||
+    !proofSecret || proofSecret.length < 32 || isPlaceholder(proofSecret) || new Set(proofSecret).size < 8 ||
+    proofSecret === secretKey || !expectedHostnames.length ||
+    expectedHostnames.some((hostname) => hostname.includes("/") || hostname.includes(":") || hostname.includes("*"))) {
+    throw new ConfigurationError("CONFIG_TURNSTILE_INVALID");
+  }
+  return { secretKey, proofSecret, expectedHostnames: [...new Set(expectedHostnames)] };
+}
+
+export function resolveCleanupConfig(env: EnvironmentSource) {
+  const cronSecret = clean(env.CRON_SECRET);
+  const dryRunFlag = enabledFlag(env.APPLICATION_CLEANUP_DRY_RUN ?? "true");
+  if (!cronSecret || cronSecret.length < 32 || isPlaceholder(cronSecret) || new Set(cronSecret).size < 8 || !dryRunFlag.valid) {
+    throw new ConfigurationError("CONFIG_CLEANUP_INVALID");
+  }
+  return {
+    cronSecret,
+    dryRun: dryRunFlag.enabled,
+    abandonedSessionHours: positiveInteger(env.APPLICATION_ABANDONED_SESSION_HOURS, 24, 1, 24 * 30),
+    failedSessionHours: positiveInteger(env.APPLICATION_FAILED_SESSION_HOURS, 24, 1, 24 * 30),
+    finalizedSessionDays: positiveInteger(env.APPLICATION_FINALIZED_SESSION_DAYS, 30, 1, 365),
+    anonymousUserDays: positiveInteger(env.APPLICATION_ANONYMOUS_USER_DAYS, 7, 1, 365),
+    batchSize: positiveInteger(env.APPLICATION_CLEANUP_BATCH_SIZE, 50, 1, 100),
+  };
 }
 
 export function resolveEmailRouting(applicantEmail: string, env: EnvironmentSource) {
