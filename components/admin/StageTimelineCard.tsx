@@ -1,4 +1,5 @@
 import { formatLabel, getStageClass } from "@/lib/admin/formatLabel";
+import { buildApplicationTimeline } from "@/lib/admin/auditTimeline";
 import type {
   ApplicationAuditEvent,
   ApplicationStageHistoryEntry,
@@ -39,6 +40,7 @@ export function StageTimelineCard({
   auditEvents,
 }: StageTimelineCardProps) {
   const hasAuditTrail = auditEvents !== null;
+  const timelineItems = buildApplicationTimeline(historyEntries, auditEvents);
 
   return (
     <section className="panel admin-timeline-panel">
@@ -47,43 +49,39 @@ export function StageTimelineCard({
         <h2>{hasAuditTrail ? "Recorded admin activity" : "Review progression"}</h2>
       </div>
 
-      {hasAuditTrail && auditEvents.length > 0 ? (
+      {timelineItems.length > 0 ? (
         <div className="admin-timeline-list">
-          {auditEvents.map((event, index) => (
+          {timelineItems.map((item, index) => (
             <article
-              key={event.id}
+              key={item.id}
               className={`admin-timeline-item${index === 0 ? " latest" : ""}`}
             >
               <div className="admin-timeline-dot" aria-hidden="true" />
               <div>
-                <p>{auditEventLabel(event)}</p>
-                <p className="admin-timeline-date">
-                  {formatTimelineDate(event.created_at)}
-                  {event.actor_email ? ` · ${event.actor_email}` : ""}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : historyEntries.length > 0 ? (
-        <div className="admin-timeline-list">
-          {historyEntries.map((entry, index) => (
-            <article
-              key={entry.id}
-              className={`admin-timeline-item${index === 0 ? " latest" : ""}`}
-            >
-              <div className="admin-timeline-dot" aria-hidden="true" />
-              <div>
-                <p>
-                  <span
-                    className={`admin-stage-pill admin-timeline-stage-pill ${getStageClass(
-                      entry.review_stage
-                    )}`}
-                  >
-                    {formatLabel(entry.review_stage)}
-                  </span>
-                </p>
-                <p className="admin-timeline-date">{formatTimelineDate(entry.changed_at)}</p>
+                {item.kind === "audit" ? (
+                  <>
+                    <p>{auditEventLabel(item.event)}</p>
+                    <p className="admin-timeline-date">
+                      {formatTimelineDate(item.occurredAt)}
+                      {item.event.actor_email ? ` · ${item.event.actor_email}` : ""}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      <span
+                        className={`admin-stage-pill admin-timeline-stage-pill ${getStageClass(
+                          item.entry.review_stage
+                        )}`}
+                      >
+                        {formatLabel(item.entry.review_stage)}
+                      </span>
+                    </p>
+                    <p className="admin-timeline-date">
+                      {formatTimelineDate(item.occurredAt)}
+                    </p>
+                  </>
+                )}
               </div>
             </article>
           ))}
