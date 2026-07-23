@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type {
   AffiliateApplication,
+  ApplicationAuditEvent,
   ApplicationStageHistoryEntry,
 } from "@/lib/admin/types";
 import {
@@ -97,6 +98,33 @@ export async function getApplicationStageHistory(applicationId: string) {
   }
 
   return (data ?? []) as ApplicationStageHistoryEntry[];
+}
+
+function isMissingAuditTable(error: { code?: string; message?: string } | null) {
+  return error?.code === "42P01" || error?.code === "PGRST205";
+}
+
+export async function getApplicationAuditEvents(applicationId: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("affiliate_application_audit_events")
+    .select(
+      "id, application_id, event_type, actor_user_id, actor_email, from_review_stage, to_review_stage, from_status, to_status, details, created_at"
+    )
+    .eq("application_id", applicationId)
+    .order("created_at", { ascending: false });
+
+  // Allows application code to be deployed before the reviewed migration.
+  // Once the migration exists, every non-missing-table error remains fatal.
+  if (isMissingAuditTable(error)) {
+    return null;
+  }
+
+  if (error) {
+    throw new Error(`Failed to load application audit events: ${error.message}`);
+  }
+
+  return (data ?? []) as ApplicationAuditEvent[];
 }
 
 export async function getAllApplicationStageHistory() {

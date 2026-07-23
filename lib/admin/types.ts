@@ -41,3 +41,22 @@ export type ApplicationStageHistoryEntry = {
   status: string;
   changed_at: string;
 };
+
+export type ApplicationAuditEvent = {
+  id: string;
+  application_id: string;
+  event_type:
+    | "stage_changed"
+    | "internal_notes_updated"
+    | "applicant_notification_requested"
+    | "applicant_notification_sent"
+    | "applicant_notification_failed";
+  actor_user_id: string | null;
+  actor_email: string | null;
+  from_review_stage: string | null;
+  to_review_stage: string | null;
+  from_status: string | null;
+  to_status: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+};

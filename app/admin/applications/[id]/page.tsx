@@ -8,6 +8,7 @@ import { StageTimelineCard } from "@/components/admin/StageTimelineCard";
 import { requireAdminUser } from "@/lib/admin/auth";
 import {
   getAffiliateApplicationById,
+  getApplicationAuditEvents,
   getApplicationStageHistory,
 } from "@/lib/admin/supabase";
 import { updateApplicationReviewAction } from "./actions";
@@ -24,9 +25,10 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   await requireAdminUser();
-  const [application, stageHistory] = await Promise.all([
+  const [application, stageHistory, auditEvents] = await Promise.all([
     getAffiliateApplicationById(params.id),
     getApplicationStageHistory(params.id),
+    getApplicationAuditEvents(params.id),
   ]);
 
   if (!application) {
@@ -56,7 +58,10 @@ export default async function AdminApplicationDetailPage({
             action={updateApplicationReviewAction}
           />
 
-          <StageTimelineCard historyEntries={stageHistory} />
+          <StageTimelineCard
+            historyEntries={stageHistory}
+            auditEvents={auditEvents}
+          />
         </div>
       </div>
     </AdminShell>

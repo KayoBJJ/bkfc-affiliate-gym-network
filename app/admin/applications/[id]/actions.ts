@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
-import { logStageChange } from "@/lib/admin/stageHistory";
 import type { ReviewFormState } from "@/lib/admin/types";
 
 function getFormValue(formData: FormData, key: string) {
@@ -17,52 +16,30 @@ async function updateApplicationStageAndStatus({
   applicationId,
   reviewStage,
   status,
-  internalNotes,
+  actorUserId,
+  actorEmail,
 }: {
   applicationId: string;
   reviewStage: string;
   status: string;
-  internalNotes?: string | null;
+  actorUserId: string;
+  actorEmail: string;
 }) {
   const supabase = createAdminSupabaseClient();
-  const { data: existingApplication, error: existingApplicationError } = await supabase
-    .from("affiliate_applications")
-    .select("review_stage")
-    .eq("id", applicationId)
-    .maybeSingle();
-
-  if (existingApplicationError) {
-    throw new Error(existingApplicationError.message);
-  }
-
-  if (!existingApplication) {
-    throw new Error("Application not found.");
-  }
-
-  const updates: {
-    review_stage: string;
-    status: string;
-    internal_notes?: string | null;
-  } = {
-    review_stage: reviewStage,
-    status,
-  };
-
-  if (typeof internalNotes !== "undefined") {
-    updates.internal_notes = internalNotes || null;
-  }
-
-  const { error } = await supabase
-    .from("affiliate_applications")
-    .update(updates)
-    .eq("id", applicationId);
+  const { error } = await supabase.rpc("admin_transition_affiliate_application", {
+    p_application_id: applicationId,
+    p_review_stage: reviewStage,
+    p_status: status,
+    p_actor_user_id: actorUserId,
+    p_actor_email: actorEmail,
+  });
 
   if (error) {
-    throw new Error(error.message);
-  }
-
-  if (existingApplication.review_stage !== reviewStage) {
-    await logStageChange(applicationId, reviewStage, status);
+    throw new Error(
+      error.code === "PGRST202"
+        ? "Batch 1A.3 database migration is required before workflow actions can be used."
+        : error.message
+    );
   }
 
   revalidatePath("/admin/applications");
@@ -73,7 +50,7 @@ export async function updateApplicationReviewAction(
   _previousState: ReviewFormState,
   formData: FormData
 ): Promise<ReviewFormState> {
-  await requireAdminUser();
+  const adminUser = await requireAdminUser();
 
   const applicationId = getFormValue(formData, "applicationId");
   const internalNotes = getFormValue(formData, "internal_notes");
@@ -87,22 +64,29 @@ export async function updateApplicationReviewAction(
 
   try {
     const supabase = createAdminSupabaseClient();
-    const { error } = await supabase
-      .from("affiliate_applications")
-      .update({
-        internal_notes: internalNotes || null,
-      })
-      .eq("id", applicationId);
+    const { data: changed, error } = await supabase.rpc(
+      "admin_update_affiliate_application_notes",
+      {
+        p_application_id: applicationId,
+        p_internal_notes: internalNotes,
+        p_actor_user_id: adminUser.id,
+        p_actor_email: adminUser.email!,
+      }
+    );
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(
+        error.code === "PGRST202"
+          ? "Batch 1A.3 database migration is required before notes can be changed."
+          : error.message
+      );
     }
 
     revalidatePath("/admin/applications");
     revalidatePath(`/admin/applications/${applicationId}`);
 
     return {
-      message: "Notes updated.",
+      message: changed ? "Notes updated and recorded in the audit trail." : "No note changes to save.",
       status: "success",
     };
   } catch (error) {
@@ -115,7 +99,7 @@ export async function updateApplicationReviewAction(
 }
 
 export async function triggerPipelineAction(formData: FormData) {
-  await requireAdminUser();
+  const adminUser = await requireAdminUser();
 
   const applicationId = getFormValue(formData, "applicationId");
   const reviewStage = getFormValue(formData, "review_stage");
@@ -137,6 +121,8 @@ export async function triggerPipelineAction(formData: FormData) {
     applicationId,
     reviewStage,
     status,
+    actorUserId: adminUser.id,
+    actorEmail: adminUser.email!,
   });
 
   redirect(`/admin/applications/${applicationId}`);
