@@ -26,6 +26,15 @@ function auditEventLabel(event: ApplicationAuditEvent) {
   if (event.event_type === "internal_notes_updated") {
     return "Internal notes updated";
   }
+  if (event.event_type === "information_request_created") {
+    return "Secure information request created";
+  }
+  if (event.event_type === "information_request_revoked") {
+    return "Previous information request revoked";
+  }
+  if (event.event_type === "applicant_response_received") {
+    return "Applicant response received";
+  }
   if (event.event_type === "applicant_notification_requested") {
     return "Applicant notification prepared — awaiting approved copy";
   }

@@ -37,3 +37,7 @@ export function getCleanupConfig() {
 export function getEmailRouting(applicantEmail: string) {
   return resolveEmailRouting(applicantEmail, process.env);
 }
+
+export function isInformationResponseEnabled() {
+  return process.env.INFORMATION_RESPONSE_ENABLED?.trim().toLowerCase() === "true";
+}

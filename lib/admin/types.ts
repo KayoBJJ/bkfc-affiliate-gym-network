@@ -34,6 +34,12 @@ export type ReviewFormState = {
   status: "idle" | "success" | "error";
 };
 
+export type InformationRequestFormState = {
+  message: string;
+  status: "idle" | "success" | "error";
+  responsePath?: string;
+};
+
 export type ApplicationStageHistoryEntry = {
   id: string;
   application_id: string;
@@ -48,6 +54,9 @@ export type ApplicationAuditEvent = {
   event_type:
     | "stage_changed"
     | "internal_notes_updated"
+    | "information_request_created"
+    | "information_request_revoked"
+    | "applicant_response_received"
     | "applicant_notification_requested"
     | "applicant_notification_sent"
     | "applicant_notification_failed";
@@ -59,4 +68,19 @@ export type ApplicationAuditEvent = {
   to_status: string | null;
   details: Record<string, unknown>;
   created_at: string;
+};
+
+export type ApplicationInformationRequest = {
+  id: string;
+  application_id: string;
+  request_summary: string;
+  request_details: string | null;
+  status: "open" | "responded" | "revoked" | "expired";
+  expires_at: string;
+  created_by_email: string | null;
+  created_at: string;
+  responded_at: string | null;
+  revoked_at: string | null;
+  response_text: string | null;
+  response_submitted_at: string | null;
 };

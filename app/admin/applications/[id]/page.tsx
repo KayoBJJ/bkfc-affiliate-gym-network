@@ -5,13 +5,19 @@ import { ApplicationDetailPanel } from "@/components/admin/ApplicationDetailPane
 import { PipelineActionsPanel } from "@/components/admin/PipelineActionsPanel";
 import { ReviewUpdateForm } from "@/components/admin/ReviewUpdateForm";
 import { StageTimelineCard } from "@/components/admin/StageTimelineCard";
+import { InformationRequestForm } from "@/components/admin/InformationRequestForm";
+import { InformationRequestsCard } from "@/components/admin/InformationRequestsCard";
 import { requireAdminUser } from "@/lib/admin/auth";
 import {
   getAffiliateApplicationById,
   getApplicationAuditEvents,
+  getApplicationInformationRequests,
   getApplicationStageHistory,
 } from "@/lib/admin/supabase";
-import { updateApplicationReviewAction } from "./actions";
+import {
+  createInformationRequestAction,
+  updateApplicationReviewAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +31,11 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   await requireAdminUser();
-  const [application, stageHistory, auditEvents] = await Promise.all([
+  const [application, stageHistory, auditEvents, informationRequests] = await Promise.all([
     getAffiliateApplicationById(params.id),
     getApplicationStageHistory(params.id),
     getApplicationAuditEvents(params.id),
+    getApplicationInformationRequests(params.id),
   ]);
 
   if (!application) {
@@ -51,6 +58,13 @@ export default async function AdminApplicationDetailPage({
 
         <div className="admin-detail-sidebar">
           <PipelineActionsPanel applicationId={application.id} />
+
+          <InformationRequestForm
+            applicationId={application.id}
+            action={createInformationRequestAction}
+          />
+
+          <InformationRequestsCard requests={informationRequests} />
 
           <ReviewUpdateForm
             applicationId={application.id}

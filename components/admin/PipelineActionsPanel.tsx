@@ -26,11 +26,6 @@ const pipelineGroups: PipelineGroup[] = [
         status: "in_review",
       },
       {
-        label: "Request Follow-Up",
-        reviewStage: "follow_up_required",
-        status: "pending_info",
-      },
-      {
         label: "Mark for Interview",
         reviewStage: "interview",
         status: "in_review",

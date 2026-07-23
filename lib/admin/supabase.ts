@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import type {
   AffiliateApplication,
   ApplicationAuditEvent,
+  ApplicationInformationRequest,
   ApplicationStageHistoryEntry,
 } from "@/lib/admin/types";
 import {
@@ -125,6 +126,53 @@ export async function getApplicationAuditEvents(applicationId: string) {
   }
 
   return (data ?? []) as ApplicationAuditEvent[];
+}
+
+export async function getApplicationInformationRequests(applicationId: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data: requests, error } = await supabase
+    .from("affiliate_application_information_requests")
+    .select(
+      "id, application_id, request_summary, request_details, status, expires_at, created_by_email, created_at, responded_at, revoked_at"
+    )
+    .eq("application_id", applicationId)
+    .order("created_at", { ascending: false });
+  if (isMissingAuditTable(error)) return null;
+  if (error) {
+    throw new Error(`Failed to load information requests: ${error.message}`);
+  }
+
+  const requestIds = (requests ?? []).map((request) => request.id);
+  const responsesByRequest = new Map<
+    string,
+    { response_text: string; submitted_at: string }
+  >();
+  if (requestIds.length > 0) {
+    const { data: responses, error: responseError } = await supabase
+      .from("affiliate_application_information_responses")
+      .select("request_id, response_text, submitted_at")
+      .in("request_id", requestIds);
+    if (responseError) {
+      throw new Error(`Failed to load information responses: ${responseError.message}`);
+    }
+    for (const response of responses ?? []) {
+      responsesByRequest.set(response.request_id, response);
+    }
+  }
+
+  return (requests ?? []).map((request) => {
+    const response = responsesByRequest.get(request.id);
+    return {
+      ...request,
+      status:
+        request.status === "open" &&
+        new Date(request.expires_at).getTime() <= Date.now()
+          ? "expired"
+          : request.status,
+      response_text: response?.response_text ?? null,
+      response_submitted_at: response?.submitted_at ?? null,
+    };
+  }) as ApplicationInformationRequest[];
 }
 
 export async function getAllApplicationStageHistory() {

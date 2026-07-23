@@ -47,3 +47,27 @@ After Lubo approves the copy:
 3. implement a retry-safe outbox worker;
 4. activate only the approved notification types;
 5. retain controlled test routing until HQ approves production sender and recipients.
+
+## Secure information-response slice
+
+The second migration adds a text-only, token-scoped applicant response flow. Raw bearer
+tokens are shown once to the creating admin for controlled testing and are never stored
+in the database. Only SHA-256 token hashes are persisted.
+
+Safe rollout order:
+
+1. Keep `INFORMATION_RESPONSE_ENABLED=false` in Vercel.
+2. Apply
+   `supabase/migrations/20260723010000_batch_1a3_secure_information_response.sql`
+   inside an explicit transaction.
+3. Verify RLS is enabled on all three new tables.
+4. Verify only `service_role` can execute the three new functions.
+5. Add `INFORMATION_RESPONSE_ENABLED=true` to local `.env.local` and restart development.
+6. Create a request against the golden application and open the one-time test link.
+7. Submit a text response and verify the request becomes `responded`, the application
+   returns to `under_review`, and the audit/outbox records are created once.
+8. Keep the production flag false until applicant-facing copy and the production
+   delivery workflow are approved.
+
+Attachments are intentionally excluded from this slice. They require generated private
+paths and direct-to-storage signed uploads so files never transit Vercel's request body.

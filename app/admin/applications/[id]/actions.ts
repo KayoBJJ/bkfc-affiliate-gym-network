@@ -5,7 +5,17 @@ import { redirect } from "next/navigation";
 import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
-import type { ReviewFormState } from "@/lib/admin/types";
+import type {
+  InformationRequestFormState,
+  ReviewFormState,
+} from "@/lib/admin/types";
+import {
+  generateInformationResponseToken,
+  hashInformationResponseToken,
+  validateInformationRequestInput,
+} from "@/lib/application/information-response";
+import { IDEMPOTENCY_KEY_PATTERN } from "@/lib/application/policy";
+import { isInformationResponseEnabled } from "@/lib/config/server";
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -126,4 +136,71 @@ export async function triggerPipelineAction(formData: FormData) {
   });
 
   redirect(`/admin/applications/${applicationId}`);
+}
+
+export async function createInformationRequestAction(
+  _previousState: InformationRequestFormState,
+  formData: FormData
+): Promise<InformationRequestFormState> {
+  const adminUser = await requireAdminUser();
+  if (!isInformationResponseEnabled()) {
+    return {
+      message: "Secure information responses are not enabled in this environment.",
+      status: "error",
+    };
+  }
+
+  const applicationId = getFormValue(formData, "applicationId");
+  if (!IDEMPOTENCY_KEY_PATTERN.test(applicationId)) {
+    return { message: "Invalid application id.", status: "error" };
+  }
+
+  try {
+    const request = validateInformationRequestInput({
+      summary: getFormValue(formData, "request_summary"),
+      details: getFormValue(formData, "request_details"),
+      validDays: Number(getFormValue(formData, "valid_days")),
+    });
+    const token = generateInformationResponseToken();
+    const tokenHash = hashInformationResponseToken(token);
+    if (!tokenHash) throw new Error("Unable to create a secure response link.");
+    const expiresAt = new Date(
+      Date.now() + request.validDays * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const supabase = createAdminSupabaseClient();
+    const { error } = await supabase.rpc(
+      "admin_create_affiliate_information_request",
+      {
+        p_application_id: applicationId,
+        p_request_summary: request.summary,
+        p_request_details: request.details,
+        p_expires_at: expiresAt,
+        p_token_hash: tokenHash,
+        p_actor_user_id: adminUser.id,
+        p_actor_email: adminUser.email!,
+      }
+    );
+    if (error) {
+      throw new Error(
+        error.code === "PGRST202"
+          ? "The secure information-response migration must be applied first."
+          : error.message
+      );
+    }
+
+    revalidatePath("/admin/applications");
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return {
+      message:
+        "Secure request created. This test link is shown once; do not share it publicly.",
+      status: "success",
+      responsePath: `/application-response/${token}`,
+    };
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error ? error.message : "Unable to create the information request.",
+      status: "error",
+    };
+  }
 }
