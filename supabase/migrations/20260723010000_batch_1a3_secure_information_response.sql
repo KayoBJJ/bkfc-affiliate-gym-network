@@ -18,9 +18,11 @@ alter table public.affiliate_application_audit_events
   );
 
 alter table public.affiliate_application_notification_outbox
-  drop constraint if exists affiliate_application_notification_outbox_notification_type_check;
+  drop constraint if exists affiliate_application_notification_outb_notification_type_check;
 alter table public.affiliate_application_notification_outbox
-  add constraint affiliate_application_notification_outbox_notification_type_check check (
+  drop constraint if exists affiliate_app_notification_outbox_type_check;
+alter table public.affiliate_application_notification_outbox
+  add constraint affiliate_app_notification_outbox_type_check check (
     notification_type in (
       'more_information_required',
       'information_received',

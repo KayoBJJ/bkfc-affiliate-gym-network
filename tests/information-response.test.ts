@@ -89,6 +89,19 @@ test("response completion is atomic, one-time, audited, and returns the applicat
   );
 });
 
+test("migration replaces the production notification constraint with a stable short name", async () => {
+  const migration = await readFile(migrationPath, "utf8");
+  assert.match(
+    migration,
+    /drop constraint if exists affiliate_application_notification_outb_notification_type_check/i
+  );
+  assert.match(
+    migration,
+    /add constraint affiliate_app_notification_outbox_type_check check/i
+  );
+  assert.ok("affiliate_app_notification_outbox_type_check".length <= 63);
+});
+
 test("public response source excludes private application and admin fields", async () => {
   const source = await readFile(
     "lib/application/information-response-server.ts",
