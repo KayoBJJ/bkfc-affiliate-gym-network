@@ -7,6 +7,7 @@ import {
   validateInformationRequestInput,
   validateInformationResponseText,
 } from "../lib/application/information-response.ts";
+import { formatInformationRequestExpiry } from "../lib/application/information-response-format.ts";
 
 const migrationPath =
   "supabase/migrations/20260723010000_batch_1a3_secure_information_response.sql";
@@ -48,6 +49,13 @@ test("admin requests and applicant responses enforce bounded text", () => {
   );
   assert.equal(validateInformationResponseText("  Updated details  "), "Updated details");
   assert.throws(() => validateInformationResponseText("   "), /requested information/i);
+});
+
+test("applicant response expiry renders in UTC without incompatible Intl options", () => {
+  const formatted = formatInformationRequestExpiry("2026-07-27T12:30:00.000Z");
+  assert.match(formatted, /July 27, 2026/i);
+  assert.match(formatted, /12:30/);
+  assert.match(formatted, /UTC$/);
 });
 
 test("information-response tables are private and raw bearer tokens are never persisted", async () => {
@@ -112,6 +120,21 @@ test("public response source excludes private application and admin fields", asy
     /internal_notes|created_by_email|contact_person|phone|gym_photo|fighter_list|logo_path/
   );
   assert.match(source, /application_reference, gym_name/);
+});
+
+test("completed and concurrent response replays retain a successful confirmation", async () => {
+  const action = await readFile(
+    "app/application-response/[token]/actions.ts",
+    "utf8"
+  );
+  assert.match(
+    action,
+    /request\?\.status === "responded"[\s\S]*return responseReceivedState\(\)/i
+  );
+  assert.match(
+    action,
+    /error\.code === "P0002"[\s\S]*refreshedRequest\?\.status === "responded"[\s\S]*return responseReceivedState\(\)/i
+  );
 });
 
 test("legacy one-click follow-up action is removed in favor of the structured request", async () => {

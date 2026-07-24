@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { formatInformationRequestExpiry } from "@/lib/application/information-response-format";
 import { getPublicInformationRequest } from "@/lib/application/information-response-server";
 import { isInformationResponseEnabled } from "@/lib/config/server";
 import { submitInformationResponseAction } from "./actions";
@@ -11,15 +12,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
   referrer: "no-referrer",
 };
-
-function formatExpiry(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "long",
-    timeStyle: "short",
-    timeZone: "UTC",
-    timeZoneName: "short",
-  }).format(new Date(value));
-}
 
 export default async function InformationResponsePage({
   params,
@@ -48,7 +40,8 @@ export default async function InformationResponsePage({
               <h2>{request.requestSummary}</h2>
               {request.requestDetails ? <p>{request.requestDetails}</p> : null}
               <p className="response-expiry">
-                This secure link expires {formatExpiry(request.expiresAt)}.
+                This secure link expires{" "}
+                {formatInformationRequestExpiry(request.expiresAt)}.
               </p>
             </div>
             <ResponseForm token={params.token} action={submitInformationResponseAction} />

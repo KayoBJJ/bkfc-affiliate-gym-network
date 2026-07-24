@@ -20,6 +20,16 @@ export type InformationResponseState = {
   status: "idle" | "success" | "error";
 };
 
+const RESPONSE_RECEIVED_MESSAGE =
+  "Your information has been received securely. The BKFC team can now continue its review.";
+
+function responseReceivedState(): InformationResponseState {
+  return {
+    message: RESPONSE_RECEIVED_MESSAGE,
+    status: "success",
+  };
+}
+
 function requestOrigin() {
   const requestHeaders = headers();
   const proxy = getProxyTrustConfig();
@@ -64,6 +74,9 @@ export async function submitInformationResponseAction(
       };
     }
     const request = await getPublicInformationRequest(tokenValue);
+    if (request?.status === "responded") {
+      return responseReceivedState();
+    }
     if (!request || request.status !== "open") {
       return {
         message: "This response link is expired, completed, or no longer available.",
@@ -76,6 +89,12 @@ export async function submitInformationResponseAction(
       p_response_text: responseText,
     });
     if (error) {
+      if (error.code === "P0002") {
+        const refreshedRequest = await getPublicInformationRequest(tokenValue);
+        if (refreshedRequest?.status === "responded") {
+          return responseReceivedState();
+        }
+      }
       return {
         message:
           error.code === "P0002"
@@ -85,11 +104,7 @@ export async function submitInformationResponseAction(
       };
     }
     revalidatePath(`/admin/applications/${request.applicationId}`);
-    return {
-      message:
-        "Your information has been received securely. The BKFC team can now continue its review.",
-      status: "success",
-    };
+    return responseReceivedState();
   } catch {
     return {
       message: "The secure response service is temporarily unavailable.",
