@@ -47,6 +47,9 @@ function auditEventLabel(event: ApplicationAuditEvent) {
   if (event.event_type === "information_attachment_replacement_requested") {
     return "Replacement file requested";
   }
+  if (event.event_type === "applicant_portal_access_issued") {
+    return "Applicant progress portal link generated";
+  }
   if (event.event_type === "applicant_notification_requested") {
     return "Applicant notification prepared — awaiting approved copy";
   }

@@ -6,22 +6,85 @@ import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/co
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 import type {
+  ApplicantPortalLinkFormState,
   AttachmentReviewFormState,
   InformationLinkFormState,
   InformationRequestFormState,
   ReviewFormState,
 } from "@/lib/admin/types";
 import {
+  APPLICANT_PORTAL_VALID_DAYS,
+  generateApplicantPortalToken,
+  hashApplicantPortalToken,
+} from "@/lib/application/applicant-portal";
+import {
   generateInformationResponseToken,
   hashInformationResponseToken,
   validateInformationRequestInput,
 } from "@/lib/application/information-response";
 import { IDEMPOTENCY_KEY_PATTERN } from "@/lib/application/policy";
-import { isInformationResponseEnabled } from "@/lib/config/server";
+import { isApplicantPortalEnabled, isInformationResponseEnabled } from "@/lib/config/server";
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+export async function issueApplicantPortalLinkAction(
+  _previousState: ApplicantPortalLinkFormState,
+  formData: FormData,
+): Promise<ApplicantPortalLinkFormState> {
+  const adminUser = await requireAdminUser();
+  if (!isApplicantPortalEnabled()) {
+    return {
+      message: "Applicant progress portals are not enabled in this environment.",
+      status: "error",
+    };
+  }
+  const applicationId = getFormValue(formData, "application_id");
+  if (!IDEMPOTENCY_KEY_PATTERN.test(applicationId)) {
+    return { message: "Invalid application id.", status: "error" };
+  }
+
+  try {
+    const token = generateApplicantPortalToken();
+    const tokenHash = hashApplicantPortalToken(token);
+    if (!tokenHash) throw new Error("Unable to create a secure portal link.");
+    const expiresAt = new Date(
+      Date.now() + APPLICANT_PORTAL_VALID_DAYS * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const supabase = createAdminSupabaseClient();
+    const { error } = await supabase.rpc(
+      "admin_issue_affiliate_application_portal_access",
+      {
+        p_application_id: applicationId,
+        p_token_hash: tokenHash,
+        p_expires_at: expiresAt,
+        p_actor_user_id: adminUser.id,
+        p_actor_email: adminUser.email!,
+      },
+    );
+    if (error) {
+      throw new Error(
+        error.code === "PGRST202"
+          ? "The Batch 1B applicant portal migration must be applied first."
+          : error.message,
+      );
+    }
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return {
+      message:
+        "New private portal link generated. It is shown once and replaces any previous link.",
+      status: "success",
+      portalPath: `/application-progress/${token}`,
+    };
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error ? error.message : "Unable to generate the portal link.",
+      status: "error",
+    };
+  }
 }
 
 export async function reissueInformationResponseLinkAction(

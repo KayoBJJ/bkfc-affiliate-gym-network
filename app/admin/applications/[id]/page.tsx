@@ -7,6 +7,7 @@ import { ReviewUpdateForm } from "@/components/admin/ReviewUpdateForm";
 import { StageTimelineCard } from "@/components/admin/StageTimelineCard";
 import { InformationRequestForm } from "@/components/admin/InformationRequestForm";
 import { InformationRequestsCard } from "@/components/admin/InformationRequestsCard";
+import { ApplicantPortalAccessCard } from "@/components/admin/ApplicantPortalAccessCard";
 import { requireAdminUser } from "@/lib/admin/auth";
 import {
   getAffiliateApplicationById,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/admin/supabase";
 import {
   createInformationRequestAction,
+  issueApplicantPortalLinkAction,
   reissueInformationResponseLinkAction,
   reviewInformationAttachmentAction,
   updateApplicationReviewAction,
@@ -65,6 +67,11 @@ export default async function AdminApplicationDetailPage({
             applicationId={application.id}
             currentInternalNotes={application.internal_notes}
             action={updateApplicationReviewAction}
+          />
+
+          <ApplicantPortalAccessCard
+            applicationId={application.id}
+            action={issueApplicantPortalLinkAction}
           />
         </aside>
       </div>

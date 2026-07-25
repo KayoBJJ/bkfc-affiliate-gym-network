@@ -52,6 +52,12 @@ export type InformationLinkFormState = {
   responsePath?: string;
 };
 
+export type ApplicantPortalLinkFormState = {
+  message: string;
+  status: "idle" | "success" | "error";
+  portalPath?: string;
+};
+
 export type ApplicationStageHistoryEntry = {
   id: string;
   application_id: string;
@@ -73,6 +79,7 @@ export type ApplicationAuditEvent = {
     | "information_attachment_uploaded"
     | "information_attachment_accepted"
     | "information_attachment_replacement_requested"
+    | "applicant_portal_access_issued"
     | "applicant_notification_requested"
     | "applicant_notification_sent"
     | "applicant_notification_failed";

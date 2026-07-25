@@ -41,3 +41,7 @@ export function getEmailRouting(applicantEmail: string) {
 export function isInformationResponseEnabled() {
   return process.env.INFORMATION_RESPONSE_ENABLED?.trim().toLowerCase() === "true";
 }
+
+export function isApplicantPortalEnabled() {
+  return process.env.APPLICANT_PORTAL_ENABLED?.trim().toLowerCase() === "true";
+}
