@@ -58,32 +58,36 @@ export default async function AdminApplicationDetailPage({
       <div className="admin-detail-layout">
         <ApplicationDetailPanel application={application} />
 
-        <div className="admin-detail-sidebar">
+        <aside className="admin-review-rail" aria-label="Application review controls">
           <PipelineActionsPanel applicationId={application.id} />
-
-          <InformationRequestForm
-            applicationId={application.id}
-            action={createInformationRequestAction}
-          />
-
-          <InformationRequestsCard
-            requests={informationRequests}
-            applicationId={application.id}
-            reviewAttachmentAction={reviewInformationAttachmentAction}
-            reissueResponseLinkAction={reissueInformationResponseLinkAction}
-          />
 
           <ReviewUpdateForm
             applicationId={application.id}
             currentInternalNotes={application.internal_notes}
             action={updateApplicationReviewAction}
           />
+        </aside>
+      </div>
 
-          <StageTimelineCard
-            historyEntries={stageHistory}
-            auditEvents={auditEvents}
-          />
-        </div>
+      <div className="admin-follow-up-layout">
+        <InformationRequestForm
+          applicationId={application.id}
+          action={createInformationRequestAction}
+        />
+
+        <InformationRequestsCard
+          requests={informationRequests}
+          applicationId={application.id}
+          reviewAttachmentAction={reviewInformationAttachmentAction}
+          reissueResponseLinkAction={reissueInformationResponseLinkAction}
+        />
+      </div>
+
+      <div className="admin-audit-layout">
+        <StageTimelineCard
+          historyEntries={stageHistory}
+          auditEvents={auditEvents}
+        />
       </div>
     </AdminShell>
   );

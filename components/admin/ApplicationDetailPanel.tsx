@@ -132,10 +132,6 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
         </article>
       </div>
 
-      <article className="admin-notes-panel">
-        <p className="admin-detail-label">Internal notes</p>
-        <p>{application.internal_notes || "No internal notes added yet."}</p>
-      </article>
     </section>
   );
 }

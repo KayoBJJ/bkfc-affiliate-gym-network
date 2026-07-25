@@ -1945,9 +1945,27 @@ h1 {
   gap: 16px;
 }
 
-.admin-detail-sidebar {
+.admin-review-rail,
+.admin-follow-up-layout,
+.admin-audit-layout {
   display: grid;
   gap: 18px;
+}
+
+.admin-review-rail {
+  align-self: start;
+}
+
+.admin-follow-up-layout,
+.admin-audit-layout {
+  margin-top: 18px;
+}
+
+.admin-review-rail > .panel,
+.admin-follow-up-layout > .panel,
+.admin-audit-layout > .panel {
+  margin-top: 0;
+  min-width: 0;
 }
 
 .admin-pipeline-panel {
@@ -2578,16 +2596,17 @@ h1 {
     align-items: start;
   }
 
+  .admin-follow-up-layout {
+    grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1.28fr);
+    align-items: start;
+  }
+
   .admin-detail-heading {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
 
-  .admin-update-panel {
-    position: sticky;
-    top: 24px;
-  }
 }
 
 @media (max-width: 768px) {
