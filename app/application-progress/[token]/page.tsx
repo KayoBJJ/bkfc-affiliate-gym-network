@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { unstable_noStore as noStore } from "next/cache";
 import { notFound } from "next/navigation";
 import { APPLICANT_PROGRESS_MILESTONES } from "@/lib/application/applicant-portal";
 import { getApplicantPortalView } from "@/lib/application/applicant-portal-server";
 import { isApplicantPortalEnabled } from "@/lib/config/server";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const metadata: Metadata = {
   title: "Application Progress | BKFC Gym Network",
   description: "Private BKFC Gym Network application progress portal.",
@@ -32,6 +34,7 @@ export default async function ApplicantProgressPage({
 }: {
   params: { token: string };
 }) {
+  noStore();
   if (!isApplicantPortalEnabled()) notFound();
   const portal = await getApplicantPortalView(params.token);
   if (!portal) notFound();
@@ -191,4 +194,3 @@ export default async function ApplicantProgressPage({
     </main>
   );
 }
-

@@ -20,6 +20,8 @@ review process private.
 - Latest uploaded-file review state and replacement instructions
 - No indexing, referrer leakage, internal notes, reviewer identities, private
   file URLs, or raw tokens
+- Explicit browser and CDN no-store headers so revoked links cannot display a
+  previously rendered portal
 - Feature flag: `APPLICANT_PORTAL_ENABLED`
 - Append-only audit event when portal access is issued
 
@@ -81,4 +83,3 @@ Use `BKFC-GYM-D58A32FBC475`.
 - Admin visibility for issued/expired portal access
 - Expiry reminders using Lubo-approved copy
 - Production runbook, monitoring, and rollback checks
-

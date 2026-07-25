@@ -88,6 +88,21 @@ test("portal page is non-indexable and uses the explicit feature gate", async ()
   assert.match(page, /robots: \{ index: false, follow: false, nocache: true \}/);
   assert.match(page, /referrer: "no-referrer"/);
   assert.match(page, /isApplicantPortalEnabled\(\)/);
+  assert.match(page, /unstable_noStore as noStore/);
+  assert.match(page, /export const revalidate = 0/);
+  assert.match(page, /noStore\(\)/);
   assert.doesNotMatch(page, /internal_notes|actor_email|created_by_email/);
 });
 
+test("portal responses cannot be retained by browsers or Vercel's CDN", async () => {
+  const config = await readFile("next.config.js", "utf8");
+  assert.match(config, /source: "\/application-progress\/:path\*"/);
+  assert.match(
+    config,
+    /key: "Cache-Control"[\s\S]*private, no-store, no-cache, max-age=0, must-revalidate/,
+  );
+  assert.match(config, /key: "CDN-Cache-Control"[\s\S]*private, no-store/);
+  assert.match(config, /key: "Vercel-CDN-Cache-Control"[\s\S]*private, no-store/);
+  assert.match(config, /key: "Referrer-Policy"[\s\S]*no-referrer/);
+  assert.match(config, /key: "X-Robots-Tag"[\s\S]*noindex, nofollow, noarchive/);
+});
