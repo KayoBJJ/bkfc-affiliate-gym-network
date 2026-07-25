@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin/supabase";
 import {
   createInformationRequestAction,
+  reviewInformationAttachmentAction,
   updateApplicationReviewAction,
 } from "./actions";
 
@@ -64,7 +65,11 @@ export default async function AdminApplicationDetailPage({
             action={createInformationRequestAction}
           />
 
-          <InformationRequestsCard requests={informationRequests} />
+          <InformationRequestsCard
+            requests={informationRequests}
+            applicationId={application.id}
+            reviewAttachmentAction={reviewInformationAttachmentAction}
+          />
 
           <ReviewUpdateForm
             applicationId={application.id}

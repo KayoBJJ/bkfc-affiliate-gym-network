@@ -10,6 +10,7 @@ export type PublicInformationRequest = {
   gymName: string;
   requestSummary: string;
   requestDetails: string | null;
+  replacementInstructions: string | null;
   status: "open" | "responded" | "revoked" | "expired";
   expiresAt: string;
 };
@@ -32,6 +33,15 @@ export async function getPublicInformationRequest(token: string) {
     .maybeSingle();
   if (applicationError || !application) return null;
 
+  const { data: replacement } = await supabase
+    .from("affiliate_application_information_attachments")
+    .select("review_note")
+    .eq("request_id", request.id)
+    .eq("status", "replacement_requested")
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const status =
     request.status === "open" && new Date(request.expires_at).getTime() <= Date.now()
       ? "expired"
@@ -43,6 +53,7 @@ export async function getPublicInformationRequest(token: string) {
     gymName: application.gym_name,
     requestSummary: request.request_summary,
     requestDetails: request.request_details,
+    replacementInstructions: replacement?.review_note ?? null,
     status,
     expiresAt: request.expires_at,
   } as PublicInformationRequest;

@@ -40,6 +40,19 @@ export const FILE_RULES = {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ],
   },
+  informationResponseAttachment: {
+    maxFiles: 1,
+    maxBytes: 10 * 1024 * 1024,
+    extensions: ["png", "jpg", "jpeg", "webp", "pdf", "docx", "xlsx"],
+    mimeTypes: [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ],
+  },
 } as const;
 
 export type ApiCode =

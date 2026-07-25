@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 import {
   hashInformationResponseToken,
-  validateInformationResponseText,
+  INFORMATION_RESPONSE_TEXT_MAX,
 } from "@/lib/application/information-response";
 import { getPublicInformationRequest } from "@/lib/application/information-response-server";
 import { rateLimitIdentifier } from "@/lib/application/rate-limit";
@@ -60,7 +60,13 @@ export async function submitInformationResponseAction(
   }
 
   try {
-    const responseText = validateInformationResponseText(responseValue);
+    const responseText = responseValue.trim();
+    if (responseText.length > INFORMATION_RESPONSE_TEXT_MAX) {
+      return {
+        message: "Response cannot exceed 6,000 characters.",
+        status: "error",
+      };
+    }
     const originHash = rateLimitIdentifier(requestOrigin(), getRateLimitConfig().secret);
     const supabase = createAdminSupabaseClient();
     const { data: allowed, error: rateLimitError } = await supabase.rpc(

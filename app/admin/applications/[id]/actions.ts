@@ -6,6 +6,7 @@ import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/co
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 import type {
+  AttachmentReviewFormState,
   InformationRequestFormState,
   ReviewFormState,
 } from "@/lib/admin/types";
@@ -20,6 +21,79 @@ import { isInformationResponseEnabled } from "@/lib/config/server";
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+export async function reviewInformationAttachmentAction(
+  _previousState: AttachmentReviewFormState,
+  formData: FormData
+): Promise<AttachmentReviewFormState> {
+  const adminUser = await requireAdminUser();
+  const attachmentId = getFormValue(formData, "attachment_id");
+  const applicationId = getFormValue(formData, "application_id");
+  const decision = getFormValue(formData, "decision");
+  const reviewNote = getFormValue(formData, "review_note");
+  if (
+    !IDEMPOTENCY_KEY_PATTERN.test(attachmentId) ||
+    !IDEMPOTENCY_KEY_PATTERN.test(applicationId)
+  ) {
+    return { message: "Invalid attachment.", status: "error" };
+  }
+  if (!["accepted", "replacement_requested"].includes(decision)) {
+    return { message: "Select a valid review decision.", status: "error" };
+  }
+  if (decision === "replacement_requested" && !reviewNote) {
+    return {
+      message: "Explain what the applicant should replace.",
+      status: "error",
+    };
+  }
+  if (reviewNote.length > 1000) {
+    return { message: "Review instructions cannot exceed 1,000 characters.", status: "error" };
+  }
+
+  try {
+    const replacementToken =
+      decision === "replacement_requested" ? generateInformationResponseToken() : "";
+    const replacementTokenHash = replacementToken
+      ? hashInformationResponseToken(replacementToken)
+      : null;
+    const supabase = createAdminSupabaseClient();
+    const { data: reviewedApplicationId, error } = await supabase.rpc(
+      "admin_review_affiliate_information_attachment",
+      {
+        p_attachment_id: attachmentId,
+        p_decision: decision,
+        p_review_note: reviewNote,
+        p_actor_user_id: adminUser.id,
+        p_actor_email: adminUser.email!,
+        p_replacement_token_hash: replacementTokenHash,
+      },
+    );
+    if (error || reviewedApplicationId !== applicationId) {
+      throw new Error(
+        error?.code === "PGRST202"
+          ? "The secure file-response migration must be applied first."
+          : error?.message || "The attachment could not be reviewed.",
+      );
+    }
+    revalidatePath("/admin/applications");
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return {
+      message:
+        decision === "accepted"
+          ? "File accepted and recorded in the audit trail."
+          : "Replacement requested and recorded in the audit trail.",
+      status: "success",
+      ...(replacementToken
+        ? { responsePath: `/application-response/${replacementToken}` }
+        : {}),
+    };
+  } catch (error) {
+    return {
+      message: error instanceof Error ? error.message : "Unable to review the file.",
+      status: "error",
+    };
+  }
 }
 
 async function updateApplicationStageAndStatus({

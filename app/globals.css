@@ -2327,6 +2327,48 @@ h1 {
   line-height: 1.55;
 }
 
+.admin-information-attachments {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 215, 59, 0.16);
+}
+
+.admin-information-attachment {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.admin-attachment-open {
+  width: 100%;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.admin-attachment-review-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.admin-attachment-review-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-attachment-review-actions button {
+  min-width: 0;
+}
+
+.admin-attachment-review-note {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .response-page {
   min-height: 100vh;
   display: grid;
@@ -2371,9 +2413,50 @@ h1 {
   line-height: 1.65;
 }
 
+.response-replacement-note {
+  margin-top: 16px;
+  padding: 14px;
+  border-left: 3px solid var(--gold);
+  background: rgba(255, 215, 59, 0.08);
+}
+
+.response-replacement-note p {
+  margin-top: 6px;
+  line-height: 1.55;
+}
+
 .response-form {
   display: grid;
   gap: 16px;
+}
+
+.response-form .admin-field small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.response-form input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+}
+
+.response-form input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 9px 12px;
+  border: 0;
+  background: #f3f3ef;
+  color: #0a0a0a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .admin-attachment-review-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 .admin-form-message {

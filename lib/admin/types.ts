@@ -40,6 +40,12 @@ export type InformationRequestFormState = {
   responsePath?: string;
 };
 
+export type AttachmentReviewFormState = {
+  message: string;
+  status: "idle" | "success" | "error";
+  responsePath?: string;
+};
+
 export type ApplicationStageHistoryEntry = {
   id: string;
   application_id: string;
@@ -57,6 +63,9 @@ export type ApplicationAuditEvent = {
     | "information_request_created"
     | "information_request_revoked"
     | "applicant_response_received"
+    | "information_attachment_uploaded"
+    | "information_attachment_accepted"
+    | "information_attachment_replacement_requested"
     | "applicant_notification_requested"
     | "applicant_notification_sent"
     | "applicant_notification_failed";
@@ -83,4 +92,25 @@ export type ApplicationInformationRequest = {
   revoked_at: string | null;
   response_text: string | null;
   response_submitted_at: string | null;
+  attachments: ApplicationInformationAttachment[];
+};
+
+export type ApplicationInformationAttachment = {
+  id: string;
+  request_id: string;
+  version: number;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  status:
+    | "uploading"
+    | "uploaded"
+    | "accepted"
+    | "replacement_requested"
+    | "rejected";
+  uploaded_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by_email: string | null;
+  review_note: string | null;
+  access_url: string | null;
 };

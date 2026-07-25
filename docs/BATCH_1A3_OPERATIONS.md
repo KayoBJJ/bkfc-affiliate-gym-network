@@ -71,3 +71,37 @@ Safe rollout order:
 
 Attachments are intentionally excluded from this slice. They require generated private
 paths and direct-to-storage signed uploads so files never transit Vercel's request body.
+
+## Secure file-response slice
+
+Slice 3 adds one reviewer-requested file to the existing gym follow-up flow. It does not
+add a default document checklist and it does not change application statuses.
+
+- applicants upload directly to the existing private Storage bucket through a
+  short-lived signed upload token;
+- paths contain generated identifiers rather than applicant filenames;
+- the server re-downloads each completed object and verifies its size, extension, MIME
+  type, file signature, and Office archive family before it becomes reviewable;
+- accepted and replacement-requested files retain version history;
+- replacement instructions are applicant-visible while internal audit details never
+  copy filenames or review-note text;
+- applicant notification intents remain `blocked_copy_pending` until Lubo approves the
+  actual email copy and production routing.
+
+Safe rollout order:
+
+1. Keep `INFORMATION_RESPONSE_ENABLED=false` in production.
+2. Apply
+   `supabase/migrations/20260725000000_batch_1a3_secure_file_responses.sql`.
+3. Confirm the attachment table has RLS enabled and no `anon` or `authenticated`
+   privileges.
+4. Deploy the matching application code.
+5. Enable the response feature only in a controlled test environment.
+6. Create a file request for the golden application and upload each allowed family.
+7. Confirm an executable, macro-enabled Office file, false extension, and file over
+   10 MB are rejected.
+8. Accept a file and confirm the request and application stages do not change.
+9. Request a replacement, confirm the application returns to
+   `follow_up_required / pending_info`, and use the newly generated one-time link.
+10. Upload the replacement and confirm both versions remain visible to the admin.
+11. Keep applicant email delivery disabled until approved copy and routing are supplied.

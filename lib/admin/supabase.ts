@@ -147,16 +147,61 @@ export async function getApplicationInformationRequests(applicationId: string) {
     string,
     { response_text: string; submitted_at: string }
   >();
+  const attachmentsByRequest = new Map<
+    string,
+    ApplicationInformationRequest["attachments"]
+  >();
   if (requestIds.length > 0) {
-    const { data: responses, error: responseError } = await supabase
-      .from("affiliate_application_information_responses")
-      .select("request_id, response_text, submitted_at")
-      .in("request_id", requestIds);
+    const [{ data: responses, error: responseError }, { data: attachments, error: attachmentError }] =
+      await Promise.all([
+        supabase
+          .from("affiliate_application_information_responses")
+          .select("request_id, response_text, submitted_at")
+          .in("request_id", requestIds),
+        supabase
+          .from("affiliate_application_information_attachments")
+          .select(
+            "id, request_id, version, storage_path, original_filename, content_type, size_bytes, status, uploaded_at, reviewed_at, reviewed_by_email, review_note",
+          )
+          .in("request_id", requestIds)
+          .order("version", { ascending: false }),
+      ]);
     if (responseError) {
       throw new Error(`Failed to load information responses: ${responseError.message}`);
     }
+    if (attachmentError && !isMissingAuditTable(attachmentError)) {
+      throw new Error(`Failed to load information attachments: ${attachmentError.message}`);
+    }
     for (const response of responses ?? []) {
       responsesByRequest.set(response.request_id, response);
+    }
+    for (const attachment of attachments ?? []) {
+      const accessUrl =
+        attachment.status === "uploading" || attachment.status === "rejected"
+          ? null
+          : (
+              await supabase.storage
+                .from(STORAGE_BUCKET)
+                .createSignedUrl(attachment.storage_path, 10 * 60, {
+                  download: true,
+                })
+            ).data?.signedUrl ?? null;
+      const list = attachmentsByRequest.get(attachment.request_id) ?? [];
+      list.push({
+        id: attachment.id,
+        request_id: attachment.request_id,
+        version: attachment.version,
+        original_filename: attachment.original_filename,
+        content_type: attachment.content_type,
+        size_bytes: Number(attachment.size_bytes),
+        status: attachment.status,
+        uploaded_at: attachment.uploaded_at,
+        reviewed_at: attachment.reviewed_at,
+        reviewed_by_email: attachment.reviewed_by_email,
+        review_note: attachment.review_note,
+        access_url: accessUrl,
+      });
+      attachmentsByRequest.set(attachment.request_id, list);
     }
   }
 
@@ -171,6 +216,7 @@ export async function getApplicationInformationRequests(applicationId: string) {
           : request.status,
       response_text: response?.response_text ?? null,
       response_submitted_at: response?.submitted_at ?? null,
+      attachments: attachmentsByRequest.get(request.id) ?? [],
     };
   }) as ApplicationInformationRequest[];
 }

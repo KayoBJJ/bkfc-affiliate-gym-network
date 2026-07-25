@@ -39,6 +39,12 @@ export default async function InformationResponsePage({
               <p className="admin-pipeline-group-label">Information requested</p>
               <h2>{request.requestSummary}</h2>
               {request.requestDetails ? <p>{request.requestDetails}</p> : null}
+              {request.replacementInstructions ? (
+                <div className="response-replacement-note">
+                  <strong>Replacement requested</strong>
+                  <p>{request.replacementInstructions}</p>
+                </div>
+              ) : null}
               <p className="response-expiry">
                 This secure link expires{" "}
                 {formatInformationRequestExpiry(request.expiresAt)}.

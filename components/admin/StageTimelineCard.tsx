@@ -35,6 +35,15 @@ function auditEventLabel(event: ApplicationAuditEvent) {
   if (event.event_type === "applicant_response_received") {
     return "Applicant response received";
   }
+  if (event.event_type === "information_attachment_uploaded") {
+    return "Applicant file uploaded securely";
+  }
+  if (event.event_type === "information_attachment_accepted") {
+    return "Applicant file accepted";
+  }
+  if (event.event_type === "information_attachment_replacement_requested") {
+    return "Replacement file requested";
+  }
   if (event.event_type === "applicant_notification_requested") {
     return "Applicant notification prepared — awaiting approved copy";
   }
