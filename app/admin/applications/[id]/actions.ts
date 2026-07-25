@@ -7,6 +7,7 @@ import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 import type {
   AttachmentReviewFormState,
+  InformationLinkFormState,
   InformationRequestFormState,
   ReviewFormState,
 } from "@/lib/admin/types";
@@ -21,6 +22,58 @@ import { isInformationResponseEnabled } from "@/lib/config/server";
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+export async function reissueInformationResponseLinkAction(
+  _previousState: InformationLinkFormState,
+  formData: FormData,
+): Promise<InformationLinkFormState> {
+  const adminUser = await requireAdminUser();
+  const applicationId = getFormValue(formData, "application_id");
+  const requestId = getFormValue(formData, "request_id");
+  if (
+    !IDEMPOTENCY_KEY_PATTERN.test(applicationId) ||
+    !IDEMPOTENCY_KEY_PATTERN.test(requestId)
+  ) {
+    return { message: "Invalid information request.", status: "error" };
+  }
+
+  try {
+    const token = generateInformationResponseToken();
+    const tokenHash = hashInformationResponseToken(token);
+    if (!tokenHash) throw new Error("Unable to create a secure response link.");
+    const supabase = createAdminSupabaseClient();
+    const { data: linkedApplicationId, error } = await supabase.rpc(
+      "admin_reissue_affiliate_information_response_link",
+      {
+        p_request_id: requestId,
+        p_token_hash: tokenHash,
+        p_actor_user_id: adminUser.id,
+        p_actor_email: adminUser.email!,
+      },
+    );
+    if (error || linkedApplicationId !== applicationId) {
+      throw new Error(
+        error?.code === "PGRST202"
+          ? "The replacement-link recovery migration must be applied first."
+          : error?.message || "Unable to generate a new replacement link.",
+      );
+    }
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return {
+      message: "New replacement link generated. The previous link is now invalid.",
+      status: "success",
+      responsePath: `/application-response/${token}`,
+    };
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to generate a new replacement link.",
+      status: "error",
+    };
+  }
 }
 
 export async function reviewInformationAttachmentAction(

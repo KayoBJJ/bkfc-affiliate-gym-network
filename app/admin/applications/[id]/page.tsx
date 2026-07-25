@@ -16,6 +16,7 @@ import {
 } from "@/lib/admin/supabase";
 import {
   createInformationRequestAction,
+  reissueInformationResponseLinkAction,
   reviewInformationAttachmentAction,
   updateApplicationReviewAction,
 } from "./actions";
@@ -69,6 +70,7 @@ export default async function AdminApplicationDetailPage({
             requests={informationRequests}
             applicationId={application.id}
             reviewAttachmentAction={reviewInformationAttachmentAction}
+            reissueResponseLinkAction={reissueInformationResponseLinkAction}
           />
 
           <ReviewUpdateForm

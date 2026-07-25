@@ -50,7 +50,21 @@ export function InformationAttachmentReview({
   ) => Promise<AttachmentReviewFormState>;
 }) {
   const [state, formAction] = useFormState(action, initialState);
-  if (attachment.status !== "uploaded") return null;
+  if (attachment.status !== "uploaded") {
+    return state.responsePath ? (
+      <div className="admin-attachment-review-form">
+        <p className={`admin-form-message ${state.status}`}>{state.message}</p>
+        <a
+          className="secondary-button admin-response-link"
+          href={state.responsePath}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open one-time replacement link
+        </a>
+      </div>
+    ) : null;
+  }
 
   return (
     <form action={formAction} className="admin-attachment-review-form">

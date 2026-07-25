@@ -105,3 +105,35 @@ test("the browser uploads directly and the server verifies the stored object", a
   );
   assert.match(route, /\.remove\(\[attachment\.storage_path\]\)/);
 });
+
+test("replacement links stay visible and can be securely regenerated", async () => {
+  const [review, recovery, migration] = await Promise.all([
+    readFile("components/admin/InformationAttachmentReview.tsx", "utf8"),
+    readFile("components/admin/InformationResponseLinkRecovery.tsx", "utf8"),
+    readFile(
+      "supabase/migrations/20260725010000_batch_1a3_replacement_link_recovery.sql",
+      "utf8",
+    ),
+  ]);
+  assert.match(
+    review,
+    /attachment\.status !== "uploaded"[\s\S]*state\.responsePath[\s\S]*Open one-time replacement link/,
+  );
+  assert.match(recovery, /Generate new replacement link/);
+  assert.match(
+    migration,
+    /create or replace function public\.admin_reissue_affiliate_information_response_link/i,
+  );
+  assert.match(
+    migration,
+    /set token_hash = p_token_hash[\s\S]*expires_at = greatest/i,
+  );
+  assert.match(
+    migration,
+    /revoke all on function public\.admin_reissue_affiliate_information_response_link[\s\S]*from public, anon, authenticated/i,
+  );
+  assert.match(
+    migration,
+    /grant execute on function public\.admin_reissue_affiliate_information_response_link[\s\S]*to service_role/i,
+  );
+});

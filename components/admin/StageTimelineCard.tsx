@@ -32,6 +32,9 @@ function auditEventLabel(event: ApplicationAuditEvent) {
   if (event.event_type === "information_request_revoked") {
     return "Previous information request revoked";
   }
+  if (event.event_type === "information_request_link_reissued") {
+    return "Replacement response link regenerated";
+  }
   if (event.event_type === "applicant_response_received") {
     return "Applicant response received";
   }

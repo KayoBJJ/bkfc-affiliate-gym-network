@@ -105,3 +105,13 @@ Safe rollout order:
    `follow_up_required / pending_info`, and use the newly generated one-time link.
 10. Upload the replacement and confirm both versions remain visible to the admin.
 11. Keep applicant email delivery disabled until approved copy and routing are supplied.
+
+### Replacement-link recovery hotfix
+
+Apply
+`supabase/migrations/20260725010000_batch_1a3_replacement_link_recovery.sql`
+after the secure file-response migration. A replacement link remains visible after the
+review action. If an admin misses it or refreshes the page, the open request provides a
+`Generate new replacement link` action. Regeneration atomically invalidates the old
+token, extends the request window when needed, and records the action without storing
+the raw token.

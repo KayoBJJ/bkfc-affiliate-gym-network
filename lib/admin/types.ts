@@ -46,6 +46,12 @@ export type AttachmentReviewFormState = {
   responsePath?: string;
 };
 
+export type InformationLinkFormState = {
+  message: string;
+  status: "idle" | "success" | "error";
+  responsePath?: string;
+};
+
 export type ApplicationStageHistoryEntry = {
   id: string;
   application_id: string;
@@ -62,6 +68,7 @@ export type ApplicationAuditEvent = {
     | "internal_notes_updated"
     | "information_request_created"
     | "information_request_revoked"
+    | "information_request_link_reissued"
     | "applicant_response_received"
     | "information_attachment_uploaded"
     | "information_attachment_accepted"

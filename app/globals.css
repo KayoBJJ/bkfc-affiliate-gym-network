@@ -2369,6 +2369,14 @@ h1 {
   line-height: 1.5;
 }
 
+.admin-response-link-recovery {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 215, 59, 0.16);
+}
+
 .response-page {
   min-height: 100vh;
   display: grid;

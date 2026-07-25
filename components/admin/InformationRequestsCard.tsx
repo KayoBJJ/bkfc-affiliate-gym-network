@@ -2,8 +2,10 @@ import { formatLabel } from "@/lib/admin/formatLabel";
 import type {
   ApplicationInformationRequest,
   AttachmentReviewFormState,
+  InformationLinkFormState,
 } from "@/lib/admin/types";
 import { InformationAttachmentReview } from "./InformationAttachmentReview";
+import { InformationResponseLinkRecovery } from "./InformationResponseLinkRecovery";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -16,6 +18,7 @@ export function InformationRequestsCard({
   requests,
   applicationId,
   reviewAttachmentAction,
+  reissueResponseLinkAction,
 }: {
   requests: ApplicationInformationRequest[] | null;
   applicationId: string;
@@ -23,6 +26,10 @@ export function InformationRequestsCard({
     state: AttachmentReviewFormState,
     formData: FormData,
   ) => Promise<AttachmentReviewFormState>;
+  reissueResponseLinkAction: (
+    state: InformationLinkFormState,
+    formData: FormData,
+  ) => Promise<InformationLinkFormState>;
 }) {
   if (requests === null) return null;
   return (
@@ -99,6 +106,16 @@ export function InformationRequestsCard({
                     </div>
                   ))}
                 </div>
+              ) : null}
+              {request.status === "open" &&
+              request.attachments.some(
+                (attachment) => attachment.status === "replacement_requested",
+              ) ? (
+                <InformationResponseLinkRecovery
+                  applicationId={applicationId}
+                  requestId={request.id}
+                  action={reissueResponseLinkAction}
+                />
               ) : null}
             </article>
           ))}
