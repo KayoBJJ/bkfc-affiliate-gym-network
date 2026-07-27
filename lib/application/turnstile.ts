@@ -29,6 +29,12 @@ type VerifyTurnstileInput = {
   now?: number;
 };
 
+function providerFailureField(errorCodes: string[] | undefined) {
+  const code = errorCodes?.[0]?.trim().toLocaleLowerCase("en-US");
+  if (!code || !/^[a-z0-9_-]{1,80}$/.test(code)) return "turnstile_provider";
+  return `turnstile_provider_${code}`;
+}
+
 export async function verifyTurnstileToken(
   input: VerifyTurnstileInput,
   config: TurnstileVerificationConfig,
@@ -75,15 +81,29 @@ export async function verifyTurnstileToken(
   const hostname = result.hostname?.toLocaleLowerCase("en-US");
   const requestHostname = input.requestHostname.toLocaleLowerCase("en-US");
   const expectedHostnames = config.expectedHostnames.map((value) => value.toLocaleLowerCase("en-US"));
-  const valid = result.success === true &&
-    result.action === (input.expectedAction ?? TURNSTILE_ACTION) &&
-    Boolean(hostname && expectedHostnames.includes(hostname)) &&
-    hostname === requestHostname &&
-    Number.isFinite(challengedAt) &&
-    challengedAt <= now + 30_000 &&
-    now - challengedAt <= MAX_CHALLENGE_AGE_MS;
-
-  if (!valid) throw new ApplicationError("CAPTCHA_INVALID", 400, "turnstile");
+  if (result.success !== true) {
+    throw new ApplicationError(
+      "CAPTCHA_INVALID",
+      400,
+      providerFailureField(result["error-codes"]),
+    );
+  }
+  if (result.action !== (input.expectedAction ?? TURNSTILE_ACTION)) {
+    throw new ApplicationError("CAPTCHA_INVALID", 400, "turnstile_action");
+  }
+  if (!hostname || !expectedHostnames.includes(hostname)) {
+    throw new ApplicationError("CAPTCHA_INVALID", 400, "turnstile_hostname");
+  }
+  if (hostname !== requestHostname) {
+    throw new ApplicationError("CAPTCHA_INVALID", 400, "turnstile_request_hostname");
+  }
+  if (
+    !Number.isFinite(challengedAt) ||
+    challengedAt > now + 30_000 ||
+    now - challengedAt > MAX_CHALLENGE_AGE_MS
+  ) {
+    throw new ApplicationError("CAPTCHA_INVALID", 400, "turnstile_timestamp");
+  }
   return { hostname: hostname!, challengedAt: new Date(challengedAt).toISOString() };
 }
 

@@ -32,7 +32,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, proof }, { headers: { "cache-control": "no-store" } });
   } catch (caught) {
     if (caught instanceof ApplicationError) {
-      logApplicationEvent("warn", { stage: "captcha", code: caught.code, durationMs: Date.now() - startedAt });
+      logApplicationEvent("warn", {
+        stage: "captcha",
+        code: caught.code,
+        field: caught.field,
+        durationMs: Date.now() - startedAt,
+      });
       return NextResponse.json({ success: false, code: caught.code, field: caught.field }, { status: caught.status });
     }
     logApplicationEvent("error", { stage: "captcha", code: "CAPTCHA_UNAVAILABLE", durationMs: Date.now() - startedAt });

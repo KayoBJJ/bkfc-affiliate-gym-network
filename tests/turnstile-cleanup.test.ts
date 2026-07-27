@@ -31,10 +31,17 @@ function verifierResponse(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function expectCaptchaCode(overrides: Record<string, unknown>, code = "CAPTCHA_INVALID") {
+async function expectCaptchaCode(
+  overrides: Record<string, unknown>,
+  field: string,
+  code = "CAPTCHA_INVALID",
+) {
   await assert.rejects(
     () => verifyTurnstileToken({ token: "fresh-token", idempotencyKey: "58b3b08f-582f-4a1a-a11b-30b738532a23", requestHostname: "gyms.bkfc.com", now }, turnstileConfig, verifierResponse(overrides) as typeof fetch),
-    (error: unknown) => error instanceof ApplicationError && error.code === code,
+    (error: unknown) =>
+      error instanceof ApplicationError &&
+      error.code === code &&
+      error.field === field,
   );
 }
 
@@ -54,14 +61,34 @@ test("Turnstile fails closed for missing, failed, expired, wrong-action, and wro
     () => verifyTurnstileToken({ token: "", idempotencyKey: "58b3b08f-582f-4a1a-a11b-30b738532a23", requestHostname: "gyms.bkfc.com" }, turnstileConfig, verifierResponse() as typeof fetch),
     (error: unknown) => error instanceof ApplicationError && error.code === "CAPTCHA_REQUIRED",
   );
-  await expectCaptchaCode({ success: false, "error-codes": ["timeout-or-duplicate"] });
-  await expectCaptchaCode({ challenge_ts: new Date(now - 6 * 60_000).toISOString() });
-  await expectCaptchaCode({ action: "other_action" });
-  await expectCaptchaCode({ hostname: "attacker.example" });
+  await expectCaptchaCode(
+    { success: false, "error-codes": ["timeout-or-duplicate"] },
+    "turnstile_provider_timeout-or-duplicate",
+  );
+  await expectCaptchaCode(
+    { challenge_ts: new Date(now - 6 * 60_000).toISOString() },
+    "turnstile_timestamp",
+  );
+  await expectCaptchaCode({ action: "other_action" }, "turnstile_action");
+  await expectCaptchaCode({ hostname: "attacker.example" }, "turnstile_hostname");
   await assert.rejects(
     () => verifyTurnstileToken({ token: "fresh-token", idempotencyKey: "58b3b08f-582f-4a1a-a11b-30b738532a23", requestHostname: "preview.example", now }, turnstileConfig, verifierResponse() as typeof fetch),
-    (error: unknown) => error instanceof ApplicationError && error.code === "CAPTCHA_INVALID",
+    (error: unknown) =>
+      error instanceof ApplicationError &&
+      error.code === "CAPTCHA_INVALID" &&
+      error.field === "turnstile_request_hostname",
   );
+});
+
+test("Turnstile accepts a route-specific action when explicitly requested", async () => {
+  const result = await verifyTurnstileToken({
+    token: "fresh-token",
+    idempotencyKey: "58b3b08f-582f-4a1a-a11b-30b738532a23",
+    requestHostname: "gyms.bkfc.com",
+    expectedAction: "portal_recovery",
+    now,
+  }, turnstileConfig, verifierResponse({ action: "portal_recovery" }) as typeof fetch);
+  assert.equal(result.hostname, "gyms.bkfc.com");
 });
 
 test("Turnstile and cleanup configuration fail closed and cleanup defaults to dry-run", () => {

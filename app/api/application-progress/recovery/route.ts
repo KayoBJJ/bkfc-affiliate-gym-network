@@ -180,6 +180,12 @@ export async function POST(request: Request) {
     return await genericResponse(startedAt);
   } catch (caught) {
     if (caught instanceof ApplicationError) {
+      logApplicationEvent("warn", {
+        stage: "portal_recovery_turnstile",
+        code: caught.code,
+        field: caught.field,
+        durationMs: Date.now() - startedAt,
+      });
       return NextResponse.json(
         { success: false, code: caught.code },
         { status: caught.status, headers: { "cache-control": "no-store" } },
