@@ -1,4 +1,5 @@
 export type EmailApplication = {
+  applicationId: string;
   applicationReference: string;
   gymName: string;
   cityCountry: string;

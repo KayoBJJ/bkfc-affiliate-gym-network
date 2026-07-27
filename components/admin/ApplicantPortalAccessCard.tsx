@@ -8,7 +8,7 @@ const initialState: ApplicantPortalLinkFormState = {
   status: "idle",
 };
 
-function SubmitButton() {
+function GenerateButton() {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="secondary-button admin-submit-button" disabled={pending}>
@@ -17,17 +17,32 @@ function SubmitButton() {
   );
 }
 
+function EmailButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="cta-button admin-submit-button" disabled={pending}>
+      {pending ? "Sending secure email..." : "Email secure portal access"}
+    </button>
+  );
+}
+
 export function ApplicantPortalAccessCard({
   applicationId,
-  action,
+  generateAction,
+  emailAction,
 }: {
   applicationId: string;
-  action: (
+  generateAction: (
+    state: ApplicantPortalLinkFormState,
+    formData: FormData,
+  ) => Promise<ApplicantPortalLinkFormState>;
+  emailAction: (
     state: ApplicantPortalLinkFormState,
     formData: FormData,
   ) => Promise<ApplicantPortalLinkFormState>;
 }) {
-  const [state, formAction] = useFormState(action, initialState);
+  const [generateState, generateFormAction] = useFormState(generateAction, initialState);
+  const [emailState, emailFormAction] = useFormState(emailAction, initialState);
   return (
     <section className="panel admin-portal-access-card">
       <div className="section-heading">
@@ -35,22 +50,32 @@ export function ApplicantPortalAccessCard({
         <h2>Progress portal</h2>
       </div>
       <p>
-        Create a private progress link for this applicant. Generating a new link
-        immediately invalidates the previous one.
+        Send a private portal link through the approved applicant email route, or
+        generate a one-time admin test link. Only successful email delivery
+        replaces the applicant&apos;s current link.
       </p>
-      <form action={formAction}>
+      <form action={emailFormAction}>
         <input type="hidden" name="application_id" value={applicationId} />
-        <SubmitButton />
+        <EmailButton />
       </form>
-      {state.message ? (
-        <p className={`admin-form-message ${state.status}`} role="status">
-          {state.message}
+      {emailState.message ? (
+        <p className={`admin-form-message ${emailState.status}`} role="status">
+          {emailState.message}
         </p>
       ) : null}
-      {state.portalPath ? (
+      <form action={generateFormAction}>
+        <input type="hidden" name="application_id" value={applicationId} />
+        <GenerateButton />
+      </form>
+      {generateState.message ? (
+        <p className={`admin-form-message ${generateState.status}`} role="status">
+          {generateState.message}
+        </p>
+      ) : null}
+      {generateState.portalPath ? (
         <a
           className="cta-button admin-response-link"
-          href={state.portalPath}
+          href={generateState.portalPath}
           target="_blank"
           rel="noreferrer"
         >
@@ -60,4 +85,3 @@ export function ApplicantPortalAccessCard({
     </section>
   );
 }
-

@@ -320,6 +320,7 @@ export async function POST(request: Request) {
 
   const notificationResult = await runNonCriticalNotification(() =>
     sendApplicationNotifications({
+      applicationId,
       applicationReference: storedReference,
       gymName: application.gymName,
       cityCountry: application.cityCountry,

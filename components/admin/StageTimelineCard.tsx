@@ -50,6 +50,24 @@ function auditEventLabel(event: ApplicationAuditEvent) {
   if (event.event_type === "applicant_portal_access_issued") {
     return "Applicant progress portal link generated";
   }
+  if (event.event_type === "applicant_portal_delivery_requested") {
+    return "Applicant portal email prepared";
+  }
+  if (event.event_type === "applicant_portal_delivery_sent") {
+    return "Applicant portal email accepted for delivery";
+  }
+  if (event.event_type === "applicant_portal_delivery_failed") {
+    return "Applicant portal email delivery failed";
+  }
+  if (event.event_type === "applicant_portal_recovery_requested") {
+    return "Applicant requested portal recovery";
+  }
+  if (event.event_type === "applicant_portal_recovery_sent") {
+    return "Portal recovery email accepted for delivery";
+  }
+  if (event.event_type === "applicant_portal_access_recovered") {
+    return "Applicant recovered portal access";
+  }
   if (event.event_type === "applicant_notification_requested") {
     return "Applicant notification prepared — awaiting approved copy";
   }

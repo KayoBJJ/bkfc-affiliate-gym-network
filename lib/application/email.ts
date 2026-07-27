@@ -3,6 +3,17 @@ import { Resend } from "resend";
 import { logApplicationEvent } from "./logging";
 import { getEmailRouting } from "@/lib/config/server";
 import {
+  isApplicantPortalEmailDeliveryEnabled,
+  isApplicantPortalEnabled,
+} from "@/lib/config/server";
+import {
+  completeApplicantPortalDelivery,
+  prepareApplicantPortalDelivery,
+  type PreparedApplicantPortalDelivery,
+} from "./applicant-portal-delivery";
+import type { ApplicantPortalEmailOutcome } from "./applicant-portal-email";
+import { isApplicantPortalDeliveryTargetAllowed } from "./applicant-portal-email";
+import {
   buildInternalNotificationEmail,
   escapeHtml,
   type EmailApplication,
@@ -13,11 +24,13 @@ function buildApplicantReceivedEmail({
   gymName,
   cityCountry,
   submissionId,
+  portalUrl,
 }: {
   contactPerson: string;
   gymName: string;
   cityCountry: string;
   submissionId: string;
+  portalUrl?: string;
 }) {
   return `
 <body style="margin:0;background:#080808;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
@@ -96,6 +109,16 @@ function buildApplicantReceivedEmail({
                 </tr>
               </table>
 
+              ${portalUrl ? `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#171717;border:1px solid #3a3324;border-radius:12px;">
+                <tr><td style="padding:20px;">
+                  <div style="margin:0 0 10px;color:#ffffff;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Private application portal</div>
+                  <p style="margin:0 0 16px;color:#d4d4d4;font-size:14px;line-height:24px;">Follow your application progress and see when BKFC needs an action from you.</p>
+                  <a href="${escapeHtml(portalUrl)}" style="display:inline-block;padding:13px 20px;border-radius:8px;background:#c8a45d;color:#000;text-decoration:none;font-size:14px;font-weight:800;">Open secure application portal</a>
+                </td></tr>
+              </table>
+              ` : ""}
+
               <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;background:#141414;border-left:3px solid #c8a45d;border-radius:10px;">
                 <tr>
                   <td style="padding:20px;">
@@ -156,6 +179,27 @@ function buildApplicantReceivedEmail({
 export async function sendApplicationNotifications(application: EmailApplication) {
   const routing = getEmailRouting(application.email);
   const sends: Array<{ type: "internal" | "applicant"; promise: ReturnType<Resend["emails"]["send"]> }> = [];
+  let preparedPortal: PreparedApplicantPortalDelivery | null = null;
+  if (
+    isApplicantPortalEnabled() &&
+    isApplicantPortalEmailDeliveryEnabled() &&
+    isApplicantPortalDeliveryTargetAllowed(application)
+  ) {
+    try {
+      preparedPortal = await prepareApplicantPortalDelivery({
+        applicationId: application.applicationId,
+        reason: "application_received",
+      });
+    } catch {
+      logApplicationEvent("warn", {
+        stage: "notification",
+        code: "PORTAL_DELIVERY_PREPARE_FAILED",
+        applicationReference: application.applicationReference,
+        notification: "failed",
+        notificationType: "applicant_portal",
+      });
+    }
+  }
 
   if (!routing.internal.enabled) {
     logApplicationEvent("warn", {
@@ -176,7 +220,15 @@ export async function sendApplicationNotifications(application: EmailApplication
     });
   }
 
-  if (!routing.providerApiKey) return;
+  if (!routing.providerApiKey) {
+    if (preparedPortal) {
+      await completeApplicantPortalDelivery({
+        accessId: preparedPortal.accessId,
+        outcome: { status: "failed", errorCode: "CONFIG_EMAIL_INVALID" },
+      }).catch(() => undefined);
+    }
+    return;
+  }
   const resend = new Resend(routing.providerApiKey);
   if (routing.internal.enabled && routing.internal.from && routing.internal.recipient) {
     sends.push({
@@ -202,14 +254,28 @@ export async function sendApplicationNotifications(application: EmailApplication
           gymName: application.gymName,
           cityCountry: application.cityCountry,
           submissionId: application.applicationReference,
+          ...(preparedPortal ? { portalUrl: preparedPortal.portalUrl } : {}),
         }),
       }),
     });
   }
 
   const results = await Promise.allSettled(sends.map(({ promise }) => promise));
+  let applicantOutcome: ApplicantPortalEmailOutcome = {
+    status: "failed",
+    errorCode: "APPLICANT_EMAIL_NOT_SENT",
+  };
   results.forEach((result, index) => {
     const failed = result.status === "rejected" || Boolean(result.value.error);
+    if (sends[index].type === "applicant") {
+      applicantOutcome = failed
+        ? { status: "failed", errorCode: "PROVIDER_REJECTED" }
+        : {
+            status: "sent",
+            providerMessageId:
+              result.status === "fulfilled" ? result.value.data?.id ?? null : null,
+          };
+    }
     logApplicationEvent(failed ? "warn" : "info", {
       stage: "notification",
       code: failed ? "EMAIL_NOTIFICATION_FAILED" : "EMAIL_NOTIFICATION_SENT",
@@ -218,4 +284,20 @@ export async function sendApplicationNotifications(application: EmailApplication
       notificationType: sends[index].type === "internal" ? "internal" : "applicant_template",
     });
   });
+  if (preparedPortal) {
+    try {
+      await completeApplicantPortalDelivery({
+        accessId: preparedPortal.accessId,
+        outcome: applicantOutcome,
+      });
+    } catch {
+      logApplicationEvent("warn", {
+        stage: "notification",
+        code: "PORTAL_DELIVERY_FINALIZE_FAILED",
+        applicationReference: application.applicationReference,
+        notification: "failed",
+        notificationType: "applicant_portal",
+      });
+    }
+  }
 }

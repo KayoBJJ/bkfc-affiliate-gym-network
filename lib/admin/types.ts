@@ -80,6 +80,12 @@ export type ApplicationAuditEvent = {
     | "information_attachment_accepted"
     | "information_attachment_replacement_requested"
     | "applicant_portal_access_issued"
+    | "applicant_portal_delivery_requested"
+    | "applicant_portal_delivery_sent"
+    | "applicant_portal_delivery_failed"
+    | "applicant_portal_recovery_requested"
+    | "applicant_portal_recovery_sent"
+    | "applicant_portal_access_recovered"
     | "applicant_notification_requested"
     | "applicant_notification_sent"
     | "applicant_notification_failed";

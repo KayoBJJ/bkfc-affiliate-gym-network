@@ -20,10 +20,11 @@ type Props = {
   onToken: (token: string | null) => void;
   onStateChange: (state: "loading" | "ready" | "error" | "expired") => void;
   unavailableMessage: string;
+  action?: string;
 };
 
 export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, Props>(function TurnstileWidget(
-  { onToken, onStateChange, unavailableMessage },
+  { onToken, onStateChange, unavailableMessage, action = TURNSTILE_ACTION },
   ref,
 ) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -35,7 +36,7 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, Props>(function
     if (!siteKey || !containerRef.current || !window.turnstile || widgetIdRef.current) return;
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
-      action: TURNSTILE_ACTION,
+      action,
       theme: "dark",
       appearance: "interaction-only",
       "response-field": false,
@@ -56,7 +57,7 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, Props>(function
         onStateChange("error");
       },
     });
-  }, [onStateChange, onToken, siteKey]);
+  }, [action, onStateChange, onToken, siteKey]);
 
   useImperativeHandle(ref, () => ({
     reset() {

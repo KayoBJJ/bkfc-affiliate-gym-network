@@ -11,7 +11,7 @@ type RegularApplicationLogEvent = {
   compatibilityMode?: "full_schema" | "legacy_schema";
   cleanup?: "not_required" | "succeeded" | "failed";
   notification?: "sent" | "skipped" | "failed";
-  notificationType?: "internal" | "applicant_template";
+  notificationType?: "internal" | "applicant_template" | "applicant_portal";
   durationMs?: number;
   pipelineStage?:
     | "idempotency_lookup"

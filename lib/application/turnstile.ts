@@ -25,6 +25,7 @@ type VerifyTurnstileInput = {
   remoteIp?: string;
   idempotencyKey: string;
   requestHostname: string;
+  expectedAction?: string;
   now?: number;
 };
 
@@ -75,7 +76,7 @@ export async function verifyTurnstileToken(
   const requestHostname = input.requestHostname.toLocaleLowerCase("en-US");
   const expectedHostnames = config.expectedHostnames.map((value) => value.toLocaleLowerCase("en-US"));
   const valid = result.success === true &&
-    result.action === TURNSTILE_ACTION &&
+    result.action === (input.expectedAction ?? TURNSTILE_ACTION) &&
     Boolean(hostname && expectedHostnames.includes(hostname)) &&
     hostname === requestHostname &&
     Number.isFinite(challengedAt) &&

@@ -17,13 +17,18 @@ import {
   generateApplicantPortalToken,
   hashApplicantPortalToken,
 } from "@/lib/application/applicant-portal";
+import { deliverApplicantPortalAccess } from "@/lib/application/applicant-portal-delivery";
 import {
   generateInformationResponseToken,
   hashInformationResponseToken,
   validateInformationRequestInput,
 } from "@/lib/application/information-response";
 import { IDEMPOTENCY_KEY_PATTERN } from "@/lib/application/policy";
-import { isApplicantPortalEnabled, isInformationResponseEnabled } from "@/lib/config/server";
+import {
+  isApplicantPortalEmailDeliveryEnabled,
+  isApplicantPortalEnabled,
+  isInformationResponseEnabled,
+} from "@/lib/config/server";
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -84,6 +89,82 @@ export async function issueApplicantPortalLinkAction(
         error instanceof Error ? error.message : "Unable to generate the portal link.",
       status: "error",
     };
+  }
+}
+
+export async function emailApplicantPortalLinkAction(
+  _previousState: ApplicantPortalLinkFormState,
+  formData: FormData,
+): Promise<ApplicantPortalLinkFormState> {
+  const adminUser = await requireAdminUser();
+  if (!isApplicantPortalEnabled() || !isApplicantPortalEmailDeliveryEnabled()) {
+    return {
+      message: "Applicant portal email delivery is not enabled in this environment.",
+      status: "error",
+    };
+  }
+  const applicationId = getFormValue(formData, "application_id");
+  if (!IDEMPOTENCY_KEY_PATTERN.test(applicationId)) {
+    return { message: "Invalid application id.", status: "error" };
+  }
+  try {
+    const outcome = await deliverApplicantPortalAccess({
+      applicationId,
+      actor: { userId: adminUser.id, email: adminUser.email },
+      reason: "manual_applicant_update",
+    });
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return outcome.status === "sent"
+      ? {
+          message:
+            "Secure portal email accepted for delivery. The new link now replaces the previous link.",
+          status: "success",
+        }
+      : {
+          message:
+            "Portal email was not delivered. The applicant's previous portal link remains active.",
+          status: "error",
+        };
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error ? error.message : "Unable to email portal access.",
+      status: "error",
+    };
+  }
+}
+
+async function deliverMaterialPortalUpdate({
+  applicationId,
+  actorUserId,
+  actorEmail,
+  reason,
+  secondaryPath,
+}: {
+  applicationId: string;
+  actorUserId: string;
+  actorEmail: string;
+  reason:
+    | "more_information_required"
+    | "replacement_required"
+    | "approved"
+    | "rejected"
+    | "affiliate_activated";
+  secondaryPath?: string;
+}) {
+  if (!isApplicantPortalEmailDeliveryEnabled()) return null;
+  try {
+    return await deliverApplicantPortalAccess({
+      applicationId,
+      actor: { userId: actorUserId, email: actorEmail },
+      reason,
+      secondaryPath,
+    });
+  } catch {
+    return {
+      status: "failed",
+      errorCode: "PORTAL_DELIVERY_UNAVAILABLE",
+    } as const;
   }
 }
 
@@ -192,13 +273,25 @@ export async function reviewInformationAttachmentAction(
           : error?.message || "The attachment could not be reviewed.",
       );
     }
+    const portalDelivery =
+      decision === "replacement_requested"
+        ? await deliverMaterialPortalUpdate({
+            applicationId,
+            actorUserId: adminUser.id,
+            actorEmail: adminUser.email!,
+            reason: "replacement_required",
+            secondaryPath: `/application-response/${replacementToken}`,
+          })
+        : null;
     revalidatePath("/admin/applications");
     revalidatePath(`/admin/applications/${applicationId}`);
     return {
       message:
         decision === "accepted"
           ? "File accepted and recorded in the audit trail."
-          : "Replacement requested and recorded in the audit trail.",
+          : portalDelivery?.status === "sent"
+            ? "Replacement requested and the secure applicant email was accepted for delivery."
+            : "Replacement requested and recorded. No applicant portal email was delivered.",
       status: "success",
       ...(replacementToken
         ? { responsePath: `/application-response/${replacementToken}` }
@@ -240,6 +333,18 @@ async function updateApplicationStageAndStatus({
         ? "Batch 1A.3 database migration is required before workflow actions can be used."
         : error.message
     );
+  }
+
+  if (["approved", "rejected", "activated_affiliate"].includes(reviewStage)) {
+    await deliverMaterialPortalUpdate({
+      applicationId,
+      actorUserId,
+      actorEmail,
+      reason:
+        reviewStage === "activated_affiliate"
+          ? "affiliate_activated"
+          : reviewStage as "approved" | "rejected",
+    });
   }
 
   revalidatePath("/admin/applications");
@@ -378,11 +483,21 @@ export async function createInformationRequestAction(
       );
     }
 
+    const portalDelivery = await deliverMaterialPortalUpdate({
+      applicationId,
+      actorUserId: adminUser.id,
+      actorEmail: adminUser.email!,
+      reason: "more_information_required",
+      secondaryPath: `/application-response/${token}`,
+    });
+
     revalidatePath("/admin/applications");
     revalidatePath(`/admin/applications/${applicationId}`);
     return {
       message:
-        "Secure request created. This test link is shown once; do not share it publicly.",
+        portalDelivery?.status === "sent"
+          ? "Secure request created and the applicant email was accepted for delivery."
+          : "Secure request created. No applicant portal email was delivered; the test link is shown once.",
       status: "success",
       responsePath: `/application-response/${token}`,
     };

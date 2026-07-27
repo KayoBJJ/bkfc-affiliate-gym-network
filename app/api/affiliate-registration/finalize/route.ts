@@ -148,6 +148,7 @@ export async function POST(request: Request) {
     }
 
     const notification = await runNonCriticalNotification(() => sendApplicationNotifications({
+      applicationId: sessionId!,
       applicationReference: session.application_reference,
       gymName: application.gymName,
       cityCountry: application.cityCountry,

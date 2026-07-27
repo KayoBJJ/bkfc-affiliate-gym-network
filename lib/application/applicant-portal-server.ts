@@ -33,13 +33,14 @@ export async function getApplicantPortalView(token: string): Promise<ApplicantPo
   const supabase = createAdminSupabaseClient();
   const { data: access, error: accessError } = await supabase
     .from("affiliate_application_portal_access")
-    .select("application_id, expires_at, revoked_at")
+    .select("application_id, expires_at, revoked_at, activated_at")
     .eq("token_hash", tokenHash)
     .maybeSingle();
   if (
     accessError ||
     !access ||
     access.revoked_at ||
+    !access.activated_at ||
     new Date(access.expires_at).getTime() <= Date.now()
   ) {
     return null;
@@ -108,4 +109,3 @@ export async function getApplicantPortalView(token: string): Promise<ApplicantPo
     }),
   };
 }
-

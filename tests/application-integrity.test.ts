@@ -405,6 +405,7 @@ test("privileged configuration and provider modules preserve server-only boundar
 
 test("internal notification restores approved fields and excludes attachment access details", () => {
   const html = buildInternalNotificationEmail({
+    applicationId: "123e4567-e89b-42d3-a456-426614174000",
     applicationReference: "BKFC-GYM-TEST123",
     gymName: "A & B Gym",
     cityCountry: "Sofia, Bulgaria",

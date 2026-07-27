@@ -4,7 +4,10 @@ import { unstable_noStore as noStore } from "next/cache";
 import { notFound } from "next/navigation";
 import { APPLICANT_PROGRESS_MILESTONES } from "@/lib/application/applicant-portal";
 import { getApplicantPortalView } from "@/lib/application/applicant-portal-server";
-import { isApplicantPortalEnabled } from "@/lib/config/server";
+import {
+  isApplicantPortalEnabled,
+  isApplicantPortalRecoveryEnabled,
+} from "@/lib/config/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -188,7 +191,15 @@ export default async function ApplicantProgressPage({
             Keep this private link confidential. It provides access to your application
             progress.
           </p>
-          <p>BKFC Gym Network</p>
+          <p>
+            {isApplicantPortalRecoveryEnabled() ? (
+              <>
+                <a href="/application-progress/recover">Recover portal access</a>
+                {" · "}
+              </>
+            ) : null}
+            BKFC Gym Network
+          </p>
         </footer>
       </div>
     </main>

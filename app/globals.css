@@ -2873,6 +2873,96 @@ h1 {
   }
 }
 
+.portal-recovery-page {
+  display: grid;
+  align-items: start;
+}
+
+.portal-recovery-card {
+  width: min(100%, 680px);
+  margin: 32px auto 0;
+  padding: clamp(26px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    rgba(8, 8, 8, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.portal-recovery-card h1 {
+  margin-top: 12px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.8rem, 8vw, 4.8rem);
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.portal-recovery-card > p:not(.eyebrow) {
+  margin-top: 16px;
+}
+
+.portal-recovery-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.portal-recovery-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.portal-recovery-form input {
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #0b0b0b;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.portal-recovery-form input:focus {
+  border-color: var(--gold);
+  outline: 2px solid rgba(255, 215, 59, 0.16);
+  outline-offset: 2px;
+}
+
+.portal-recovery-form .cta-button {
+  justify-self: start;
+}
+
+.portal-recovery-message {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.portal-recovery-message.success {
+  color: #a5efbb;
+}
+
+.portal-recovery-message.error {
+  color: #ffb0b0;
+}
+
+.portal-recovery-help {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .response-form input[type="file"]::file-selector-button {
   margin-right: 12px;
   padding: 9px 12px;

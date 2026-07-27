@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin/supabase";
 import {
   createInformationRequestAction,
+  emailApplicantPortalLinkAction,
   issueApplicantPortalLinkAction,
   reissueInformationResponseLinkAction,
   reviewInformationAttachmentAction,
@@ -71,7 +72,8 @@ export default async function AdminApplicationDetailPage({
 
           <ApplicantPortalAccessCard
             applicationId={application.id}
-            action={issueApplicantPortalLinkAction}
+            generateAction={issueApplicantPortalLinkAction}
+            emailAction={emailApplicantPortalLinkAction}
           />
         </aside>
       </div>
