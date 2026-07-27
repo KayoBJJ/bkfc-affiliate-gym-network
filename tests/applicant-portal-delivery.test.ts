@@ -8,6 +8,8 @@ import {
 
 const migrationPath =
   "supabase/migrations/20260728000000_batch_1b_portal_delivery_recovery.sql";
+const recoveryHotfixPath =
+  "supabase/migrations/20260728010000_batch_1b_recovery_ambiguity_hotfix.sql";
 
 test("portal recovery tokens are high entropy and only hashable valid values", () => {
   const first = generateApplicantPortalRecoveryToken();
@@ -97,6 +99,25 @@ test("requesting recovery does not revoke active portal access", async () => {
   assert.match(
     migration,
     /consume_affiliate_application_portal_recovery[\s\S]*update public\.affiliate_application_portal_access[\s\S]*set revoked_at = now\(\)[\s\S]*update public\.affiliate_application_portal_recovery[\s\S]*set consumed_at = now\(\)/i,
+  );
+});
+
+test("recovery request qualifies the table application id in fresh and upgraded databases", async () => {
+  const [migration, hotfix] = await Promise.all([
+    readFile(migrationPath, "utf8"),
+    readFile(recoveryHotfixPath, "utf8"),
+  ]);
+  const qualifiedUpdate =
+    /update public\.affiliate_application_portal_recovery as recovery[\s\S]*where recovery\.application_id = v_application\.id[\s\S]*recovery\.consumed_at is null[\s\S]*recovery\.revoked_at is null/i;
+  assert.match(migration, qualifiedUpdate);
+  assert.match(hotfix, qualifiedUpdate);
+  assert.match(
+    hotfix,
+    /create or replace function public\.request_affiliate_application_portal_recovery/i,
+  );
+  assert.match(
+    hotfix,
+    /grant execute on function public\.request_affiliate_application_portal_recovery[\s\S]*to service_role/i,
   );
 });
 

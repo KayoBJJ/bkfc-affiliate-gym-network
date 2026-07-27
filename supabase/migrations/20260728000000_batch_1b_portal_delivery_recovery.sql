@@ -456,11 +456,11 @@ begin
     return;
   end if;
 
-  update public.affiliate_application_portal_recovery
+  update public.affiliate_application_portal_recovery as recovery
   set revoked_at = v_now
-  where application_id = v_application.id
-    and consumed_at is null
-    and revoked_at is null;
+  where recovery.application_id = v_application.id
+    and recovery.consumed_at is null
+    and recovery.revoked_at is null;
 
   insert into public.affiliate_application_portal_recovery (
     application_id, token_hash, expires_at
