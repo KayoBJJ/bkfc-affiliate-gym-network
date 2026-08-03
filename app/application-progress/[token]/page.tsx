@@ -3,10 +3,12 @@ import Image from "next/image";
 import { unstable_noStore as noStore } from "next/cache";
 import { notFound } from "next/navigation";
 import { APPLICANT_PROGRESS_MILESTONES } from "@/lib/application/applicant-portal";
-import { getApplicantPortalView } from "@/lib/application/applicant-portal-server";
+import { getApplicantPortalResult } from "@/lib/application/applicant-portal-server";
 import {
+  isApplicantPortalActionsEnabled,
   isApplicantPortalEnabled,
   isApplicantPortalRecoveryEnabled,
+  isInformationResponseEnabled,
 } from "@/lib/config/server";
 
 export const dynamic = "force-dynamic";
@@ -28,8 +30,95 @@ function formatDate(value: string) {
 function requestStatusLabel(status: string) {
   if (status === "open") return "Action required";
   if (status === "responded") return "Response received";
-  if (status === "expired") return "Link expired";
-  return "Closed";
+  if (status === "expired") return "Request expired";
+  return "Request replaced";
+}
+
+function PortalHeader() {
+  return (
+    <header className="portal-header">
+      <Image
+        src="/bkfc-logo.png"
+        width={188}
+        height={70}
+        alt="BKFC"
+        className="portal-logo"
+        priority
+      />
+      <div className="portal-security-note">
+        <span aria-hidden="true">●</span>
+        Private application view
+      </div>
+    </header>
+  );
+}
+
+function PortalAccessUnavailable({
+  state,
+  recoveryEnabled,
+}: {
+  state: "expired" | "replaced" | "unavailable";
+  recoveryEnabled: boolean;
+}) {
+  const copy =
+    state === "expired"
+      ? {
+          title: "Portal link expired",
+          message: "This private application link has reached the end of its access period.",
+        }
+      : state === "replaced"
+        ? {
+            title: "Portal link replaced",
+            message: "A newer private portal link has replaced this one.",
+          }
+        : {
+            title: "Portal access unavailable",
+            message: "This private application link is invalid or no longer available.",
+          };
+  return (
+    <main className="portal-page">
+      <div className="portal-shell">
+        <PortalHeader />
+        <section className="portal-access-state" role="status">
+          <p className="eyebrow">BKFC Gym Network · Application progress</p>
+          <h1>{copy.title}</h1>
+          <p>{copy.message}</p>
+          {recoveryEnabled ? (
+            <a className="cta-button" href="/application-progress/recover">
+              Recover portal access
+            </a>
+          ) : (
+            <p>Contact your BKFC representative if you need a new secure link.</p>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function decisionCopy(stage: string) {
+  if (stage === "approved") {
+    return {
+      label: "Application approved",
+      title: "Your gym has been approved",
+      message: "The BKFC team will guide you through the remaining activation steps.",
+    };
+  }
+  if (stage === "rejected") {
+    return {
+      label: "Review completed",
+      title: "A decision has been made",
+      message: "Please refer to the direct communication from BKFC for the decision details.",
+    };
+  }
+  if (stage === "activated_affiliate") {
+    return {
+      label: "Affiliate active",
+      title: "Welcome to the BKFC Gym Network",
+      message: "Your gym is now active in the BKFC Affiliate Gym Network.",
+    };
+  }
+  return null;
 }
 
 export default async function ApplicantProgressPage({
@@ -39,27 +128,28 @@ export default async function ApplicantProgressPage({
 }) {
   noStore();
   if (!isApplicantPortalEnabled()) notFound();
-  const portal = await getApplicantPortalView(params.token);
-  if (!portal) notFound();
-  const hasOpenRequest = portal.requests.some((request) => request.status === "open");
+  const portalResult = await getApplicantPortalResult(params.token);
+  const recoveryEnabled = isApplicantPortalRecoveryEnabled();
+  if (portalResult.state !== "active") {
+    return (
+      <PortalAccessUnavailable
+        state={portalResult.state}
+        recoveryEnabled={recoveryEnabled}
+      />
+    );
+  }
+  const portal = portalResult.portal;
+  const outcome = decisionCopy(portal.reviewStage);
+  const portalActionsEnabled =
+    isApplicantPortalActionsEnabled() && isInformationResponseEnabled();
+  const hasOpenRequest =
+    portal.reviewStage === "follow_up_required" &&
+    portal.requests.some((request) => request.status === "open");
 
   return (
     <main className="portal-page">
       <div className="portal-shell">
-        <header className="portal-header">
-          <Image
-            src="/bkfc-logo.png"
-            width={188}
-            height={70}
-            alt="BKFC"
-            className="portal-logo"
-            priority
-          />
-          <div className="portal-security-note">
-            <span aria-hidden="true">●</span>
-            Private application view
-          </div>
-        </header>
+        <PortalHeader />
 
         <section className={`portal-status-card tone-${portal.progress.tone}`}>
           <div className="portal-status-copy">
@@ -83,6 +173,14 @@ export default async function ApplicantProgressPage({
             </div>
           </dl>
         </section>
+
+        {outcome ? (
+          <section className={`portal-decision-card decision-${portal.reviewStage}`} role="status">
+            <p className="eyebrow">{outcome.label}</p>
+            <h2>{outcome.title}</h2>
+            <p>{outcome.message}</p>
+          </section>
+        ) : null}
 
         <section className="portal-progress-section" aria-labelledby="progress-title">
           <div className="portal-section-heading">
@@ -170,10 +268,19 @@ export default async function ApplicantProgressPage({
                     </div>
                   ) : null}
                   {request.status === "open" ? (
-                    <p className="portal-request-help">
-                      Use the secure response link supplied by the BKFC team. If the
-                      link is unavailable, reply to your BKFC contact to request a new one.
-                    </p>
+                    portalActionsEnabled && portal.reviewStage === "follow_up_required" ? (
+                      <a
+                        className="cta-button portal-response-button"
+                        href={`/application-progress/${params.token}/respond/${request.id}`}
+                      >
+                        Respond securely
+                      </a>
+                    ) : (
+                      <p className="portal-request-help">
+                        Use the secure response link supplied by the BKFC team. If the
+                        link is unavailable, reply to your BKFC contact to request a new one.
+                      </p>
+                    )
                   ) : null}
                 </article>
               ))}
@@ -192,7 +299,7 @@ export default async function ApplicantProgressPage({
             progress.
           </p>
           <p>
-            {isApplicantPortalRecoveryEnabled() ? (
+            {recoveryEnabled ? (
               <>
                 <a href="/application-progress/recover">Recover portal access</a>
                 {" · "}

@@ -2469,6 +2469,16 @@ h1 {
   color: var(--text);
 }
 
+.response-portal-return {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.response-portal-return a {
+  color: var(--gold);
+  font-weight: 800;
+}
+
 /* Applicant progress portal */
 
 .admin-portal-access-card {
@@ -2533,13 +2543,39 @@ h1 {
 
 .portal-status-card,
 .portal-progress-section,
-.portal-action-card {
+.portal-action-card,
+.portal-decision-card,
+.portal-access-state {
   border: 1px solid var(--line);
   border-radius: 24px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
     rgba(8, 8, 8, 0.96);
   box-shadow: var(--shadow);
+}
+
+.portal-access-state {
+  width: min(100%, 680px);
+  margin: 64px auto 0;
+  padding: clamp(28px, 6vw, 52px);
+  text-align: center;
+}
+
+.portal-access-state h1 {
+  margin-top: 12px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.8rem, 8vw, 5rem);
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.portal-access-state > p:not(.eyebrow) {
+  margin: 18px auto 0;
+  max-width: 54ch;
+}
+
+.portal-access-state .cta-button {
+  margin-top: 26px;
 }
 
 .portal-status-card {
@@ -2635,6 +2671,35 @@ h1 {
 .portal-action-card {
   margin-top: 20px;
   padding: clamp(24px, 4vw, 38px);
+}
+
+.portal-decision-card {
+  margin-top: 20px;
+  padding: clamp(24px, 4vw, 38px);
+  border-color: rgba(101, 216, 137, 0.3);
+  background:
+    linear-gradient(180deg, rgba(101, 216, 137, 0.08), rgba(255, 255, 255, 0.018)),
+    rgba(8, 8, 8, 0.96);
+}
+
+.portal-decision-card.decision-rejected {
+  border-color: rgba(255, 255, 255, 0.15);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+    rgba(8, 8, 8, 0.96);
+}
+
+.portal-decision-card h2 {
+  margin-top: 8px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.portal-decision-card > p:last-child {
+  margin-top: 12px;
+  max-width: 62ch;
 }
 
 .portal-section-heading {
@@ -2828,6 +2893,10 @@ h1 {
   font-size: 0.88rem;
 }
 
+.portal-response-button {
+  margin-top: 18px;
+}
+
 .portal-footer {
   display: flex;
   justify-content: space-between;
@@ -2864,7 +2933,9 @@ h1 {
 
   .portal-status-card,
   .portal-progress-section,
-  .portal-action-card {
+  .portal-action-card,
+  .portal-decision-card,
+  .portal-access-state {
     border-radius: 18px;
   }
 

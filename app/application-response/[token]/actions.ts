@@ -3,15 +3,21 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
+import { hashApplicantPortalToken } from "@/lib/application/applicant-portal";
 import {
   hashInformationResponseToken,
   INFORMATION_RESPONSE_TEXT_MAX,
 } from "@/lib/application/information-response";
-import { getPublicInformationRequest } from "@/lib/application/information-response-server";
+import {
+  getPortalInformationRequest,
+  getPublicInformationRequest,
+} from "@/lib/application/information-response-server";
 import { rateLimitIdentifier } from "@/lib/application/rate-limit";
 import {
   getProxyTrustConfig,
   getRateLimitConfig,
+  isApplicantPortalActionsEnabled,
+  isApplicantPortalEnabled,
   isInformationResponseEnabled,
 } from "@/lib/config/server";
 
@@ -50,11 +56,24 @@ export async function submitInformationResponseAction(
     return { message: "This response service is currently unavailable.", status: "error" };
   }
   const tokenValue = formData.get("token");
+  const credentialKind = formData.get("credential_kind") === "portal" ? "portal" : "link";
+  const requestId = formData.get("request_id");
   const responseValue = formData.get("response_text");
   if (typeof tokenValue !== "string" || typeof responseValue !== "string") {
     return { message: "The secure response link is invalid.", status: "error" };
   }
-  const tokenHash = hashInformationResponseToken(tokenValue);
+  if (
+    credentialKind === "portal" &&
+    (!isApplicantPortalEnabled() ||
+      !isApplicantPortalActionsEnabled() ||
+      typeof requestId !== "string")
+  ) {
+    return { message: "Portal responses are currently unavailable.", status: "error" };
+  }
+  const tokenHash =
+    credentialKind === "portal"
+      ? hashApplicantPortalToken(tokenValue)
+      : hashInformationResponseToken(tokenValue);
   if (!tokenHash) {
     return { message: "The secure response link is invalid.", status: "error" };
   }
@@ -79,7 +98,10 @@ export async function submitInformationResponseAction(
         status: "error",
       };
     }
-    const request = await getPublicInformationRequest(tokenValue);
+    const request =
+      credentialKind === "portal"
+        ? await getPortalInformationRequest(tokenValue, requestId as string)
+        : await getPublicInformationRequest(tokenValue);
     if (request?.status === "responded") {
       return responseReceivedState();
     }
@@ -90,13 +112,23 @@ export async function submitInformationResponseAction(
       };
     }
 
-    const { error } = await supabase.rpc("submit_affiliate_information_response", {
-      p_token_hash: tokenHash,
-      p_response_text: responseText,
-    });
+    const { error } =
+      credentialKind === "portal"
+        ? await supabase.rpc("submit_affiliate_information_response_from_portal", {
+            p_portal_token_hash: tokenHash,
+            p_request_id: request.id,
+            p_response_text: responseText,
+          })
+        : await supabase.rpc("submit_affiliate_information_response", {
+            p_token_hash: tokenHash,
+            p_response_text: responseText,
+          });
     if (error) {
       if (error.code === "P0002") {
-        const refreshedRequest = await getPublicInformationRequest(tokenValue);
+        const refreshedRequest =
+          credentialKind === "portal"
+            ? await getPortalInformationRequest(tokenValue, request.id)
+            : await getPublicInformationRequest(tokenValue);
         if (refreshedRequest?.status === "responded") {
           return responseReceivedState();
         }

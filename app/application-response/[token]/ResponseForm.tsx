@@ -28,14 +28,16 @@ function SubmitButton({
 }
 
 type Props = {
-  token: string;
+  credential:
+    | { kind: "link"; token: string }
+    | { kind: "portal"; token: string; requestId: string };
   action: (
     state: InformationResponseState,
     formData: FormData
   ) => Promise<InformationResponseState>;
 };
 
-export function ResponseForm({ token, action }: Props) {
+export function ResponseForm({ credential, action }: Props) {
   const [state, formAction] = useFormState(action, initialState);
   const [file, setFile] = useState<File | null>(null);
   const [uploadedAttachmentId, setUploadedAttachmentId] = useState("");
@@ -43,6 +45,14 @@ export function ResponseForm({ token, action }: Props) {
   const [clientError, setClientError] = useState("");
   const [isPending, startTransition] = useTransition();
   const completed = state.status === "success";
+  const credentialPayload =
+    credential.kind === "portal"
+      ? {
+          credentialKind: "portal",
+          portalToken: credential.token,
+          requestId: credential.requestId,
+        }
+      : { credentialKind: "link", token: credential.token };
 
   async function uploadAttachment(selectedFile: File) {
     const createResponse = await fetch("/api/application-response/attachment", {
@@ -50,7 +60,7 @@ export function ResponseForm({ token, action }: Props) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         action: "create",
-        token,
+        ...credentialPayload,
         file: {
           name: selectedFile.name,
           size: selectedFile.size,
@@ -91,7 +101,7 @@ export function ResponseForm({ token, action }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           action: "finalize",
-          token,
+          ...credentialPayload,
           attachmentId: created.attachmentId,
         }),
       });
@@ -111,7 +121,7 @@ export function ResponseForm({ token, action }: Props) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           action: "abort",
-          token,
+          ...credentialPayload,
           attachmentId: created.attachmentId,
         }),
       }).catch(() => undefined);
@@ -148,7 +158,11 @@ export function ResponseForm({ token, action }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="response-form">
-      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="credential_kind" value={credential.kind} />
+      <input type="hidden" name="token" value={credential.token} />
+      {credential.kind === "portal" ? (
+        <input type="hidden" name="request_id" value={credential.requestId} />
+      ) : null}
       <label className="admin-field">
         <span>Requested file</span>
         <input

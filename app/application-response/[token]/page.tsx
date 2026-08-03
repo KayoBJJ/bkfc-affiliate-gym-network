@@ -50,7 +50,10 @@ export default async function InformationResponsePage({
                 {formatInformationRequestExpiry(request.expiresAt)}.
               </p>
             </div>
-            <ResponseForm token={params.token} action={submitInformationResponseAction} />
+            <ResponseForm
+              credential={{ kind: "link", token: params.token }}
+              action={submitInformationResponseAction}
+            />
           </>
         ) : (
           <div className="response-unavailable" role="status">

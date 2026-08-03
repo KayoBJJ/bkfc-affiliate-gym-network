@@ -124,14 +124,66 @@ Use `BKFC-GYM-D58A32FBC475`.
 8. Generate a new portal link and confirm the old link returns not found.
 9. Confirm the audit trail records `Applicant progress portal link generated`.
 
-## Next slices
+## Slice 3 — implemented behind a disabled flag
 
-### Slice 3 — portal actions
+- Active portal access can open the current information request directly
+- Portal authorization is bound to the request and application in the database
+- Portal submission wrappers reuse the existing audited text-response and
+  versioned-file functions
+- Existing emailed response links are not rotated, replaced, or exposed
+- Text, file, and combined responses use the existing private upload and file
+  verification path
+- Revoked, expired, unactivated, cross-application, and non-current portal actions
+  fail closed
+- Portal and emailed-link response replays retain the same safe success behavior
+- Accessible portal states cover empty history, expired access, replaced access,
+  expired requests, replaced requests, approvals, rejections, and activation
+- Feature flag: `APPLICANT_PORTAL_ACTIONS_ENABLED`
 
-- Allow an authenticated portal session to open the current secure request
-  directly
-- Preserve the one-request/one-version audit model from Batch 1A.3
-- Add accessible empty, expired, replaced, approved, and rejected states
+Keep `APPLICANT_PORTAL_ACTIONS_ENABLED=false` until the Slice 3 migration has been
+applied and the golden-application acceptance test has passed. This flag does not
+enable applicant email delivery.
+
+## Slice 3 rollout order
+
+1. Keep `APPLICANT_PORTAL_ACTIONS_ENABLED=false`.
+2. Review and apply
+   `20260803000000_batch_1b_portal_actions.sql`.
+3. Deploy the matching application code with the flag still disabled.
+4. Confirm the read-only Slice 2 portal and existing emailed response links still
+   behave normally.
+5. Enable `APPLICANT_PORTAL_ACTIONS_ENABLED=true` only in the controlled test
+   environment.
+6. Use `BKFC-GYM-D58A32FBC475` to complete the acceptance test below.
+7. Return the production environment to the approved pre-launch flag state until
+   Lubo authorizes applicant use.
+
+## Slice 3 golden-application acceptance test
+
+1. Create an information request and open the application's active portal.
+2. Confirm the request shows `Respond securely` only while the application is in
+   `follow_up_required` and the request is open.
+3. Open the response from the portal and submit a text-only response.
+4. Confirm the application returns to review and creates exactly one response,
+   stage-history entry, response audit event, and blocked notification intent.
+5. Repeat with a file response and confirm the existing private upload, download,
+   file-signature validation, and review workflow remain intact.
+6. Request a replacement, submit the next file version from the portal, and confirm
+   the version sequence remains attached to the same information request.
+7. Confirm the original emailed response link remains valid until the request is
+   completed and is never rotated merely by opening the portal action.
+8. Attempt to pair the portal token with another application's request id and
+   confirm it returns unavailable without changing either application.
+9. Confirm expired, revoked, replaced, unactivated, and pending-delivery portal
+   access cannot upload or submit.
+10. Race portal and emailed-link submissions and confirm one completion with a safe
+    success response on replay.
+11. Confirm expired portal, replaced portal, empty request history, expired request,
+    replaced request, approved, rejected, and activated states render accessibly.
+12. Confirm logs and audit details contain no raw tokens, response text, applicant
+    values, filenames, or private URLs.
+
+## Next slice
 
 ### Slice 4 — analytics and operational readiness
 

@@ -46,6 +46,10 @@ export function isApplicantPortalEnabled() {
   return process.env.APPLICANT_PORTAL_ENABLED?.trim().toLowerCase() === "true";
 }
 
+export function isApplicantPortalActionsEnabled() {
+  return process.env.APPLICANT_PORTAL_ACTIONS_ENABLED?.trim().toLowerCase() === "true";
+}
+
 export function isApplicantPortalEmailDeliveryEnabled() {
   return process.env.APPLICANT_PORTAL_EMAIL_DELIVERY_ENABLED?.trim().toLowerCase() === "true";
 }
