@@ -537,6 +537,8 @@ export function FaqAccordion({ language }: FaqAccordionProps) {
     <div className="faq-list">
       {items.map((item, index) => {
         const isOpen = openIndex === index;
+        const questionId = `faq-question-${index}`;
+        const answerId = `faq-answer-${index}`;
 
         return (
           <div
@@ -544,13 +546,15 @@ export function FaqAccordion({ language }: FaqAccordionProps) {
             className={`faq-item ${isOpen ? "open" : ""}`}
           >
             <button
+              id={questionId}
               type="button"
               className="faq-question"
               onClick={() => toggleItem(index)}
               aria-expanded={isOpen}
+              aria-controls={answerId}
             >
               <span>{item.question}</span>
-              <span className={`faq-icon ${isOpen ? "open" : ""}`}>
+              <span className={`faq-icon ${isOpen ? "open" : ""}`} aria-hidden="true">
                 <svg
                   width="18"
                   height="18"
@@ -566,7 +570,13 @@ export function FaqAccordion({ language }: FaqAccordionProps) {
               </span>
             </button>
 
-            <div className="faq-answer-wrap">
+            <div
+              id={answerId}
+              className="faq-answer-wrap"
+              role="region"
+              aria-labelledby={questionId}
+              aria-hidden={!isOpen}
+            >
               <div className="faq-answer">
                 <p>{item.answer}</p>
               </div>

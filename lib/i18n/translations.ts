@@ -13,12 +13,12 @@ export type LanguageCode = (typeof languages)[number]["code"];
 export const translations = {
   en: {
     navApply: "Apply Now",
-    heroEyebrow: "Official BKFC Development Network",
+    heroEyebrow: "Official Affiliate Gym Program",
     heroTitle: "BKFC Gym Network",
     heroSubtitle:
       "A global affiliate program connecting approved combat sports gyms with the BKFC international development system.",
-    heroSupporting: 
-      "Build for gyms with serious standards, ahtlete potential, and long-term growth ambition inside an expanding BKFC network.",
+    heroSupporting:
+      "Built for gyms with serious standards, athlete potential, and long-term growth ambition inside an expanding BKFC network.",
     heroPrimaryCta: "Apply to Join",
     heroSecondaryCta: "Explore the Program",
 
@@ -83,8 +83,8 @@ export const translations = {
 
     benefitsEyebrow: "Benefits",
     benefitsTitle: "Why selected gyms join the program",
-    benefitsSubtitle: 
-      "The BKFC Affiliate Gym Program is designed to create value across brand visibility, fighter opportunity, and long-term gym development iside structured international network",
+    benefitsSubtitle:
+      "The BKFC Affiliate Gym Program is designed to create value across brand visibility, fighter opportunity, and long-term gym development inside a structured international network.",
     
     
     benefitKicker: "Program Value",
@@ -93,18 +93,18 @@ export const translations = {
     benefitGroup1Title: "Exposure",
     benefitGroup1Item1: "Official BKFC affiliate recognition",
     benefitGroup1Item2: "Positioning inside the BKFC international gym network",
-    benefitGroup1Item3: "Visibility opportunities across BKFC digitital and content channels",
+    benefitGroup1Item3: "Visibility opportunities across BKFC digital and content channels",
     benefitGroup1Item4: "Stronger credibility for gyms looking to grow locally and internationally",
 
-    benefitGroup2Title: "Athele Opportunity",
+    benefitGroup2Title: "Athlete Opportunity",
     benefitGroup2Item1: "Priority visibility for fighters connected to affiliate gyms",
     benefitGroup2Item2: "Closer connection to BKFC tryouts, trials, and talent pathways",
-    benefitGroup2Item3: "Stronger long-term bridge betweengym athletes and BKFC opportunity channels",
-    benefitGroup2Item4: "Additionalvalue for gyms focused on developing competitive fighter",
+    benefitGroup2Item3: "Stronger long-term bridge between gym athletes and BKFC opportunity channels",
+    benefitGroup2Item4: "Additional value for gyms focused on developing competitive fighters",
 
 
     benefitGroup3Title: "Commercial & Program Advantages",
-    benefitGroup3Item1: "Potential access to selected BKFC-related acctivations",
+    benefitGroup3Item1: "Potential access to selected BKFC-related activations",
     benefitGroup3Item2: "Merchandising and promotional opportunity framework",
     benefitGroup3Item3: "Seminar and appearance possibilities connected to BKFC talent",
     benefitGroup3Item4: "Entry into a structured program built for growth, not just affiliation",
@@ -179,7 +179,7 @@ footerSupportText:
  "Questions regarding the Affiliate Gym Program may be directed to:",
 footerNoticeLabel: "Program notice",
 footerNoticeText:
- "Use of BKFC branding, affiliate status, or related representations is premitted only after formal approval  by BKFC International Development",
+ "Use of BKFC branding, affiliate status, or related representations is permitted only after formal approval by BKFC International Development.",
 footerLegal:
   "© Bare Knuckle Fighting Championship. All rights reserved.",
 
@@ -192,7 +192,7 @@ footerLegal:
 
   es: {
     navApply: "Aplicar Ahora",
-    heroEyebrow: "Red Oficial de Desarrollo BKFC",
+    heroEyebrow: "Programa Oficial de Gimnasios Afiliados",
     heroTitle: "BKFC Gym Network",
     heroSubtitle:
       "Un programa global de afiliación que conecta gimnasios de deportes de combate aprobados con el sistema internacional de desarrollo de BKFC.",
@@ -369,7 +369,7 @@ footerLegal:
 
   pt: {
     navApply: "Candidatar-se",
-    heroEyebrow: "Rede Oficial de Desenvolvimento BKFC",
+    heroEyebrow: "Programa Oficial de Academias Afiliadas",
     heroTitle: "BKFC Gym Network",
     heroSubtitle:
       "Um programa global de afiliação que conecta academias aprovadas de esportes de combate ao sistema internacional de desenvolvimento da BKFC.",
@@ -545,7 +545,7 @@ footerLegal:
 
   ru: {
     navApply: "Подать заявку",
-    heroEyebrow: "Официальная сеть развития BKFC",
+    heroEyebrow: "Официальная программа партнёрских залов",
     heroTitle: "BKFC Gym Network",
     heroSubtitle:
       "Глобальная партнерская программа, объединяющая одобренные залы единоборств с международной системой развития BKFC.",
@@ -721,7 +721,7 @@ footerLegal:
 
   de: {
   navApply: "Jetzt bewerben",
-  heroEyebrow: "Offizielles BKFC Entwicklungsnetzwerk",
+  heroEyebrow: "Offizielles Affiliate-Gym-Programm",
   heroTitle: "BKFC Gym Network",
   heroSubtitle:
     "Ein globales Affiliate-Programm, das zugelassene Kampfsport-Gyms mit dem internationalen Entwicklungssystem von BKFC verbindet.",
@@ -890,7 +890,7 @@ footerLegal:
 
 it: {
   navApply: "Candidati ora",
-  heroEyebrow: "Rete ufficiale di sviluppo BKFC",
+  heroEyebrow: "Programma ufficiale per palestre affiliate",
   heroTitle: "BKFC Gym Network",
   heroSubtitle:
     "Un programma globale di affiliazione che collega palestre di sport da combattimento approvate al sistema internazionale di sviluppo BKFC.",
@@ -1059,7 +1059,7 @@ it: {
 
 pl: {
   navApply: "Aplikuj teraz",
-  heroEyebrow: "Oficjalna sieć rozwoju BKFC",
+  heroEyebrow: "Oficjalny program klubów afiliacyjnych",
   heroTitle: "BKFC Gym Network",
   heroSubtitle:
     "Globalny program afiliacyjny łączący zatwierdzone kluby sportów walki z międzynarodowym systemem rozwoju BKFC.",
