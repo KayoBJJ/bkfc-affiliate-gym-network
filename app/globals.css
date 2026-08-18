@@ -3968,3 +3968,1742 @@ h1 {
   font-size: 0.78rem;
   line-height: 1;
 }
+
+/* BKFC landing redesign --------------------------------------------------- */
+
+.landing-page {
+  --fight-yellow: #ffd43f;
+  --fight-yellow-bright: #ffe16a;
+  --fight-black: #050505;
+  --fight-ink: #121212;
+  --fight-paper: #f2f1ed;
+  --fight-white: #ffffff;
+  --fight-gray: #a9a9a4;
+  --fight-rule: rgba(255, 255, 255, 0.18);
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 0 0 32px;
+  background: var(--fight-black);
+  color: var(--fight-white);
+}
+
+.landing-page section[id] {
+  scroll-margin-top: 112px;
+}
+
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page .fight-button,
+.landing-page .section-nav-link,
+.landing-page .section-nav-toggle,
+.landing-page .footer-label {
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page p {
+  margin: 0;
+}
+
+.landing-page h2 {
+  max-width: 15ch;
+  font-size: clamp(3rem, 6.4vw, 6.8rem);
+  line-height: 0.86;
+  letter-spacing: 0.005em;
+}
+
+.landing-page h3 {
+  font-size: clamp(2rem, 3.5vw, 3.65rem);
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+}
+
+.landing-page p,
+.landing-page li {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.landing-page :where(
+  a,
+  button,
+  select,
+  input,
+  textarea
+):focus-visible {
+  outline: 3px solid var(--fight-yellow-bright);
+  outline-offset: 4px;
+}
+
+.landing-page :where(
+  .fight-header,
+  .fight-language-switcher,
+  .section-nav,
+  .application-section
+) :where(a, select, input, textarea, button):focus-visible {
+  outline-color: var(--fight-black);
+}
+
+.landing-page .faq-question:focus-visible {
+  color: var(--fight-yellow);
+}
+
+.landing-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  opacity: 0.07;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 255, 255, 0.07) 4px),
+    repeating-linear-gradient(90deg, transparent 0 5px, rgba(255, 255, 255, 0.035) 6px);
+  mix-blend-mode: overlay;
+}
+
+.fight-eyebrow {
+  margin-bottom: 18px !important;
+  color: var(--fight-yellow) !important;
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif !important;
+  font-size: 1.1rem !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.085em !important;
+  text-transform: uppercase;
+}
+
+/* Hero */
+
+.fight-hero {
+  position: relative;
+  isolation: isolate;
+  max-width: 1440px;
+  min-height: 790px;
+  margin: 0 auto;
+  background: #0a0a0a;
+}
+
+.fight-header {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  min-height: 82px;
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.fight-brand {
+  display: flex;
+  align-items: center;
+  padding: 0 34px;
+  border-right: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.fight-brand img {
+  display: block;
+  width: 145px;
+  height: auto;
+  filter: invert(1);
+}
+
+.fight-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 30px;
+  padding: 0 30px;
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.08rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.fight-header-meta a {
+  text-decoration: none;
+}
+
+.fight-language-switcher.language-switcher {
+  align-self: center;
+  min-width: 92px;
+  height: 82px;
+  border: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0;
+  background: var(--fight-yellow);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.fight-language-switcher.language-switcher:hover {
+  transform: none;
+  border-color: rgba(0, 0, 0, 0.15);
+  background: var(--fight-yellow-bright);
+  box-shadow: none;
+}
+
+.fight-language-switcher .language-select {
+  color: var(--fight-black);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+.fight-language-switcher .language-select option {
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.fight-language-switcher .language-chevron {
+  color: var(--fight-black);
+}
+
+.fight-hero-stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 708px;
+  align-items: flex-end;
+  padding: 78px 5.5% 54px;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.72) 42%, rgba(0, 0, 0, 0.16) 78%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, transparent 52%),
+    url("/images/bkfc-events/hero/BKFC62-0296.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.fight-hero-stage::before {
+  content: "BARE KNUCKLE FIGHTING";
+  position: absolute;
+  top: 28px;
+  left: 5.5%;
+  color: rgba(255, 255, 255, 0.22);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: clamp(0.85rem, 1.4vw, 1.3rem);
+  letter-spacing: 0.68em;
+  white-space: nowrap;
+}
+
+.fight-hero-stage::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 55%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.32), transparent);
+  transform: skewX(-14deg);
+}
+
+.fight-hero-copy {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 820px);
+}
+
+.fight-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px !important;
+  color: var(--fight-yellow) !important;
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif !important;
+  font-size: clamp(1.15rem, 2vw, 1.55rem) !important;
+  letter-spacing: 0.08em;
+  line-height: 1 !important;
+  text-transform: uppercase;
+}
+
+.fight-hero-copy h1 {
+  max-width: 9ch;
+  color: var(--fight-white);
+  font-size: clamp(5rem, 11vw, 10.8rem);
+  line-height: 0.75;
+  letter-spacing: -0.01em;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.72);
+}
+
+.fight-hero-subtitle {
+  max-width: 62ch;
+  margin-top: 28px !important;
+  color: var(--fight-white) !important;
+  font-size: clamp(1.05rem, 1.7vw, 1.35rem) !important;
+  font-weight: 700;
+  line-height: 1.45 !important;
+}
+
+.fight-hero-supporting {
+  max-width: 66ch;
+  margin-top: 12px !important;
+  color: rgba(255, 255, 255, 0.66) !important;
+  font-size: 0.96rem !important;
+  line-height: 1.6 !important;
+}
+
+.fight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.fight-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 205px;
+  min-height: 56px;
+  padding: 0 24px;
+  border: 1px solid var(--fight-yellow);
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.fight-button:hover {
+  transform: translateY(-2px);
+}
+
+.fight-button-primary {
+  background: var(--fight-yellow);
+  color: var(--fight-black);
+}
+
+.fight-button-secondary {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--fight-white);
+}
+
+.fight-button-secondary:hover {
+  background: var(--fight-yellow);
+  color: var(--fight-black);
+}
+
+.fight-hero-rail {
+  position: absolute;
+  right: 4%;
+  bottom: 42px;
+  z-index: 2;
+  width: min(35%, 420px);
+  border-top: 1px solid var(--fight-rule);
+  border-bottom: 1px solid var(--fight-rule);
+  background: rgba(8, 8, 8, 0.74);
+  backdrop-filter: blur(12px);
+}
+
+.fight-hero-rail div {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.fight-hero-rail div:last-child {
+  border-bottom: 0;
+}
+
+.fight-hero-rail span {
+  color: var(--fight-yellow);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1rem;
+}
+
+.fight-hero-rail strong {
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Sticky landing navigation */
+
+.landing-page .section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  background: var(--fight-paper);
+}
+
+.landing-page .section-nav-inner {
+  justify-content: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding: 0 0 0 18px;
+  border: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+  background: var(--fight-paper);
+  box-shadow: none;
+  backdrop-filter: none;
+  scrollbar-width: none;
+}
+
+.landing-page .section-nav-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.landing-page .section-nav-link {
+  flex: 0 0 auto;
+  padding: 19px 15px 16px;
+  border-bottom: 4px solid transparent;
+  border-radius: 0;
+  color: rgba(0, 0, 0, 0.62);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.landing-page .section-nav-link:hover {
+  color: var(--fight-black);
+  background: rgba(0, 0, 0, 0.05);
+  transform: none;
+}
+
+.landing-page .section-nav-link.active {
+  border-bottom-color: var(--fight-yellow);
+  background: transparent;
+  color: var(--fight-black);
+  box-shadow: none;
+}
+
+.landing-page .section-nav-cta {
+  display: inline-flex;
+  min-width: 190px;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-left: auto;
+  padding: 0 24px;
+  background: var(--fight-yellow);
+  color: var(--fight-black);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.12rem;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.landing-page .section-nav-cta:hover {
+  background: var(--fight-yellow-bright);
+}
+
+/* Shared editorial sections */
+
+.editorial-section,
+.tier-section,
+.standards-section,
+.benefits-section,
+.process-section,
+.starter-section,
+.application-section,
+.faq-section {
+  width: min(calc(100% - 40px), 1240px);
+  margin: 0 auto;
+}
+
+.editorial-section {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: clamp(40px, 7vw, 100px);
+  margin-top: 56px;
+  padding: clamp(36px, 5vw, 68px);
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.section-index {
+  position: absolute;
+  top: 22px;
+  right: 28px;
+  color: rgba(0, 0, 0, 0.1);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: clamp(5rem, 12vw, 11rem);
+  line-height: 0.8;
+}
+
+.editorial-heading,
+.editorial-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.editorial-heading .fight-eyebrow {
+  color: #9d7600 !important;
+}
+
+.editorial-copy {
+  align-self: end;
+  padding-top: 80px;
+}
+
+.editorial-copy p,
+.spotlight-copy > p,
+.standards-heading > p,
+.process-copy > p,
+.starter-copy > p,
+.application-header > p,
+.faq-header > p {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.editorial-copy p {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.editorial-support {
+  margin-top: 20px !important;
+  padding-left: 18px;
+  border-left: 4px solid var(--fight-yellow);
+}
+
+/* Pathway */
+
+.pathway-section {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 1440px);
+  margin: 48px auto 0;
+  padding: clamp(48px, 6vw, 82px) clamp(20px, 5vw, 76px);
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.96), rgba(0, 0, 0, 0.72)),
+    url("/images/bkfc-events/fighter-pathway/BKFC34 PL0247.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.pathway-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: repeating-linear-gradient(108deg, transparent 0 110px, rgba(255, 255, 255, 0.025) 111px 112px);
+}
+
+.pathway-intro {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 0.55fr);
+  gap: 40px;
+  align-items: end;
+  max-width: 1240px;
+  margin: 0 auto 50px;
+}
+
+.pathway-intro .fight-eyebrow {
+  grid-column: 1 / -1;
+  margin-bottom: -18px !important;
+}
+
+.pathway-intro p:last-child {
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.65;
+}
+
+.landing-page .pathway-grid {
+  display: grid;
+  grid-template-columns: 1fr 38px 1fr 38px 1fr 38px 1fr;
+  gap: 0;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.landing-page .pathway-step {
+  display: flex;
+  min-height: 250px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.62);
+  box-shadow: none;
+}
+
+.landing-page .pathway-step::before,
+.landing-page .pathway-step::after,
+.landing-page .pathway-arrow::before {
+  content: none;
+}
+
+.pathway-number {
+  margin-bottom: auto;
+  color: var(--fight-yellow);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.45rem;
+}
+
+.landing-page .pathway-step-title {
+  max-width: 8ch;
+  color: var(--fight-white);
+  font-size: 2.3rem;
+  line-height: 0.88;
+}
+
+.landing-page .pathway-step-copy {
+  max-width: 26ch;
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.landing-page .pathway-arrow {
+  align-self: center;
+  width: auto;
+  color: var(--fight-yellow);
+  font-size: 1.4rem;
+}
+
+/* Tiers */
+
+.tier-section,
+.benefits-section {
+  padding-top: 76px;
+  padding-bottom: 76px;
+}
+
+.section-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.55fr);
+  gap: 50px;
+  align-items: end;
+  margin-bottom: 52px;
+}
+
+.section-title-row > p {
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.7;
+}
+
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.landing-page .tier-card {
+  min-height: 390px;
+  padding: 28px;
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.landing-page .tier-card:nth-child(2) {
+  background: var(--fight-yellow);
+}
+
+.tier-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tier-card-topline strong {
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.landing-page .tier-card h3 {
+  margin-top: 88px;
+  margin-bottom: 22px;
+  font-size: clamp(3.2rem, 5vw, 5rem);
+}
+
+.landing-page .tier-card p {
+  color: rgba(0, 0, 0, 0.65);
+  line-height: 1.65;
+}
+
+/* Spotlight */
+
+.spotlight-section {
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.spotlight-image {
+  position: relative;
+  min-height: 610px;
+  background-image:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.75), transparent 55%),
+    url("/images/bkfc-events/global-network/BKFC34 NV0122.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.spotlight-image span {
+  position: absolute;
+  right: 28px;
+  bottom: 24px;
+  left: 28px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.58);
+  color: var(--fight-white);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.spotlight-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(38px, 6vw, 82px);
+}
+
+.spotlight-copy .fight-eyebrow {
+  color: #9d7600 !important;
+}
+
+.spotlight-copy > p {
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.spotlight-copy h2 {
+  margin-bottom: 28px;
+  font-size: clamp(3.2rem, 5.4vw, 5.6rem);
+}
+
+.landing-page .recognition-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 30px;
+  border-top: 1px solid rgba(0, 0, 0, 0.18);
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.landing-page .recognition-strip span {
+  flex: 1 1 50%;
+  padding: 12px;
+  border-right: 1px solid rgba(0, 0, 0, 0.18);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Standards */
+
+.standards-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(380px, 1.2fr);
+  gap: clamp(50px, 8vw, 120px);
+  padding-top: 76px;
+  padding-bottom: 76px;
+}
+
+.standards-heading h2 {
+  margin-bottom: 30px;
+}
+
+.standards-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--fight-rule);
+  list-style: none;
+}
+
+.standards-list li {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 16px;
+  align-items: start;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--fight-rule);
+}
+
+.standards-list span {
+  color: var(--fight-yellow);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.3rem;
+}
+
+.standards-list p {
+  color: rgba(255, 255, 255, 0.76);
+  line-height: 1.55;
+}
+
+/* Benefits */
+
+.landing-page .benefits-section {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.landing-page .benefits-header {
+  margin-bottom: 52px;
+  text-align: left;
+}
+
+.benefit-groups {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.benefit-card {
+  position: relative;
+  min-height: 410px;
+  padding: clamp(26px, 4vw, 46px);
+  background: #111;
+}
+
+.benefit-card:nth-child(3) {
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.benefit-card:nth-child(4) {
+  background: var(--fight-yellow);
+  color: var(--fight-black);
+}
+
+.benefit-card-index {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  color: rgba(255, 255, 255, 0.1);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 6rem;
+  line-height: 1;
+}
+
+.benefit-card:nth-child(n+3) .benefit-card-index {
+  color: rgba(0, 0, 0, 0.1);
+}
+
+.landing-page .benefit-kicker {
+  margin-bottom: 66px;
+  color: var(--fight-yellow);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.benefit-card:nth-child(n+3) .benefit-kicker {
+  color: rgba(0, 0, 0, 0.58);
+}
+
+.benefit-card h3 {
+  max-width: 11ch;
+  margin-bottom: 26px;
+}
+
+.benefit-card ul {
+  display: grid;
+  gap: 13px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benefit-card li {
+  position: relative;
+  padding-left: 20px;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.55;
+}
+
+.benefit-card:nth-child(n+3) li {
+  color: rgba(0, 0, 0, 0.66);
+}
+
+.benefit-card li::before {
+  content: "";
+  position: absolute;
+  top: 0.6em;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  background: var(--fight-yellow);
+  transform: rotate(45deg);
+}
+
+.benefit-card:nth-child(n+3) li::before {
+  background: var(--fight-black);
+}
+
+/* Process and starter kit */
+
+.process-section {
+  display: grid;
+  grid-template-columns: 0.72fr 1.28fr;
+  gap: clamp(50px, 8vw, 120px);
+  padding-top: 24px;
+  padding-bottom: 76px;
+}
+
+.process-copy h2,
+.starter-copy h2 {
+  margin-bottom: 28px;
+}
+
+.process-rail {
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--fight-white);
+  list-style: none;
+}
+
+.process-rail li {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 20px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--fight-rule);
+}
+
+.process-rail span {
+  color: var(--fight-yellow);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.process-rail p {
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+}
+
+.starter-section {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: clamp(50px, 7vw, 100px);
+  padding: clamp(42px, 6vw, 80px);
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.starter-copy .fight-eyebrow,
+.starter-card .fight-eyebrow {
+  color: #9d7600 !important;
+}
+
+.starter-copy > p {
+  color: rgba(0, 0, 0, 0.66);
+}
+
+.starter-card {
+  padding: 32px;
+  border: 2px solid var(--fight-black);
+  background: var(--fight-yellow);
+}
+
+.starter-card h3 {
+  margin-bottom: 26px;
+}
+
+.starter-card ul {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.28);
+  list-style: none;
+}
+
+.starter-card li {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.45;
+}
+
+.starter-card li span {
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.1rem;
+}
+
+/* Expansion */
+
+.landing-page .expansion-section {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 570px;
+  align-items: flex-end;
+  width: min(100%, 1440px);
+  margin: 64px auto 0;
+  padding: clamp(42px, 7vw, 92px);
+  border: 0;
+  border-radius: 0;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.94), rgba(0, 0, 0, 0.32)),
+    url("/images/bkfc-events/global-network/BKFC34 NV0122.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.landing-page .expansion-section > div {
+  position: relative;
+  z-index: 2;
+  max-width: 780px;
+}
+
+.landing-page .expansion-section h2 {
+  margin-bottom: 28px;
+}
+
+.landing-page .expansion-section p:not(.fight-eyebrow) {
+  max-width: 66ch;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.65;
+}
+
+.expansion-mark {
+  position: absolute;
+  top: 38px;
+  right: 44px;
+  color: rgba(255, 255, 255, 0.12);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: clamp(6rem, 17vw, 16rem);
+  line-height: 0.75;
+}
+
+/* Application */
+
+.application-section {
+  margin-top: 72px;
+  padding: clamp(34px, 6vw, 78px);
+  background: var(--fight-paper);
+  color: var(--fight-black);
+}
+
+.application-header {
+  max-width: 900px;
+  margin-bottom: 48px;
+}
+
+.application-header .fight-eyebrow {
+  color: #9d7600 !important;
+}
+
+.application-header h2 {
+  margin-bottom: 28px;
+}
+
+.application-header > p {
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.application-section .form-confidence {
+  max-width: 74ch;
+  margin-top: 16px;
+  color: rgba(0, 0, 0, 0.58);
+  font-size: 0.88rem;
+}
+
+.application-section .prep-inline {
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  gap: 50px;
+  margin-bottom: 24px;
+  padding: 30px;
+  border: 2px solid var(--fight-black);
+  background: var(--fight-yellow);
+}
+
+.application-section .prep-inline .fight-eyebrow {
+  color: rgba(0, 0, 0, 0.58) !important;
+}
+
+.application-section .prep-inline h3 {
+  margin-bottom: 14px;
+  font-size: 2.5rem;
+}
+
+.application-section .prep-copy {
+  color: rgba(0, 0, 0, 0.68);
+}
+
+.application-section .prep-materials-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.24);
+  list-style: none;
+}
+
+.application-section .prep-materials-list li {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 10px 12px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
+  color: rgba(0, 0, 0, 0.7);
+  line-height: 1.4;
+}
+
+.application-section .prep-materials-list li span {
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.1rem;
+}
+
+.application-section .submission-trust-note {
+  margin: 26px 0;
+  color: rgba(0, 0, 0, 0.62);
+}
+
+.application-section .form-start-marker {
+  margin: 0 0 28px;
+  padding-top: 20px;
+  border-top: 4px solid var(--fight-black);
+}
+
+.application-section .form-start-marker span {
+  color: var(--fight-black);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.application-section .registration-form {
+  gap: 28px;
+}
+
+.application-section .form-grid {
+  gap: 18px;
+}
+
+.application-section .field {
+  gap: 8px;
+}
+
+.application-section .field span,
+.application-section .checkbox-field span,
+.application-section .turnstile-label {
+  color: rgba(0, 0, 0, 0.78);
+  font-weight: 700;
+}
+
+.application-section .required-mark {
+  color: #936b00;
+}
+
+.application-section .field input,
+.application-section .field textarea {
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  border-radius: 0;
+  background: var(--fight-white);
+  color: var(--fight-black);
+  box-shadow: none;
+}
+
+.application-section .field input:focus,
+.application-section .field textarea:focus {
+  border-color: var(--fight-black);
+  background: var(--fight-white);
+  box-shadow: 0 0 0 3px rgba(255, 212, 63, 0.55);
+  transform: none;
+}
+
+.application-section .field input::file-selector-button {
+  border-radius: 0;
+  background: var(--fight-black);
+  color: var(--fight-white);
+}
+
+.application-section .field-helper {
+  color: rgba(0, 0, 0, 0.56);
+}
+
+.application-section .field-error {
+  color: #a20f0f;
+}
+
+.application-section .consent-panel {
+  border: 1px solid rgba(0, 0, 0, 0.32);
+  border-radius: 0;
+  background: #e7e5df;
+}
+
+.application-section .consent-panel .eyebrow {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.application-section .consent-panel h3 {
+  color: var(--fight-black);
+  font-size: 2.5rem;
+}
+
+.application-section .privacy-copy,
+.application-section .checkbox-helper {
+  color: rgba(0, 0, 0, 0.64);
+}
+
+.application-section .optional-interest-block {
+  border: 1px solid rgba(0, 0, 0, 0.26);
+  border-radius: 0;
+  background: rgba(255, 212, 63, 0.16);
+}
+
+.application-section .checkbox-field input {
+  accent-color: var(--fight-black);
+}
+
+.application-section .submit-button {
+  min-height: 62px;
+  border-radius: 0;
+  background: var(--fight-yellow);
+  color: var(--fight-black);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: 1.55rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.application-section .submit-button:hover:not(:disabled),
+.application-section .submit-button:focus-visible:not(:disabled) {
+  background: var(--fight-yellow-bright);
+  box-shadow: 0 0 0 3px var(--fight-black);
+  transform: none;
+}
+
+.application-section .submission-message {
+  border-radius: 0;
+  color: var(--fight-black);
+}
+
+.application-section .submission-message.success {
+  border-color: #216a37;
+  background: #d9efdf;
+}
+
+.application-section .submission-message.error,
+.application-section .turnstile-error {
+  border-color: #a20f0f;
+  border-radius: 0;
+  background: #f8dddd;
+  color: #7e1010;
+}
+
+/* FAQ and footer */
+
+.landing-page .faq-section {
+  padding-top: 76px;
+  padding-bottom: 76px;
+}
+
+.landing-page .faq-header {
+  max-width: 760px;
+  margin: 0 0 52px;
+  text-align: left;
+}
+
+.landing-page .faq-header h2 {
+  margin-bottom: 24px;
+}
+
+.landing-page .faq-header a {
+  color: var(--fight-yellow);
+}
+
+.landing-page .faq-list {
+  gap: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.landing-page .faq-item {
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.landing-page .faq-item:hover {
+  border-color: var(--fight-yellow);
+  transform: none;
+}
+
+.landing-page .faq-question {
+  padding: 23px 0;
+  color: var(--fight-white);
+  font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.landing-page .faq-question:hover {
+  background: transparent;
+  color: var(--fight-yellow);
+}
+
+.landing-page .faq-icon {
+  color: var(--fight-yellow);
+}
+
+.landing-page .faq-answer p {
+  max-width: 90ch;
+  padding: 0 0 24px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.landing-page .site-footer {
+  display: grid;
+  grid-template-columns: 230px 0.8fr 1.2fr;
+  gap: 50px;
+  width: min(100%, 1440px);
+  max-width: none;
+  margin: 0 auto;
+  padding: 54px clamp(24px, 5vw, 72px) 28px;
+  border: 0;
+  border-radius: 0;
+  background: #171717;
+  box-shadow: none;
+}
+
+.landing-page .site-footer::before {
+  grid-column: 1 / -1;
+  margin: 0;
+  background: linear-gradient(90deg, var(--fight-yellow), transparent);
+}
+
+.landing-page .footer-brand {
+  margin: 0;
+}
+
+.landing-page .footer-brand img {
+  width: 145px;
+  height: auto;
+  max-height: 180px;
+  object-fit: contain;
+  object-position: top;
+}
+
+.landing-page .footer-column {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.landing-page .footer-column p:not(.footer-label) {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.landing-page .footer-label {
+  color: var(--fight-white);
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+}
+
+.landing-page .footer-column a {
+  color: var(--fight-yellow);
+}
+
+.landing-page .footer-legal {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+@media (min-width: 760px) {
+  .application-section .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .application-section .field-full {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .landing-page .pathway-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .landing-page .pathway-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 1020px) {
+  .fight-hero-rail {
+    display: none;
+  }
+
+  .fight-hero-copy {
+    width: min(100%, 760px);
+  }
+
+  .pathway-intro,
+  .section-title-row,
+  .standards-section,
+  .process-section {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-page .pathway-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .landing-page .pathway-arrow {
+    display: none;
+  }
+
+  .tier-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-page .tier-card {
+    min-height: 300px;
+  }
+
+  .landing-page .tier-card h3 {
+    margin-top: 50px;
+  }
+
+  .spotlight-section,
+  .starter-section {
+    grid-template-columns: 1fr;
+  }
+
+  .spotlight-image {
+    min-height: 470px;
+  }
+
+  .benefit-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .application-section .prep-inline {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-page .site-footer {
+    grid-template-columns: 170px 1fr 1fr;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-page section[id] {
+    scroll-margin-top: 74px;
+  }
+
+  .fight-header {
+    grid-template-columns: 1fr 82px;
+    min-height: 68px;
+  }
+
+  .fight-brand {
+    padding: 0 20px;
+  }
+
+  .fight-brand img {
+    width: 122px;
+  }
+
+  .fight-header-meta {
+    display: none;
+  }
+
+  .fight-language-switcher.language-switcher {
+    height: 68px;
+  }
+
+  .fight-hero {
+    min-height: 720px;
+  }
+
+  .fight-hero-stage {
+    min-height: 652px;
+    padding: 72px 20px 42px;
+    background-image:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.25)),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.92), transparent 58%),
+      url("/images/bkfc-events/hero/BKFC62-0296.jpg");
+    background-position: 58% center;
+  }
+
+  .fight-hero-stage::before {
+    left: 20px;
+    max-width: calc(100% - 40px);
+    overflow: hidden;
+    letter-spacing: 0.4em;
+  }
+
+  .fight-hero-stage::after {
+    display: none;
+  }
+
+  .fight-hero-copy h1 {
+    font-size: clamp(4.7rem, 24vw, 7rem);
+  }
+
+  .fight-actions {
+    display: grid;
+  }
+
+  .fight-button {
+    width: 100%;
+  }
+
+  .landing-page .section-nav {
+    background: var(--fight-paper);
+  }
+
+  .landing-page .section-nav-toggle {
+    display: flex;
+    min-height: 58px;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    background: var(--fight-paper);
+    color: var(--fight-black);
+    font-size: 1.1rem;
+  }
+
+  .landing-page .section-nav-toggle-icon span {
+    background: var(--fight-black);
+  }
+
+  .landing-page .section-nav-inner {
+    display: none;
+    max-height: calc(100vh - 58px);
+    overflow-y: auto;
+    padding: 8px 20px 18px;
+  }
+
+  .landing-page .section-nav-inner.open {
+    display: grid;
+  }
+
+  .landing-page .section-nav-link {
+    padding: 13px 4px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .landing-page .section-nav-link.active {
+    border-bottom-color: var(--fight-yellow);
+  }
+
+  .landing-page .section-nav-cta {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    margin-left: 0;
+    margin-top: 10px;
+    padding: 0 18px;
+    background: var(--fight-yellow);
+    color: var(--fight-black);
+    font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+    font-size: 1.2rem;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .editorial-section,
+  .tier-section,
+  .standards-section,
+  .benefits-section,
+  .process-section,
+  .starter-section,
+  .application-section,
+  .faq-section {
+    width: min(calc(100% - 24px), 1240px);
+  }
+
+  .editorial-section {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 36px;
+    padding: 34px 24px;
+  }
+
+  .editorial-copy {
+    padding-top: 0;
+  }
+
+  .section-index {
+    top: 18px;
+    right: 18px;
+    font-size: 6rem;
+  }
+
+  .pathway-section {
+    margin-top: 36px;
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+
+  .pathway-intro {
+    display: block;
+    margin-bottom: 32px;
+  }
+
+  .pathway-intro .fight-eyebrow {
+    margin-bottom: 18px !important;
+  }
+
+  .pathway-intro h2 {
+    margin-bottom: 24px;
+  }
+
+  .landing-page .pathway-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-page .pathway-step {
+    min-height: 210px;
+  }
+
+  .tier-section,
+  .benefits-section,
+  .standards-section,
+  .faq-section {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
+  .section-title-row {
+    gap: 24px;
+    margin-bottom: 34px;
+  }
+
+  .landing-page .tier-card {
+    min-height: 280px;
+    padding: 24px;
+  }
+
+  .spotlight-image {
+    min-height: 390px;
+  }
+
+  .spotlight-copy {
+    padding: 40px 24px;
+  }
+
+  .standards-section {
+    gap: 36px;
+  }
+
+  .benefit-card {
+    min-height: 350px;
+    padding: 28px 24px;
+  }
+
+  .process-section {
+    gap: 36px;
+    padding-bottom: 56px;
+  }
+
+  .process-rail li {
+    grid-template-columns: 60px 1fr;
+  }
+
+  .starter-section {
+    gap: 32px;
+    padding: 34px 24px;
+  }
+
+  .starter-card {
+    padding: 24px 20px;
+  }
+
+  .landing-page .expansion-section {
+    min-height: 540px;
+    margin-top: 44px;
+    padding: 38px 24px;
+    background-position: 62% center;
+  }
+
+  .expansion-mark {
+    top: 30px;
+    right: 20px;
+  }
+
+  .application-section {
+    margin-top: 48px;
+    padding: 36px 22px;
+  }
+
+  .application-section .prep-inline {
+    gap: 28px;
+    padding: 24px 20px;
+  }
+
+  .application-section .prep-materials-list {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-page .faq-header {
+    margin-bottom: 34px;
+  }
+
+  .landing-page .site-footer {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 40px 24px 24px;
+  }
+
+  .landing-page .footer-brand img {
+    width: 120px;
+    max-height: 150px;
+  }
+
+  .landing-page .footer-legal {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page *,
+  .landing-page *::before,
+  .landing-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
