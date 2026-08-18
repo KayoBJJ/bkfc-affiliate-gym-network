@@ -6,6 +6,7 @@ import {
   getRateLimitConfig,
   getTurnstileConfig,
   isApplicantPortalEmailDeliveryEnabled,
+  isApplicantCommunicationsEnabled,
   isApplicantPortalEnabled,
   isApplicantPortalRecoveryEnabled,
 } from "@/lib/config/server";
@@ -43,6 +44,7 @@ async function genericResponse(startedAt: number) {
 export async function POST(request: Request) {
   const startedAt = Date.now();
   if (
+    !isApplicantCommunicationsEnabled() ||
     !isApplicantPortalEnabled() ||
     !isApplicantPortalRecoveryEnabled() ||
     !isApplicantPortalEmailDeliveryEnabled()

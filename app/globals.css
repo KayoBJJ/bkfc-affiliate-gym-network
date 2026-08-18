@@ -2240,6 +2240,34 @@ h1 {
   margin-top: 24px;
 }
 
+.admin-communication-panel {
+  margin-top: 24px;
+}
+
+.admin-communication-summary,
+.admin-communication-row p {
+  color: var(--muted);
+}
+
+.admin-communication-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.admin-communication-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.admin-communication-state {
+  text-align: right;
+}
+
 .admin-timeline-list {
   position: relative;
   display: grid;

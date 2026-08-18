@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   resolveEmailRouting,
+  resolveApplicantCommunicationConfig,
   resolveCleanupConfig,
   resolvePrivilegedSupabaseConfig,
   resolveProxyTrustConfig,
@@ -32,6 +33,19 @@ export function getTurnstileConfig() {
 
 export function getCleanupConfig() {
   return resolveCleanupConfig(process.env);
+}
+
+export function getApplicantCommunicationConfig() {
+  return resolveApplicantCommunicationConfig(process.env);
+}
+
+export function isApplicantCommunicationsEnabled() {
+  try {
+    const config = getApplicantCommunicationConfig();
+    return config.enabled && !config.dryRun;
+  } catch {
+    return false;
+  }
 }
 
 export function getEmailRouting(applicantEmail: string) {

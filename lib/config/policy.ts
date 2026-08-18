@@ -6,7 +6,8 @@ export type ConfigCode =
   | "CONFIG_EMAIL_INVALID"
   | "CONFIG_PROXY_INVALID"
   | "CONFIG_TURNSTILE_INVALID"
-  | "CONFIG_CLEANUP_INVALID";
+  | "CONFIG_CLEANUP_INVALID"
+  | "CONFIG_COMMUNICATION_INVALID";
 
 export class ConfigurationError extends Error {
   readonly code: ConfigCode;
@@ -104,13 +105,46 @@ function enabledFlag(value: string | undefined) {
   return { enabled: false, valid: false };
 }
 
-function positiveInteger(value: string | undefined, fallback: number, min: number, max: number) {
+function positiveInteger(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+  code: ConfigCode = "CONFIG_CLEANUP_INVALID",
+) {
   if (!clean(value)) return fallback;
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
-    throw new ConfigurationError("CONFIG_CLEANUP_INVALID");
+    throw new ConfigurationError(code);
   }
   return parsed;
+}
+
+export function resolveApplicantCommunicationConfig(env: EnvironmentSource) {
+  const enabled = enabledFlag(env.APPLICANT_COMMUNICATIONS_ENABLED);
+  const dryRun = enabledFlag(env.APPLICANT_COMMUNICATIONS_DRY_RUN ?? "true");
+  const tokenSecret = clean(env.APPLICANT_COMMUNICATION_TOKEN_SECRET);
+  if (!enabled.valid || !dryRun.valid) {
+    throw new ConfigurationError("CONFIG_COMMUNICATION_INVALID");
+  }
+  if (
+    enabled.enabled &&
+    (!tokenSecret || tokenSecret.length < 32 || isPlaceholder(tokenSecret) || new Set(tokenSecret).size < 8)
+  ) {
+    throw new ConfigurationError("CONFIG_COMMUNICATION_INVALID");
+  }
+  return {
+    enabled: enabled.enabled,
+    dryRun: dryRun.enabled,
+    batchSize: positiveInteger(
+      env.APPLICANT_COMMUNICATION_BATCH_SIZE,
+      10,
+      1,
+      25,
+      "CONFIG_COMMUNICATION_INVALID",
+    ),
+    tokenSecret,
+  };
 }
 
 export function resolveTurnstileConfig(env: EnvironmentSource) {

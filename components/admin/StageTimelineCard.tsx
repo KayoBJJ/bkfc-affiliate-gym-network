@@ -71,6 +71,9 @@ function auditEventLabel(event: ApplicationAuditEvent) {
   if (event.event_type === "applicant_notification_requested") {
     return "Applicant notification prepared — awaiting approved copy";
   }
+  if (event.event_type === "applicant_notification_released") {
+    return "Applicant notification released with approved copy";
+  }
   if (event.event_type === "applicant_notification_sent") {
     return "Applicant notification sent";
   }

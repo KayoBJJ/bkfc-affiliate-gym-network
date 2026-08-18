@@ -8,13 +8,16 @@ import { StageTimelineCard } from "@/components/admin/StageTimelineCard";
 import { InformationRequestForm } from "@/components/admin/InformationRequestForm";
 import { InformationRequestsCard } from "@/components/admin/InformationRequestsCard";
 import { ApplicantPortalAccessCard } from "@/components/admin/ApplicantPortalAccessCard";
+import { CommunicationStatusCard } from "@/components/admin/CommunicationStatusCard";
 import { requireAdminUser } from "@/lib/admin/auth";
 import {
   getAffiliateApplicationById,
   getApplicationAuditEvents,
+  getApplicationCommunicationStatus,
   getApplicationInformationRequests,
   getApplicationStageHistory,
 } from "@/lib/admin/supabase";
+import { isApplicantCommunicationsEnabled } from "@/lib/config/server";
 import {
   createInformationRequestAction,
   emailApplicantPortalLinkAction,
@@ -36,11 +39,12 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   await requireAdminUser();
-  const [application, stageHistory, auditEvents, informationRequests] = await Promise.all([
+  const [application, stageHistory, auditEvents, informationRequests, communicationStatus] = await Promise.all([
     getAffiliateApplicationById(params.id),
     getApplicationStageHistory(params.id),
     getApplicationAuditEvents(params.id),
     getApplicationInformationRequests(params.id),
+    getApplicationCommunicationStatus(params.id),
   ]);
 
   if (!application) {
@@ -93,6 +97,10 @@ export default async function AdminApplicationDetailPage({
       </div>
 
       <div className="admin-audit-layout">
+        <CommunicationStatusCard
+          status={communicationStatus}
+          enabled={isApplicantCommunicationsEnabled()}
+        />
         <StageTimelineCard
           historyEntries={stageHistory}
           auditEvents={auditEvents}

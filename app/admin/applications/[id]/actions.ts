@@ -26,6 +26,7 @@ import {
 import { IDEMPOTENCY_KEY_PATTERN } from "@/lib/application/policy";
 import {
   isApplicantPortalEmailDeliveryEnabled,
+  isApplicantCommunicationsEnabled,
   isApplicantPortalEnabled,
   isInformationResponseEnabled,
 } from "@/lib/config/server";
@@ -97,7 +98,8 @@ export async function emailApplicantPortalLinkAction(
   formData: FormData,
 ): Promise<ApplicantPortalLinkFormState> {
   const adminUser = await requireAdminUser();
-  if (!isApplicantPortalEnabled() || !isApplicantPortalEmailDeliveryEnabled()) {
+  if (!isApplicantCommunicationsEnabled() || !isApplicantPortalEnabled() ||
+    !isApplicantPortalEmailDeliveryEnabled()) {
     return {
       message: "Applicant portal email delivery is not enabled in this environment.",
       status: "error",
@@ -152,7 +154,7 @@ async function deliverMaterialPortalUpdate({
     | "affiliate_activated";
   secondaryPath?: string;
 }) {
-  if (!isApplicantPortalEmailDeliveryEnabled()) return null;
+  if (!isApplicantCommunicationsEnabled() || !isApplicantPortalEmailDeliveryEnabled()) return null;
   try {
     return await deliverApplicantPortalAccess({
       applicationId,

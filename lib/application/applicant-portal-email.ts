@@ -3,6 +3,7 @@ import "server-only";
 import { Resend } from "resend";
 import {
   getEmailRouting,
+  isApplicantCommunicationsEnabled,
   isApplicantPortalTestApplication,
 } from "@/lib/config/server";
 import { escapeHtml } from "./email-content";
@@ -155,6 +156,9 @@ async function sendApplicantEmail({
   subject: string;
   html: string;
 }): Promise<ApplicantPortalEmailOutcome> {
+  if (!isApplicantCommunicationsEnabled()) {
+    return { status: "failed", errorCode: "APPLICANT_COMMUNICATIONS_DISABLED" };
+  }
   const routing = getEmailRouting(application.email);
   if (
     !routing.applicantDeliveryEnabled &&
@@ -194,6 +198,7 @@ async function sendApplicantEmail({
 export function isApplicantPortalDeliveryTargetAllowed(
   application: ApplicantPortalEmailApplication,
 ) {
+  if (!isApplicantCommunicationsEnabled()) return false;
   const routing = getEmailRouting(application.email);
   return (
     routing.applicantDeliveryEnabled ||

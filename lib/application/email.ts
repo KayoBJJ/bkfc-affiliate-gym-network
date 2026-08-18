@@ -1,7 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { logApplicationEvent } from "./logging";
-import { getEmailRouting } from "@/lib/config/server";
+import { getEmailRouting, isApplicantCommunicationsEnabled } from "@/lib/config/server";
 import {
   isApplicantPortalEmailDeliveryEnabled,
   isApplicantPortalEnabled,
@@ -178,9 +178,11 @@ function buildApplicantReceivedEmail({
 
 export async function sendApplicationNotifications(application: EmailApplication) {
   const routing = getEmailRouting(application.email);
+  const applicantCommunicationsEnabled = isApplicantCommunicationsEnabled();
   const sends: Array<{ type: "internal" | "applicant"; promise: ReturnType<Resend["emails"]["send"]> }> = [];
   let preparedPortal: PreparedApplicantPortalDelivery | null = null;
   if (
+    applicantCommunicationsEnabled &&
     isApplicantPortalEnabled() &&
     isApplicantPortalEmailDeliveryEnabled() &&
     isApplicantPortalDeliveryTargetAllowed(application)
@@ -210,10 +212,12 @@ export async function sendApplicationNotifications(application: EmailApplication
       notificationType: "internal",
     });
   }
-  if (!routing.applicant.enabled) {
+  if (!applicantCommunicationsEnabled || !routing.applicant.enabled) {
     logApplicationEvent("warn", {
       stage: "notification",
-      code: routing.applicant.skipCode ?? "EMAIL_TEST_DELIVERY_SKIPPED",
+      code: applicantCommunicationsEnabled
+        ? routing.applicant.skipCode ?? "EMAIL_TEST_DELIVERY_SKIPPED"
+        : "APPLICANT_COMMUNICATIONS_DISABLED",
       applicationReference: application.applicationReference,
       notification: "skipped",
       notificationType: "applicant_template",
@@ -241,7 +245,12 @@ export async function sendApplicationNotifications(application: EmailApplication
       }),
     });
   }
-  if (routing.applicant.enabled && routing.applicant.from && routing.applicant.recipient) {
+  if (
+    applicantCommunicationsEnabled &&
+    routing.applicant.enabled &&
+    routing.applicant.from &&
+    routing.applicant.recipient
+  ) {
     sends.push({
       type: "applicant",
       promise: resend.emails.send({

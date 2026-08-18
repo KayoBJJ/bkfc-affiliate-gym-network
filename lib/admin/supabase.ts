@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type {
   AffiliateApplication,
+  ApplicationCommunicationStatus,
   ApplicationAuditEvent,
   ApplicationInformationRequest,
   ApplicationStageHistoryEntry,
@@ -18,6 +19,27 @@ import { STORAGE_BUCKET } from "@/lib/application/policy";
 
 export function createAdminSupabaseClient() {
   return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey());
+}
+
+export async function getApplicationCommunicationStatus(applicationId: string) {
+  const supabase = createAdminSupabaseClient();
+  const [outboxResult, templateResult] = await Promise.all([
+    supabase.from("affiliate_application_notification_outbox")
+      .select("id, notification_type, delivery_status, attempt_count, last_error_code, created_at, sent_at, template:affiliate_application_notification_templates(version, locale, approval_status)")
+      .eq("application_id", applicationId).order("created_at", { ascending: false }),
+    supabase.from("affiliate_application_notification_templates")
+      .select("notification_type").eq("approval_status", "approved"),
+  ]);
+  const missing = ["42P01", "42703", "PGRST204", "PGRST205"];
+  if (missing.includes(outboxResult.error?.code ?? "") ||
+    missing.includes(templateResult.error?.code ?? "")) return null;
+  if (outboxResult.error || templateResult.error) {
+    throw new Error("Failed to load applicant communication status.");
+  }
+  return {
+    rows: outboxResult.data ?? [],
+    approvedTemplateTypes: (templateResult.data ?? []).map((row) => row.notification_type),
+  } as unknown as ApplicationCommunicationStatus;
 }
 
 export async function getAffiliateApplications() {

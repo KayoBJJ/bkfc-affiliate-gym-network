@@ -87,6 +87,7 @@ export type ApplicationAuditEvent = {
     | "applicant_portal_recovery_sent"
     | "applicant_portal_access_recovered"
     | "applicant_notification_requested"
+    | "applicant_notification_released"
     | "applicant_notification_sent"
     | "applicant_notification_failed";
   actor_user_id: string | null;
@@ -133,4 +134,18 @@ export type ApplicationInformationAttachment = {
   reviewed_by_email: string | null;
   review_note: string | null;
   access_url: string | null;
+};
+
+export type ApplicationCommunicationStatus = {
+  rows: Array<{
+    id: string;
+    notification_type: string;
+    delivery_status: string;
+    attempt_count: number;
+    last_error_code: string | null;
+    created_at: string;
+    sent_at: string | null;
+    template: null | { version: number; locale: string; approval_status: string };
+  }>;
+  approvedTemplateTypes: string[];
 };

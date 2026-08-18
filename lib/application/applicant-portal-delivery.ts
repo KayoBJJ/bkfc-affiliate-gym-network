@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 import {
   getApplicationPublicUrl,
+  isApplicantCommunicationsEnabled,
   isApplicantPortalEmailDeliveryEnabled,
   isApplicantPortalEnabled,
 } from "@/lib/config/server";
@@ -106,7 +107,11 @@ export async function deliverApplicantPortalAccess({
   reason: ApplicantPortalDeliveryReason;
   secondaryPath?: string;
 }): Promise<ApplicantPortalEmailOutcome> {
-  if (!isApplicantPortalEnabled() || !isApplicantPortalEmailDeliveryEnabled()) {
+  if (
+    !isApplicantCommunicationsEnabled() ||
+    !isApplicantPortalEnabled() ||
+    !isApplicantPortalEmailDeliveryEnabled()
+  ) {
     return { status: "failed", errorCode: "PORTAL_EMAIL_DELIVERY_DISABLED" };
   }
   const supabase = createAdminSupabaseClient();
