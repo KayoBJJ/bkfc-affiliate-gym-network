@@ -1,8 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { getCleanupConfig, getPrivilegedSupabaseConfig } from "@/lib/config/server";
+import { getBkfcIntegrationConfig, getCleanupConfig, getPrivilegedSupabaseConfig } from "@/lib/config/server";
 import { runApplicationCleanup } from "@/lib/application/upload-session-cleanup";
+import { STORAGE_BUCKET } from "@/lib/application/policy";
+import { reconcileBkfcIntegrationOrphans } from "@/lib/integrations/bkfc/orphan-reconciler";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,8 +29,26 @@ export async function GET(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
     const summary = await runApplicationCleanup(supabase, cleanup);
-    return NextResponse.json({ success: summary.failures === 0, ...summary }, {
-      status: summary.failures === 0 ? 200 : 503,
+    const integration = getBkfcIntegrationConfig();
+    const orphanSummary = integration.orphanCleanupEnabled
+      ? await reconcileBkfcIntegrationOrphans({
+        list: (prefix, options) => supabase.storage.from(STORAGE_BUCKET).list(prefix, options),
+        isLinked: async (path) => {
+          const result = await supabase.rpc("affiliate_application_asset_is_linked", { p_path: path });
+          return { data: result.data as boolean | null, error: result.error };
+        },
+        remove: (paths) => supabase.storage.from(STORAGE_BUCKET).remove(paths),
+        log: (event) => console.info(JSON.stringify({ event: "bkfc_integration_orphan_cleanup", ...event })),
+      }, {
+        dryRun: integration.orphanCleanupDryRun,
+        batchSize: integration.orphanCleanupBatchSize,
+        minimumAgeHours: 24,
+        maximumPages: 10,
+      })
+      : null;
+    const failures = summary.failures + (orphanSummary?.failures ?? 0);
+    return NextResponse.json({ success: failures === 0, ...summary, orphanReconciliation: orphanSummary }, {
+      status: failures === 0 ? 200 : 503,
       headers: { "cache-control": "no-store" },
     });
   } catch {

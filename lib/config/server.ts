@@ -9,6 +9,7 @@ import {
   resolvePublicSupabaseConfig,
   resolveRateLimitConfig,
   resolveTurnstileConfig,
+  resolveBkfcIntegrationConfig,
 } from "./policy";
 
 export function getPrivilegedSupabaseConfig() {
@@ -37,6 +38,10 @@ export function getCleanupConfig() {
 
 export function getApplicantCommunicationConfig() {
   return resolveApplicantCommunicationConfig(process.env);
+}
+
+export function getBkfcIntegrationConfig() {
+  return resolveBkfcIntegrationConfig(process.env);
 }
 
 export function isApplicantCommunicationsEnabled() {

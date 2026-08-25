@@ -106,6 +106,7 @@ export async function runApplicantCommunicationWorker() {
           request_summary: requestSummary, request_deadline: requestDeadline,
         },
         portalUrl: new URL(`/application-progress/${token}`, `${getApplicationPublicUrl()}/`).toString(),
+        bkfcPaymentManaged: details?.bkfc_payment_managed === true,
       });
       const routing = getEmailRouting(application.email);
       if (!routing.applicantDeliveryEnabled &&

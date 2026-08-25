@@ -9,6 +9,7 @@ import { InformationRequestForm } from "@/components/admin/InformationRequestFor
 import { InformationRequestsCard } from "@/components/admin/InformationRequestsCard";
 import { ApplicantPortalAccessCard } from "@/components/admin/ApplicantPortalAccessCard";
 import { CommunicationStatusCard } from "@/components/admin/CommunicationStatusCard";
+import { ApplicationPaymentCard } from "@/components/admin/ApplicationPaymentCard";
 import { requireAdminUser } from "@/lib/admin/auth";
 import {
   getAffiliateApplicationById,
@@ -16,6 +17,7 @@ import {
   getApplicationCommunicationStatus,
   getApplicationInformationRequests,
   getApplicationStageHistory,
+  getApplicationPaymentStatus,
 } from "@/lib/admin/supabase";
 import { isApplicantCommunicationsEnabled } from "@/lib/config/server";
 import {
@@ -39,12 +41,13 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   await requireAdminUser();
-  const [application, stageHistory, auditEvents, informationRequests, communicationStatus] = await Promise.all([
+  const [application, stageHistory, auditEvents, informationRequests, communicationStatus, paymentStatus] = await Promise.all([
     getAffiliateApplicationById(params.id),
     getApplicationStageHistory(params.id),
     getApplicationAuditEvents(params.id),
     getApplicationInformationRequests(params.id),
     getApplicationCommunicationStatus(params.id),
+    getApplicationPaymentStatus(params.id),
   ]);
 
   if (!application) {
@@ -83,6 +86,7 @@ export default async function AdminApplicationDetailPage({
       </div>
 
       <div className="admin-follow-up-layout">
+        <ApplicationPaymentCard application={application} payment={paymentStatus} />
         <InformationRequestForm
           applicationId={application.id}
           action={createInformationRequestAction}

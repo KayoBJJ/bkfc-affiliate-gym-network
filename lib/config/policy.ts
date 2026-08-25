@@ -7,7 +7,8 @@ export type ConfigCode =
   | "CONFIG_PROXY_INVALID"
   | "CONFIG_TURNSTILE_INVALID"
   | "CONFIG_CLEANUP_INVALID"
-  | "CONFIG_COMMUNICATION_INVALID";
+  | "CONFIG_COMMUNICATION_INVALID"
+  | "CONFIG_BKFC_INTEGRATION_INVALID";
 
 export class ConfigurationError extends Error {
   readonly code: ConfigCode;
@@ -103,6 +104,103 @@ function enabledFlag(value: string | undefined) {
   if (!normalized || normalized === "false") return { enabled: false, valid: true };
   if (normalized === "true") return { enabled: true, valid: true };
   return { enabled: false, valid: false };
+}
+
+function integrationSecret(value: string | undefined) {
+  const secret = clean(value);
+  return secret && secret.length >= 43 && !isPlaceholder(secret) && new Set(secret).size >= 12
+    ? secret
+    : undefined;
+}
+
+function integrationFlag(value: string | undefined) {
+  const flag = enabledFlag(value);
+  if (!flag.valid) throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  return flag.enabled;
+}
+
+export type BkfcIntegrationConfig = {
+  submissionEnabled: boolean;
+  paymentCallbackEnabled: boolean;
+  paymentDeliveryEnabled: boolean;
+  bkfcToEuSecrets: readonly string[];
+  euToBkfcCurrentSecret?: string;
+  euToBkfcPreviousSecret?: string;
+  paymentRequestBaseUrl?: string;
+  consentNoticeVersionAllowlist: ReadonlySet<string>;
+  orphanCleanupEnabled: boolean;
+  orphanCleanupDryRun: boolean;
+  orphanCleanupBatchSize: number;
+};
+
+export function resolveBkfcIntegrationConfig(env: EnvironmentSource): BkfcIntegrationConfig {
+  const submissionEnabled = integrationFlag(env.BKFC_SUBMISSION_INTEGRATION_ENABLED);
+  const paymentCallbackEnabled = integrationFlag(env.BKFC_PAYMENT_CALLBACK_ENABLED);
+  const paymentDeliveryEnabled = integrationFlag(env.BKFC_PAYMENT_REQUEST_DELIVERY_ENABLED);
+  const orphanCleanupEnabled = integrationFlag(env.BKFC_INTEGRATION_ORPHAN_CLEANUP_ENABLED);
+  const orphanCleanupDryRunFlag = enabledFlag(env.BKFC_INTEGRATION_ORPHAN_CLEANUP_DRY_RUN ?? "true");
+  if (!orphanCleanupDryRunFlag.valid) throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  const bkfcCurrent = integrationSecret(env.BKFC_TO_EU_BEARER_SECRET_CURRENT);
+  const bkfcPrevious = integrationSecret(env.BKFC_TO_EU_BEARER_SECRET_PREVIOUS);
+  const euCurrent = integrationSecret(env.EU_TO_BKFC_BEARER_SECRET_CURRENT);
+  const euPrevious = integrationSecret(env.EU_TO_BKFC_BEARER_SECRET_PREVIOUS);
+  const consentNoticeVersionAllowlist = new Set(
+    (clean(env.BKFC_CONSENT_NOTICE_VERSION_ALLOWLIST) ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter((entry) => /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(entry)),
+  );
+
+  if (
+    (clean(env.BKFC_TO_EU_BEARER_SECRET_CURRENT) && !bkfcCurrent) ||
+    (clean(env.BKFC_TO_EU_BEARER_SECRET_PREVIOUS) && !bkfcPrevious) ||
+    (clean(env.EU_TO_BKFC_BEARER_SECRET_CURRENT) && !euCurrent) ||
+    (clean(env.EU_TO_BKFC_BEARER_SECRET_PREVIOUS) && !euPrevious) ||
+    (bkfcCurrent && bkfcPrevious && bkfcCurrent === bkfcPrevious) ||
+    (euCurrent && euPrevious && euCurrent === euPrevious) ||
+    [bkfcCurrent, bkfcPrevious].some((secret) => secret && [euCurrent, euPrevious].includes(secret))
+  ) {
+    throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  }
+
+  let paymentRequestBaseUrl: string | undefined;
+  const configuredBaseUrl = clean(env.BKFC_PAYMENT_REQUEST_BASE_URL);
+  if (configuredBaseUrl) {
+    try {
+      const url = new URL(configuredBaseUrl);
+      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
+        (url.pathname !== "/" && url.pathname !== "")) throw new Error();
+      paymentRequestBaseUrl = url.origin;
+    } catch {
+      throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+    }
+  }
+
+  if ((submissionEnabled || paymentCallbackEnabled) && !bkfcCurrent) {
+    throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  }
+  if (submissionEnabled && consentNoticeVersionAllowlist.size === 0) {
+    throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  }
+  if (paymentDeliveryEnabled && (!euCurrent || !paymentRequestBaseUrl)) {
+    throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  }
+
+  return {
+    submissionEnabled,
+    paymentCallbackEnabled,
+    paymentDeliveryEnabled,
+    bkfcToEuSecrets: [bkfcCurrent, bkfcPrevious].filter((value): value is string => Boolean(value)),
+    euToBkfcCurrentSecret: euCurrent,
+    euToBkfcPreviousSecret: euPrevious,
+    paymentRequestBaseUrl,
+    consentNoticeVersionAllowlist,
+    orphanCleanupEnabled,
+    orphanCleanupDryRun: orphanCleanupDryRunFlag.enabled,
+    orphanCleanupBatchSize: positiveInteger(
+      env.BKFC_INTEGRATION_ORPHAN_CLEANUP_BATCH_SIZE, 50, 1, 500, "CONFIG_BKFC_INTEGRATION_INVALID",
+    ),
+  };
 }
 
 function positiveInteger(

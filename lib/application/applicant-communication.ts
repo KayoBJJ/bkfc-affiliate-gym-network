@@ -46,6 +46,7 @@ export function renderApplicantCommunication(input: {
   template: ApplicantCommunicationTemplate;
   variables: ApplicantCommunicationVariables;
   portalUrl: string;
+  bkfcPaymentManaged?: boolean;
 }) {
   if (!["approved", "retired"].includes(input.template.approval_status)) {
     throw new Error("TEMPLATE_NOT_APPROVED");
@@ -58,6 +59,9 @@ export function renderApplicantCommunication(input: {
   if (/[\r\n]/.test(subject)) throw new Error("TEMPLATE_SUBJECT_INVALID");
   const headline = renderText(input.template.headline_template, input.variables);
   const paragraphs = input.template.body_paragraphs.map((paragraph) => renderText(paragraph, input.variables));
+  if (input.template.notification_type === "approved" && input.bkfcPaymentManaged === true) {
+    paragraphs.push("Your application has been approved. Official payment instructions will be sent separately by BKFC.");
+  }
   const footer = renderText(input.template.footer_text, input.variables);
   const body = paragraphs.map((paragraph) =>
     `<p style="margin:0 0 18px;color:#d4d4d4;font-size:15px;line-height:26px;">${escapeHtml(paragraph)}</p>`).join("");

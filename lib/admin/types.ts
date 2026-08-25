@@ -149,3 +149,21 @@ export type ApplicationCommunicationStatus = {
   }>;
   approvedTemplateTypes: string[];
 };
+
+export type ApplicationPaymentStatus = {
+  plan_code: "monthly" | "quarterly";
+  payment_status: "not_requested" | "pending" | "paid" | "cancelled" | "refunded";
+  payment_operation_state: string;
+  current_payment_request_id: string | null;
+  payment_requested_at: string | null;
+  payment_link_sent_at: string | null;
+  paid_at: string | null;
+  cancelled_at: string | null;
+  refunded_at: string | null;
+  last_operational_error_code: string | null;
+  delivery_status: string | null;
+  command_id: string | null;
+  command_type: string | null;
+  attempt_count: number | null;
+  next_attempt_at: string | null;
+};

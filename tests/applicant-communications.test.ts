@@ -70,11 +70,22 @@ test("approved structured copy renders escaped values and rejects unsafe variabl
       application_reference: "BKFC-GYM-ABC123", request_summary: "N/A", request_deadline: "N/A",
     },
     portalUrl: "https://example.test/application-progress/token?x=1&y=2",
+    bkfcPaymentManaged: true,
   });
   assert.equal(rendered.subject, "Update for A&B Gym");
   assert.match(rendered.html, /Ana &lt;Admin&gt;/);
   assert.match(rendered.html, /A&amp;B Gym|BKFC-GYM-ABC123/);
   assert.match(rendered.html, /x=1&amp;y=2/);
+  assert.match(rendered.html, /Official payment instructions will be sent separately by BKFC/);
+  const legacyRendered = renderApplicantCommunication({
+    template,
+    variables: {
+      contact_person: "Ana", gym_name: "Legacy Gym", application_reference: "LEGACY-1",
+      request_summary: "N/A", request_deadline: "N/A",
+    },
+    portalUrl: "https://example.test/portal",
+  });
+  assert.doesNotMatch(legacyRendered.html, /Official payment instructions/);
   assert.throws(() => renderApplicantCommunication({
     template: { ...template, subject_template: "{{unknown_value}}" },
     variables: {

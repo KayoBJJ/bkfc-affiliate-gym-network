@@ -1,0 +1,316 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+import { authenticateBearer } from "../lib/integrations/bkfc/auth.ts";
+import { IntegrationError, integrationErrorHeaders, integrationErrorPayload } from "../lib/integrations/bkfc/contracts.ts";
+import { removeUploadedLogo } from "../lib/integrations/bkfc/logo-compensation.ts";
+import {
+  reconcileBkfcIntegrationOrphans, type OrphanReconcilerDependencies,
+} from "../lib/integrations/bkfc/orphan-reconciler.ts";
+import { consumeTokenBucket } from "../lib/integrations/bkfc/rate-limit.ts";
+import {
+  finalizeIngressReservation, requireAcquiredReservation, reserveIngress,
+  type IngressReservation,
+} from "../lib/integrations/bkfc/ingress-reservation.ts";
+import { paymentDecisionForReviewTransition } from "../lib/integrations/bkfc/review-transition-policy.ts";
+import { parseDisciplinesOffered } from "../lib/integrations/bkfc/submission.ts";
+import { getApplicationRegion } from "../lib/application/region.ts";
+import { ConfigurationError, resolveBkfcIntegrationConfig } from "../lib/config/policy.ts";
+
+const currentSecret = "Abcdefghijklmnopqrstuvwxyz0123456789-ABCDEFGHIJK";
+const previousSecret = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210-abcdefghijk";
+const bkfcIdentity = { sourceSystem: "bkfc", sourceApplicationId: "BKFC-APP-123" };
+const approved = { reviewStage: "approved", status: "approved" };
+const submitted = { reviewStage: "submitted", status: "new" };
+const activated = { reviewStage: "activated_affiliate", status: "active" };
+
+test("disciplines split the raw value on every frozen delimiter before item normalization", () => {
+  assert.deepEqual(parseDisciplinesOffered("Boxing\nMMA"), ["Boxing", "MMA"]);
+  assert.deepEqual(parseDisciplinesOffered("Boxing,MMA"), ["Boxing", "MMA"]);
+  assert.deepEqual(parseDisciplinesOffered("Boxing;MMA"), ["Boxing", "MMA"]);
+  assert.deepEqual(parseDisciplinesOffered("Boxing, MMA;BJJ\n Muay\tThai"), ["Boxing", "MMA", "BJJ", "Muay Thai"]);
+  assert.deepEqual(parseDisciplinesOffered(",,Boxing;;;\n\nMMA,;"), ["Boxing", "MMA"]);
+  assert.deepEqual(parseDisciplinesOffered("x".repeat(100)), ["x".repeat(100)]);
+  assert.equal(parseDisciplinesOffered("x,".repeat(19) + "x").length, 20);
+  assert.throws(() => parseDisciplinesOffered("x".repeat(101)), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "FIELD_TOO_LONG");
+  assert.throws(() => parseDisciplinesOffered("x,".repeat(20) + "x"), IntegrationError);
+  assert.throws(() => parseDisciplinesOffered("x".repeat(2001)), IntegrationError);
+  assert.throws(() => parseDisciplinesOffered(" , ;\n "), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "REQUIRED_FIELD_MISSING");
+});
+
+test("shared macro-region derivation preserves every established category", () => {
+  assert.equal(getApplicationRegion(" Bulgaria "), "Europe");
+  assert.equal(getApplicationRegion("United Arab Emirates"), "MENA");
+  assert.equal(getApplicationRegion("Brazil"), "LATAM");
+  assert.equal(getApplicationRegion("Canada"), "North America");
+  assert.equal(getApplicationRegion("Japan"), "Other");
+});
+
+test("legacy transitions remain payment-neutral while BKFC transitions enforce payment", () => {
+  assert.equal(paymentDecisionForReviewTransition({ sourceSystem: null, sourceApplicationId: null, current: submitted, target: approved }), "none");
+  assert.equal(paymentDecisionForReviewTransition({ sourceSystem: null, sourceApplicationId: null, current: approved, target: activated }), "none");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: submitted, target: approved, paymentStatus: "not_requested" }), "initiate");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: approved, paymentStatus: "pending" }), "no_op");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: activated, paymentStatus: "pending" }), "deny_activation");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: activated, paymentStatus: "paid" }), "none");
+  assert.equal(paymentDecisionForReviewTransition({ sourceSystem: "bkfc", sourceApplicationId: null, current: submitted, target: approved }), "none");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: submitted, paymentStatus: "pending", initiationDeliveryStatus: "queued", initiationClaimed: false }), "suppress");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: submitted, paymentStatus: "paid", initiationDeliveryStatus: "sending", initiationClaimed: true }), "cancel");
+});
+
+test("credential rotation authenticates both slots without retaining raw credentials", () => {
+  const current = authenticateBearer(`Bearer ${currentSecret}`, [currentSecret, previousSecret]);
+  const previous = authenticateBearer(`Bearer ${previousSecret}`, [currentSecret, previousSecret]);
+  assert.equal(current.authorized, true);
+  assert.equal(previous.authorized, true);
+  if (!current.authorized || !previous.authorized) return;
+  assert.match(current.credentialFingerprint, /^[a-f0-9]{64}$/);
+  assert.match(previous.credentialFingerprint, /^[a-f0-9]{64}$/);
+  assert.notEqual(current.credentialFingerprint, previous.credentialFingerprint);
+  assert.equal(current.credentialFingerprint.includes(currentSecret), false);
+});
+
+test("orphan reconciliation configuration fails closed and defaults to disabled dry-run", () => {
+  const defaults = resolveBkfcIntegrationConfig({});
+  assert.equal(defaults.orphanCleanupEnabled, false);
+  assert.equal(defaults.orphanCleanupDryRun, true);
+  assert.equal(defaults.orphanCleanupBatchSize, 50);
+  assert.throws(() => resolveBkfcIntegrationConfig({
+    BKFC_INTEGRATION_ORPHAN_CLEANUP_ENABLED: "yes",
+  }), ConfigurationError);
+  assert.throws(() => resolveBkfcIntegrationConfig({
+    BKFC_INTEGRATION_ORPHAN_CLEANUP_BATCH_SIZE: "501",
+  }), ConfigurationError);
+});
+
+test("durable rate policy permits bursts, exhausts, refills and resets independently", () => {
+  let submissionState;
+  for (let index = 0; index < 10; index += 1) {
+    const result = consumeTokenBucket("submission", submissionState, 0);
+    assert.equal(result.allowed, true);
+    submissionState = result.state;
+  }
+  const limited = consumeTokenBucket("submission", submissionState, 0);
+  assert.equal(limited.allowed, false);
+  assert.equal(limited.retryAfterSeconds, 1);
+  assert.equal(consumeTokenBucket("submission", limited.state, 1_000).allowed, true);
+  assert.equal(consumeTokenBucket("submission", limited.state, 60_000).state.tokens, 9);
+
+  let callbackState;
+  for (let index = 0; index < 50; index += 1) callbackState = consumeTokenBucket("callback", callbackState, 0).state;
+  assert.equal(consumeTokenBucket("callback", callbackState, 0).allowed, false);
+  assert.equal(consumeTokenBucket("callback", callbackState, 200).allowed, true);
+});
+
+test("rate-limit 429 response is exact", () => {
+  const limited = new IntegrationError("RATE_LIMITED", 429, undefined, true, 7);
+  assert.equal(limited.status, 429);
+  assert.equal(integrationErrorHeaders(limited, "request-id")["retry-after"], "7");
+  assert.deepEqual(integrationErrorPayload(limited, "request-id"), {
+    success: false, code: "RATE_LIMITED", requestId: "request-id", retryable: true,
+  });
+});
+
+function orphanDependencies(input: {
+  createdAt: string;
+  linked?: boolean;
+  removalError?: boolean;
+  referenceError?: boolean;
+  objectCount?: number;
+}) {
+  const removed: string[][] = [];
+  const logs: Array<Record<string, string | number | boolean>> = [];
+  const objectCount = input.objectCount ?? 1;
+  const dependencies: OrphanReconcilerDependencies = {
+    list: async (prefix, options) => {
+      if (!prefix) return options.offset === 0
+        ? { data: [{ name: "1f8b7442-f45e-46da-ac1b-029d70f1b872" }], error: null }
+        : { data: [], error: null };
+      const objects = Array.from({ length: objectCount }, (_, index) => ({ name: `logo-${index}.png`, created_at: input.createdAt }));
+      return { data: objects.slice(options.offset, options.offset + options.limit), error: null };
+    },
+    isLinked: async () => ({ data: input.linked ?? false, error: input.referenceError ? {} : null }),
+    remove: async (paths) => { removed.push(paths); return { error: input.removalError ? {} : null }; },
+    log: (event) => logs.push(event),
+  };
+  return { dependencies, removed, logs };
+}
+
+const reconciliationPolicy = { dryRun: true, batchSize: 10, minimumAgeHours: 24, maximumPages: 3 };
+
+test("direct-upload orphan reconciliation is dry-run, age-safe, reference-safe and fail-closed", async () => {
+  const old = orphanDependencies({ createdAt: "2026-08-23T23:59:59.999Z" });
+  const dry = await reconcileBkfcIntegrationOrphans(old.dependencies, reconciliationPolicy, Date.parse("2026-08-25T00:00:00Z"));
+  assert.equal(dry.eligible, 1); assert.equal(dry.removed, 0); assert.equal(old.removed.length, 0);
+
+  const boundary = orphanDependencies({ createdAt: "2026-08-24T00:00:00.000Z" });
+  assert.equal((await reconcileBkfcIntegrationOrphans(boundary.dependencies, reconciliationPolicy, Date.parse("2026-08-25T00:00:00Z"))).eligible, 0);
+
+  const linked = orphanDependencies({ createdAt: "2026-08-23T00:00:00Z", linked: true });
+  const linkedResult = await reconcileBkfcIntegrationOrphans(linked.dependencies, { ...reconciliationPolicy, dryRun: false }, Date.parse("2026-08-25T00:00:00Z"));
+  assert.equal(linkedResult.protected, 1); assert.equal(linked.removed.length, 0);
+
+  const failedCheck = orphanDependencies({ createdAt: "2026-08-23T00:00:00Z", referenceError: true });
+  const failedResult = await reconcileBkfcIntegrationOrphans(failedCheck.dependencies, { ...reconciliationPolicy, dryRun: false }, Date.parse("2026-08-25T00:00:00Z"));
+  assert.equal(failedResult.failures, 1); assert.equal(failedCheck.removed.length, 0);
+});
+
+test("orphan reconciliation bounds pagination and reports removal failures without path logs", async () => {
+  const fixture = orphanDependencies({ createdAt: "2026-08-23T00:00:00Z", objectCount: 8, removalError: true });
+  const result = await reconcileBkfcIntegrationOrphans(fixture.dependencies, {
+    dryRun: false, batchSize: 3, minimumAgeHours: 24, maximumPages: 2,
+  }, Date.parse("2026-08-25T00:00:00Z"));
+  assert.equal(result.scanned, 3);
+  assert.equal(result.failures, 3);
+  assert.equal(fixture.removed.length, 3);
+  assert.equal(JSON.stringify(fixture.logs).includes("logo-"), false);
+});
+
+test("replay logo cleanup preserves success while emitting a safe machine event on failure", async () => {
+  const events: Array<{ stage: string; code: string; requestId: string }> = [];
+  assert.equal(await removeUploadedLogo(async () => ({ error: {} }), (event) => events.push(event), "request-id"), false);
+  assert.deepEqual(events, [{ stage: "submission_cleanup", code: "CLEANUP_FAILED", requestId: "request-id" }]);
+  assert.equal(JSON.stringify(events).includes("filename"), false);
+  assert.equal(await removeUploadedLogo(async () => ({ error: null }), (event) => events.push(event), "request-id"), true);
+});
+
+test("source configuration schedules delivery and routes reserve before expensive business work", async () => {
+  const vercel = JSON.parse(await readFile("vercel.json", "utf8"));
+  assert.deepEqual(vercel.crons, [
+    { path: "/api/cron/application-cleanup", schedule: "17 3 * * *" },
+    { path: "/api/cron/bkfc-payment-commands", schedule: "* * * * *" },
+  ]);
+  const sql = await readFile("supabase/migrations/20260825000000_bkfc_eu_affiliate_integration_v1.sql", "utf8");
+  const reserveStart = sql.indexOf("create or replace function public.reserve_bkfc_integration_ingress_v1");
+  const reserveEnd = sql.indexOf("create or replace function public.finalize_bkfc_integration_ingress_reservation_v1");
+  const reserveFunction = sql.slice(reserveStart, reserveEnd);
+  assert.ok(reserveFunction.indexOf("from public.affiliate_applications") <
+    reserveFunction.indexOf("consume_bkfc_integration_rate_limit_v1"));
+  assert.match(reserveFunction, /return query select 'rate_limited'/);
+  const createStart = sql.indexOf("create or replace function public.create_bkfc_affiliate_application_v1");
+  const createEnd = sql.indexOf("create or replace function public.admin_transition_affiliate_application", createStart);
+  assert.doesNotMatch(sql.slice(createStart, createEnd), /consume_bkfc_integration_rate_limit_v1/);
+  const callbackStart = sql.indexOf("create or replace function public.record_bkfc_payment_status_event_v1");
+  const callbackEnd = sql.indexOf("alter table public.affiliate_application_payment_coordination enable row level security", callbackStart);
+  assert.doesNotMatch(sql.slice(callbackStart, callbackEnd), /consume_bkfc_integration_rate_limit_v1/);
+
+  const submissionRoute = await readFile("app/api/v1/integrations/bkfc/affiliate-applications/route.ts", "utf8");
+  const submissionReserve = submissionRoute.indexOf("await reserveIngress");
+  assert.ok(submissionReserve > submissionRoute.indexOf("validateBkfcSubmission"));
+  assert.ok(submissionReserve < submissionRoute.indexOf("normalized_gym_name"));
+  assert.ok(submissionReserve < submissionRoute.indexOf(".upload("));
+  assert.ok(submissionReserve < submissionRoute.indexOf("create_bkfc_affiliate_application_v1"));
+  assert.match(submissionRoute, /p_idempotency_key: reservation\.logical_request_id/);
+
+  const callbackRoute = await readFile(
+    "app/api/v1/integrations/bkfc/affiliate-applications/[euApplicationId]/payment-status-events/route.ts",
+    "utf8",
+  );
+  assert.ok(callbackRoute.indexOf("const { data: existing") < callbackRoute.indexOf("await reserveIngress"));
+  assert.ok(callbackRoute.indexOf(".maybeSingle()") < callbackRoute.indexOf("await reserveIngress"));
+  assert.ok(callbackRoute.indexOf("await reserveIngress") <
+    callbackRoute.indexOf("record_bkfc_payment_status_event_v1"));
+});
+
+function reservation(disposition: IngressReservation["disposition"], overrides: Partial<IngressReservation> = {}): IngressReservation {
+  return {
+    disposition,
+    reservation_id: disposition === "acquired" ? "reservation-id" : null,
+    claim_token: disposition === "acquired" ? "claim-token" : null,
+    logical_request_id: "logical-id",
+    reserved_application_id: null,
+    reserved_application_reference: null,
+    outcome_code: null,
+    retry_after_seconds: 0,
+    ...overrides,
+  };
+}
+
+test("reservation dispositions gate duplicate lookup, upload and business creation", () => {
+  const expensive = { duplicate: 0, upload: 0, create: 0 };
+  const proceed = (value: IngressReservation) => {
+    if (value.disposition === "completed") return "replay";
+    requireAcquiredReservation(value);
+    expensive.duplicate += 1;
+    expensive.upload += 1;
+    expensive.create += 1;
+    return "created";
+  };
+
+  assert.throws(() => proceed(reservation("rate_limited", { retry_after_seconds: 3 })), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "RATE_LIMITED" && error.status === 429 &&
+    error.retryable && error.retryAfterSeconds === 3);
+  assert.deepEqual(expensive, { duplicate: 0, upload: 0, create: 0 });
+  assert.throws(() => proceed(reservation("in_progress", { retry_after_seconds: 9 })), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "REQUEST_IN_PROGRESS" && error.status === 409 &&
+    error.retryable && error.retryAfterSeconds === 9);
+  assert.deepEqual(expensive, { duplicate: 0, upload: 0, create: 0 });
+  assert.equal(proceed(reservation("completed")), "replay");
+  assert.deepEqual(expensive, { duplicate: 0, upload: 0, create: 0 });
+  assert.throws(() => proceed(reservation("idempotency_conflict")), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "IDEMPOTENCY_CONFLICT");
+  assert.throws(() => proceed(reservation("source_conflict")), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "BKFC_APPLICATION_ID_CONFLICT");
+  assert.deepEqual(expensive, { duplicate: 0, upload: 0, create: 0 });
+  assert.equal(proceed(reservation("acquired")), "created");
+  assert.deepEqual(expensive, { duplicate: 1, upload: 1, create: 1 });
+});
+
+test("reservation RPCs fail closed, preserve fingerprints and finalize explicit lifecycle outcomes", async () => {
+  const calls: Array<{ name: string; args: Record<string, unknown> }> = [];
+  const rpcClient = {
+    rpc: async (name: string, args: Record<string, unknown>) => {
+      calls.push({ name, args });
+      if (name.startsWith("reserve_")) return { data: [reservation("acquired")], error: null };
+      return { data: true, error: null };
+    },
+  };
+  const acquired = await reserveIngress(rpcClient, {
+    direction: "callback", logicalRequestId: "event-id", sourceApplicationId: "BKFC-1",
+    payloadHash: "a".repeat(64), credentialFingerprint: "b".repeat(64),
+    euApplicationId: "application-id", paymentRequestId: "payment-id",
+  });
+  assert.equal(acquired.disposition, "acquired");
+  assert.equal(calls[0].args.p_credential_fingerprint, "b".repeat(64));
+  assert.equal(JSON.stringify(calls).includes(currentSecret), false);
+  await finalizeIngressReservation(rpcClient, {
+    reservationId: "reservation-id", claimToken: "claim-token", payloadHash: "a".repeat(64),
+    outcomeCode: "APPLICATION_NOT_FOUND", terminal: true,
+  });
+  assert.deepEqual(calls[1], {
+    name: "finalize_bkfc_integration_ingress_reservation_v1",
+    args: {
+      p_reservation_id: "reservation-id", p_claim_token: "claim-token",
+      p_payload_hash: "a".repeat(64), p_outcome_code: "APPLICATION_NOT_FOUND", p_terminal: true,
+    },
+  });
+
+  await assert.rejects(() => reserveIngress({
+    rpc: async () => ({ data: null, error: { message: "raw provider prose" } }),
+  }, {
+    direction: "submission", logicalRequestId: "logical", sourceApplicationId: "BKFC-2",
+    payloadHash: "c".repeat(64), credentialFingerprint: "d".repeat(64),
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "PERSISTENCE_UNAVAILABLE");
+});
+
+test("migration scopes payment behavior to valid BKFC identity and enforces durable limits", async () => {
+  const sql = await readFile("supabase/migrations/20260825000000_bkfc_eu_affiliate_integration_v1.sql", "utf8");
+  const start = sql.indexOf("create or replace function public.admin_transition_affiliate_application");
+  const end = sql.indexOf("create or replace function public.admin_create_affiliate_payment_request", start);
+  const transition = sql.slice(start, end);
+  assert.match(transition, /v_is_bkfc := v_application\.source_system = 'bkfc'[\s\S]*source_application_id is not null/);
+  assert.match(transition, /if v_is_bkfc and p_review_stage = 'approved'/);
+  assert.match(transition, /if v_is_bkfc and p_review_stage = 'activated_affiliate'/);
+  assert.match(transition, /if v_is_bkfc[\s\S]*v_application\.review_stage = 'approved'/);
+  assert.match(sql, /enforce_affiliate_payment_command_bkfc_identity/);
+  assert.match(sql, /consume_bkfc_integration_rate_limit_v1/);
+  assert.match(sql, /pg_advisory_xact_lock[\s\S]*5 - v_active[\s\S]*floor\(v_tokens\)/);
+  assert.match(sql, /bkfc_integration_rate_limit_buckets enable row level security/);
+  assert.match(sql, /revoke all on table public\.bkfc_integration_rate_limit_buckets from public, anon, authenticated/);
+  assert.match(sql, /revoke all on table public\.bkfc_integration_rate_limit_buckets from service_role/);
+  assert.match(sql, /revoke all on table public\.bkfc_integration_ingress_reservations from service_role/);
+  assert.doesNotMatch(sql, /grant [^;]*bkfc_integration_rate_limit_buckets to service_role/);
+  assert.doesNotMatch(sql, /grant execute on function public\.consume_bkfc_integration_rate_limit_v1/);
+});

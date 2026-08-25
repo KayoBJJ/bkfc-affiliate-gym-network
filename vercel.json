@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/application-cleanup",
       "schedule": "17 3 * * *"
+    },
+    {
+      "path": "/api/cron/bkfc-payment-commands",
+      "schedule": "* * * * *"
     }
   ]
 }

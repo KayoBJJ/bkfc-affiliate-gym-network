@@ -7,6 +7,7 @@ import type {
   ApplicationAuditEvent,
   ApplicationInformationRequest,
   ApplicationStageHistoryEntry,
+  ApplicationPaymentStatus,
 } from "@/lib/admin/types";
 import {
   attachApplicationFileAccess,
@@ -40,6 +41,30 @@ export async function getApplicationCommunicationStatus(applicationId: string) {
     rows: outboxResult.data ?? [],
     approvedTemplateTypes: (templateResult.data ?? []).map((row) => row.notification_type),
   } as unknown as ApplicationCommunicationStatus;
+}
+
+export async function getApplicationPaymentStatus(applicationId: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data: coordination, error } = await supabase
+    .from("affiliate_application_payment_coordination")
+    .select("plan_code,payment_status,payment_operation_state,current_payment_request_id,payment_requested_at,payment_link_sent_at,paid_at,cancelled_at,refunded_at,last_operational_error_code")
+    .eq("application_id", applicationId).maybeSingle();
+  if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error?.code ?? "")) return null;
+  if (error) throw new Error("Failed to load application payment status.");
+  if (!coordination) return null;
+  const commandResult = await supabase.from("affiliate_application_payment_command_outbox")
+    .select("command_id,command_type,delivery_status,attempt_count,next_attempt_at")
+    .eq("application_id", applicationId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (commandResult.error) throw new Error("Failed to load payment command status.");
+  const command = commandResult.data;
+  return {
+    ...coordination,
+    delivery_status: command?.delivery_status ?? null,
+    command_id: command?.command_id ?? null,
+    command_type: command?.command_type ?? null,
+    attempt_count: command?.attempt_count ?? null,
+    next_attempt_at: command?.next_attempt_at ?? null,
+  } as ApplicationPaymentStatus;
 }
 
 export async function getAffiliateApplications() {

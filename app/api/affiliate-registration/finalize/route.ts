@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { getApplicationRegion } from "@/lib/application/region";
 import { getPrivilegedSupabaseConfig } from "@/lib/config/server";
 import { clientErrorPayload } from "@/lib/application/diagnostics";
 import { formDataFromPayload } from "@/lib/application/direct-upload";
@@ -33,17 +34,6 @@ function bearerToken(request: Request) {
 function extractCountry(cityCountry: string) {
   const parts = cityCountry.split(",").map((part) => part.trim()).filter(Boolean);
   return parts.at(-1) || cityCountry;
-}
-
-function getRegionFromCountry(country: string) {
-  const value = country.toLocaleLowerCase("en-US");
-  const regions: Record<string, string[]> = {
-    Europe: ["bulgaria", "spain", "italy", "serbia", "poland", "germany", "france", "netherlands", "belgium", "romania", "greece", "hungary", "croatia", "montenegro", "albania", "north macedonia", "austria", "switzerland", "united kingdom", "ireland", "portugal"],
-    MENA: ["uae", "united arab emirates", "saudi arabia", "qatar", "kuwait", "bahrain", "oman", "egypt", "morocco", "tunisia", "jordan", "lebanon"],
-    LATAM: ["mexico", "brazil", "argentina", "colombia", "chile", "peru", "uruguay", "paraguay", "ecuador", "venezuela"],
-    "North America": ["usa", "united states", "united states of america", "canada"],
-  };
-  return Object.entries(regions).find(([, countries]) => countries.includes(value))?.[0] ?? "Other";
 }
 
 async function downloadIssuedFiles(
@@ -120,7 +110,7 @@ export async function POST(request: Request) {
       gymName: application.gymName,
       cityCountry: application.cityCountry,
       country,
-      region: getRegionFromCountry(country),
+      region: getApplicationRegion(country),
       contactPerson: application.contactPerson,
       email: application.email,
       phone: application.phone,
