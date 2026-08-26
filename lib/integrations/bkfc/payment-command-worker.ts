@@ -26,16 +26,14 @@ export async function runPaymentCommandWorker(fetchImpl: typeof fetch = fetch) {
   let suppressed = 0;
   for (const command of commands) {
     try {
-      if (command.command_type === "payment_initiation") {
-        const { data: mayTransmit, error: checkError } = await supabase.rpc(
-          "confirm_affiliate_payment_command_transmission",
-          { p_command_id: command.command_id, p_claim_token: claimToken },
-        );
-        if (checkError) throw new Error("PAYMENT_COMMAND_RECHECK_FAILED");
-        if (mayTransmit !== true) {
-          suppressed += 1;
-          continue;
-        }
+      const { data: mayTransmit, error: checkError } = await supabase.rpc(
+        "confirm_affiliate_payment_command_transmission",
+        { p_command_id: command.command_id, p_claim_token: claimToken },
+      );
+      if (checkError) throw new Error("PAYMENT_COMMAND_RECHECK_FAILED");
+      if (mayTransmit !== true) {
+        suppressed += 1;
+        continue;
       }
       const result = await deliverPaymentCommand(command, {
         baseUrl: config.paymentRequestBaseUrl,

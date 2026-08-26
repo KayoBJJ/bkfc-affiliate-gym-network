@@ -59,6 +59,9 @@ test("legacy transitions remain payment-neutral while BKFC transitions enforce p
   assert.equal(paymentDecisionForReviewTransition({ sourceSystem: null, sourceApplicationId: null, current: submitted, target: approved }), "none");
   assert.equal(paymentDecisionForReviewTransition({ sourceSystem: null, sourceApplicationId: null, current: approved, target: activated }), "none");
   assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: submitted, target: approved, paymentStatus: "not_requested" }), "initiate");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: submitted, target: approved, paymentStatus: "pending", cancellationActivity: true }), "initiate");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: submitted, target: approved, paymentStatus: "pending", cancellationActivity: false }), "none");
+  assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: submitted, target: approved, paymentStatus: "refunded" }), "deny_reapproval");
   assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: approved, paymentStatus: "pending" }), "no_op");
   assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: activated, paymentStatus: "pending" }), "deny_activation");
   assert.equal(paymentDecisionForReviewTransition({ ...bkfcIdentity, current: approved, target: activated, paymentStatus: "paid" }), "none");
@@ -528,6 +531,72 @@ test("pre-parser quota migration and route expose only the narrow durable bounda
   assert.ok(post.indexOf("getBkfcIntegrationConfig") < post.indexOf("parseBkfcSubmissionIngress"));
   assert.ok(post.indexOf("consumeSubmissionPreparseQuota") < post.indexOf("validateBkfcSubmission"));
   assert.ok(post.indexOf("validateBkfcSubmission") < post.indexOf("reserveIngress"));
+});
+
+test("payment-cycle migration isolates every stale command and callback from the current request", async () => {
+  const sql = await readFile(
+    "supabase/migrations/20260826010000_bkfc_payment_cycle_isolation.sql",
+    "utf8",
+  );
+  for (const reconciliation of [
+    "PAYMENT_RECONCILIATION_MISSING_CURRENT_POINTER",
+    "PAYMENT_RECONCILIATION_NON_INITIATION_CURRENT_POINTER",
+    "PAYMENT_RECONCILIATION_CROSS_APPLICATION_CURRENT_POINTER",
+    "PAYMENT_RECONCILIATION_INVALID_COMMAND_REQUEST_LINK",
+    "PAYMENT_RECONCILIATION_INVALID_EVENT_REQUEST_LINK",
+    "PAYMENT_RECONCILIATION_DUPLICATE_CANCELLATIONS",
+    "PAYMENT_RECONCILIATION_AMBIGUOUS_PENDING_NONAPPROVED",
+    "PAYMENT_RECONCILIATION_INVALID_CURRENT_EVENT_LINK",
+  ]) assert.match(sql, new RegExp(reconciliation));
+  assert.match(sql, /unique \(command_id, application_id\)/);
+  assert.match(sql, /foreign key \(payment_request_id, application_id\)/);
+  assert.match(sql, /foreign key \(current_payment_request_id, application_id\)/);
+  assert.match(sql, /foreign key \(last_status_event_id, application_id, current_payment_request_id\)/);
+  assert.match(sql, /Payment request must reference a same-application initiation/);
+  assert.match(sql, /'superseded_payment_request'/);
+
+  const transitionStart = sql.indexOf("create or replace function public.admin_transition_affiliate_application");
+  const staffStart = sql.indexOf("create or replace function public.admin_create_affiliate_payment_request");
+  const transition = sql.slice(transitionStart, staffStart);
+  assert.match(transition, /payment_status = 'pending' and v_cancellation_activity/);
+  assert.match(transition, /\('approved', 'approved'\), \('activated_affiliate', 'active'\)/);
+  assert.match(transition, /create_bkfc_payment_initiation_cycle_v2/);
+  assert.match(transition, /current_payment_request_id = v_initiation\.payment_request_id/);
+  assert.match(sql, /current_payment_request_id = v_payment_request_id[\s\S]*last_status_event_id = null/);
+  assert.match(sql, /PAYMENT_CYCLE_STILL_ACTIVE/);
+
+  const confirmationStart = sql.indexOf("create or replace function public.confirm_affiliate_payment_command_transmission");
+  const completionStart = sql.indexOf("create or replace function public.complete_affiliate_payment_command_delivery");
+  const callbackStart = sql.indexOf("create or replace function public.record_bkfc_payment_status_event_v1");
+  const confirmation = sql.slice(confirmationStart, completionStart);
+  assert.match(confirmation, /command_type = 'payment_cancellation' then return true/);
+  assert.match(confirmation, /current_payment_request_id = v_command\.payment_request_id/);
+
+  const completion = sql.slice(completionStart, callbackStart);
+  const coordinationUpdates = completion
+    .split("update public.affiliate_application_payment_coordination")
+    .slice(1)
+    .map((segment) => segment.slice(0, segment.indexOf(";")));
+  assert.ok(coordinationUpdates.length >= 6);
+  for (const update of coordinationUpdates) {
+    assert.match(update, /current_payment_request_id = v_command\.payment_request_id/);
+  }
+
+  const callback = sql.slice(callbackStart, sql.indexOf("alter table public.affiliate_application_payment_coordination enable", callbackStart));
+  assert.match(callback, /if not v_current then\s+v_not_applied := 'superseded_payment_request'/);
+  assert.match(callback, /where application_id = p_application_id\s+and current_payment_request_id = p_payment_request_id/);
+  assert.doesNotMatch(callback, /p_event_type in \('payment_link_sent', 'payment_initiation_failed'\) and not v_current/);
+
+  assert.match(sql, /security definer\s+set search_path = pg_catalog/g);
+  assert.match(sql, /revoke all on function public\.create_bkfc_payment_initiation_cycle_v2[\s\S]*service_role/);
+  assert.doesNotMatch(sql, /grant execute on function public\.create_bkfc_payment_initiation_cycle_v2/);
+
+  const worker = await readFile("lib/integrations/bkfc/payment-command-worker.ts", "utf8");
+  assert.doesNotMatch(worker, /if \(command\.command_type === "payment_initiation"\)/);
+  assert.ok(worker.indexOf("confirm_affiliate_payment_command_transmission") <
+    worker.indexOf("deliverPaymentCommand(command"));
+  assert.ok(worker.indexOf("if (mayTransmit !== true)") <
+    worker.indexOf("deliverPaymentCommand(command"));
 });
 
 function reservation(disposition: IngressReservation["disposition"], overrides: Partial<IngressReservation> = {}): IngressReservation {
