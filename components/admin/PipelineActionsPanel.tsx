@@ -1,4 +1,5 @@
 import { triggerPipelineAction } from "@/app/admin/applications/[id]/actions";
+import { PipelineActionForm } from "@/components/admin/PipelineActionForm";
 
 type PipelineActionsPanelProps = {
   applicationId: string;
@@ -6,6 +7,7 @@ type PipelineActionsPanelProps = {
 
 type PipelineAction = {
   label: string;
+  pendingLabel: string;
   reviewStage: string;
   status: string;
   tone?: "danger";
@@ -22,16 +24,19 @@ const pipelineGroups: PipelineGroup[] = [
     actions: [
       {
         label: "Start Review",
+        pendingLabel: "Starting review...",
         reviewStage: "under_review",
         status: "in_review",
       },
       {
         label: "Mark for Interview",
+        pendingLabel: "Scheduling interview...",
         reviewStage: "interview",
         status: "in_review",
       },
       {
         label: "Mark Trial Candidate",
+        pendingLabel: "Updating candidate...",
         reviewStage: "trial_candidate",
         status: "candidate",
       },
@@ -42,11 +47,13 @@ const pipelineGroups: PipelineGroup[] = [
     actions: [
       {
         label: "Approve Gym",
+        pendingLabel: "Approving gym...",
         reviewStage: "approved",
         status: "approved",
       },
       {
         label: "Activate Affiliate",
+        pendingLabel: "Activating affiliate...",
         reviewStage: "activated_affiliate",
         status: "active",
       },
@@ -57,6 +64,7 @@ const pipelineGroups: PipelineGroup[] = [
     actions: [
       {
         label: "Reject",
+        pendingLabel: "Rejecting application...",
         reviewStage: "rejected",
         status: "rejected",
         tone: "danger" as const,
@@ -79,23 +87,16 @@ export function PipelineActionsPanel({ applicationId }: PipelineActionsPanelProp
             <p className="admin-pipeline-group-label">{group.title}</p>
             <div className="admin-pipeline-grid">
               {group.actions.map((action) => (
-                <form
+                <PipelineActionForm
                   key={action.label}
+                  applicationId={applicationId}
+                  reviewStage={action.reviewStage}
+                  status={action.status}
+                  label={action.label}
+                  pendingLabel={action.pendingLabel}
+                  tone={action.tone}
                   action={triggerPipelineAction}
-                  className="admin-pipeline-form"
-                >
-                  <input type="hidden" name="applicationId" value={applicationId} />
-                  <input type="hidden" name="review_stage" value={action.reviewStage} />
-                  <input type="hidden" name="status" value={action.status} />
-                  <button
-                    type="submit"
-                    className={`secondary-button admin-pipeline-button${
-                      action.tone === "danger" ? " danger" : ""
-                    }`}
-                  >
-                    {action.label}
-                  </button>
-                </form>
+                />
               ))}
             </div>
           </div>

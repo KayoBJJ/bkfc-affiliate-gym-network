@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { APPLICATION_STATUS_OPTIONS, REVIEW_STAGE_OPTIONS } from "@/lib/admin/constants";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
 import type {
@@ -17,6 +16,11 @@ import {
   generateApplicantPortalToken,
   hashApplicantPortalToken,
 } from "@/lib/application/applicant-portal";
+import {
+  PIPELINE_WORKFLOW_MIGRATION_REQUIRED_MESSAGE,
+  pipelineActionErrorState,
+  validatePipelineActionInput,
+} from "@/lib/admin/pipeline-action";
 import { deliverApplicantPortalAccess } from "@/lib/application/applicant-portal-delivery";
 import {
   generateInformationResponseToken,
@@ -332,7 +336,7 @@ async function updateApplicationStageAndStatus({
   if (error) {
     throw new Error(
       error.code === "PGRST202"
-        ? "Batch 1A.3 database migration is required before workflow actions can be used."
+        ? PIPELINE_WORKFLOW_MIGRATION_REQUIRED_MESSAGE
         : error.message
     );
   }
@@ -405,32 +409,29 @@ export async function updateApplicationReviewAction(
   }
 }
 
-export async function triggerPipelineAction(formData: FormData) {
+export async function triggerPipelineAction(
+  _previousState: ReviewFormState,
+  formData: FormData,
+): Promise<ReviewFormState> {
   const adminUser = await requireAdminUser();
 
   const applicationId = getFormValue(formData, "applicationId");
   const reviewStage = getFormValue(formData, "review_stage");
   const status = getFormValue(formData, "status");
+  const validationError = validatePipelineActionInput({ applicationId, reviewStage, status });
+  if (validationError) return validationError;
 
-  if (!applicationId) {
-    throw new Error("Missing application id.");
+  try {
+    await updateApplicationStageAndStatus({
+      applicationId,
+      reviewStage,
+      status,
+      actorUserId: adminUser.id,
+      actorEmail: adminUser.email!,
+    });
+  } catch (error) {
+    return pipelineActionErrorState(error);
   }
-
-  if (!REVIEW_STAGE_OPTIONS.includes(reviewStage)) {
-    throw new Error("Invalid review stage selected.");
-  }
-
-  if (!APPLICATION_STATUS_OPTIONS.includes(status)) {
-    throw new Error("Invalid application status selected.");
-  }
-
-  await updateApplicationStageAndStatus({
-    applicationId,
-    reviewStage,
-    status,
-    actorUserId: adminUser.id,
-    actorEmail: adminUser.email!,
-  });
 
   redirect(`/admin/applications/${applicationId}`);
 }
