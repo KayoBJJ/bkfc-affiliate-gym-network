@@ -2,13 +2,11 @@ import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { getBkfcIntegrationConfig, getPrivilegedSupabaseConfig } from "@/lib/config/server";
-import { authenticateBearer } from "@/lib/integrations/bkfc/auth";
 import {
-  IntegrationError, integrationErrorResponse, parseRequiredContentLength,
-  requireJsonAccept, safeIntegrationLog, UUID_V4_PATTERN,
+  IntegrationError, integrationErrorResponse, safeIntegrationLog, UUID_V4_PATTERN,
 } from "@/lib/integrations/bkfc/http";
 import {
-  BKFC_SUBMISSION_MAX_BYTES, compatibilityLocation, compatibilityWebsite,
+  compatibilityLocation, compatibilityWebsite,
   normalizedDuplicateIdentity, validateBkfcSubmission,
 } from "@/lib/integrations/bkfc/submission";
 import { STORAGE_BUCKET } from "@/lib/application/policy";
@@ -17,6 +15,7 @@ import { removeUploadedLogo } from "@/lib/integrations/bkfc/logo-compensation";
 import {
   finalizeIngressReservation, requireAcquiredReservation, reserveIngress,
 } from "@/lib/integrations/bkfc/ingress-reservation";
+import { parseBkfcSubmissionIngress } from "@/lib/integrations/bkfc/submission-ingress";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,22 +83,10 @@ export async function POST(request: Request) {
   try {
     const config = getBkfcIntegrationConfig();
     if (!config.submissionEnabled) throw new IntegrationError("INTEGRATION_DISABLED", 403);
-    const authentication = authenticateBearer(request.headers.get("authorization"), config.bkfcToEuSecrets);
-    if (!authentication.authorized) {
-      throw new IntegrationError("UNAUTHORIZED", 401);
-    }
-
-    if (!UUID_V4_PATTERN.test(headerRequestId)) throw new IntegrationError("VALIDATION_FAILED", 400, "X-Request-ID");
-    const idempotencyKey = request.headers.get("idempotency-key") ?? "";
-    const bkfcApplicationId = request.headers.get("x-bkfc-application-id") ?? "";
-    requireJsonAccept(request.headers);
-    parseRequiredContentLength(request.headers, BKFC_SUBMISSION_MAX_BYTES);
-    const contentType = request.headers.get("content-type") ?? "";
-    if (!/^multipart\/form-data\s*;[^\r\n]*boundary=[^;\r\n]+$/i.test(contentType)) {
-      throw new IntegrationError("UNSUPPORTED_MEDIA_TYPE", 415, "Content-Type");
-    }
-
-    const form = await request.formData();
+    const { authentication, idempotencyKey, bkfcApplicationId, form } = await parseBkfcSubmissionIngress(request, {
+      requestId: headerRequestId,
+      bearerSecrets: config.bkfcToEuSecrets,
+    });
     const submission = await validateBkfcSubmission({
       form, bkfcApplicationId, idempotencyKey, requestId,
       consentNoticeVersionAllowlist: config.consentNoticeVersionAllowlist,

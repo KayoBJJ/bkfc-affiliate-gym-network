@@ -7,7 +7,10 @@ import { removeUploadedLogo } from "../lib/integrations/bkfc/logo-compensation.t
 import {
   reconcileBkfcIntegrationOrphans, type OrphanReconcilerDependencies,
 } from "../lib/integrations/bkfc/orphan-reconciler.ts";
-import { consumeTokenBucket } from "../lib/integrations/bkfc/rate-limit.ts";
+import { consumeTokenBucket, createCredentialRateLimiter } from "../lib/integrations/bkfc/rate-limit.ts";
+import {
+  parseBkfcSubmissionIngress, readBoundedRequestBody,
+} from "../lib/integrations/bkfc/submission-ingress.ts";
 import {
   finalizeIngressReservation, requireAcquiredReservation, reserveIngress,
   type IngressReservation,
@@ -19,6 +22,7 @@ import { ConfigurationError, resolveBkfcIntegrationConfig } from "../lib/config/
 
 const currentSecret = "Abcdefghijklmnopqrstuvwxyz0123456789-ABCDEFGHIJK";
 const previousSecret = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210-abcdefghijk";
+const ingressRequestId = "6f314ad6-8d2f-4eb0-9df8-a6c1b547d88f";
 const bkfcIdentity = { sourceSystem: "bkfc", sourceApplicationId: "BKFC-APP-123" };
 const approved = { reviewStage: "approved", status: "approved" };
 const submitted = { reviewStage: "submitted", status: "new" };
@@ -102,6 +106,187 @@ test("durable rate policy permits bursts, exhausts, refills and resets independe
   for (let index = 0; index < 50; index += 1) callbackState = consumeTokenBucket("callback", callbackState, 0).state;
   assert.equal(consumeTokenBucket("callback", callbackState, 0).allowed, false);
   assert.equal(consumeTokenBucket("callback", callbackState, 200).allowed, true);
+});
+
+function streamingRequest(input: {
+  chunks: Uint8Array[];
+  headers: HeadersInit;
+  onPull?: () => void;
+  onCancel?: () => void;
+  cancelResult?: Promise<void>;
+}) {
+  let index = 0;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      input.onPull?.();
+      if (index >= input.chunks.length) controller.close();
+      else controller.enqueue(input.chunks[index++]);
+    },
+    cancel() { input.onCancel?.(); return input.cancelResult; },
+  }, { highWaterMark: 0 });
+  return new Request("https://eu.example.test/api/v1/integrations/bkfc/affiliate-applications", {
+    method: "POST", headers: input.headers, body, duplex: "half",
+  } as RequestInit & { duplex: "half" });
+}
+
+function ingressHeaders(contentType: string, contentLength: number) {
+  return {
+    authorization: `Bearer ${currentSecret}`,
+    accept: "application/json",
+    "x-request-id": ingressRequestId,
+    "idempotency-key": "58b3b08f-582f-4a1a-a11b-30b738532a23",
+    "x-bkfc-application-id": "BKFC-APP-123",
+    "content-type": contentType,
+    "content-length": String(contentLength),
+  };
+}
+
+test("BKFC multipart ingress authenticates and throttles before consuming body bytes", async () => {
+  let pulls = 0;
+  const unauthorized = streamingRequest({
+    chunks: [new Uint8Array([1])],
+    headers: { ...ingressHeaders("multipart/form-data; boundary=test", 1), authorization: "Bearer invalid" },
+    onPull: () => { pulls += 1; },
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(unauthorized, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "UNAUTHORIZED");
+  assert.equal(pulls, 0);
+
+  const deniedLimiter = { consume: () => ({ allowed: false, retryAfterSeconds: 3 }) };
+  const throttled = streamingRequest({
+    chunks: [new Uint8Array([1])], headers: ingressHeaders("multipart/form-data; boundary=test", 1),
+    onPull: () => { pulls += 1; },
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(throttled, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret], rateLimiter: deniedLimiter,
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "RATE_LIMITED" &&
+    error.retryAfterSeconds === 3);
+  assert.equal(pulls, 0);
+});
+
+test("actual BKFC request bytes are bounded and the stream is cancelled on overflow", async () => {
+  let cancelled = 0;
+  let pulls = 0;
+  const request = streamingRequest({
+    chunks: [new Uint8Array(6), new Uint8Array(6), new Uint8Array(6)],
+    headers: { "content-type": "application/octet-stream" },
+    onPull: () => { pulls += 1; }, onCancel: () => { cancelled += 1; },
+  });
+  await assert.rejects(() => readBoundedRequestBody(request, 10), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE" && error.status === 413);
+  assert.equal(cancelled, 1);
+  assert.equal(pulls, 2);
+  assert.equal(request.body?.locked, false);
+
+  const exact = streamingRequest({
+    chunks: [new Uint8Array(10)], headers: { "content-type": "application/octet-stream" },
+  });
+  assert.equal((await readBoundedRequestBody(exact, 10)).byteLength, 10);
+  assert.equal(exact.body?.locked, false);
+
+  let singleChunkCancelled = 0;
+  const singleChunk = streamingRequest({
+    chunks: [new Uint8Array(11)], headers: { "content-type": "application/octet-stream" },
+    onCancel: () => { singleChunkCancelled += 1; },
+    cancelResult: Promise.reject(new Error("synthetic cancellation failure")),
+  });
+  await assert.rejects(() => readBoundedRequestBody(singleChunk, 10), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE");
+  assert.equal(singleChunkCancelled, 1);
+  assert.equal(singleChunk.body?.locked, false);
+
+  const neverSettles = new Promise<void>(() => {});
+  const stalledCancel = streamingRequest({
+    chunks: [new Uint8Array(11)], headers: { "content-type": "application/octet-stream" },
+    cancelResult: neverSettles,
+  });
+  await assert.rejects(() => readBoundedRequestBody(stalledCancel, 10), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE");
+  assert.equal(stalledCancel.body?.locked, false);
+
+  const readFailureBody = new ReadableStream<Uint8Array>({
+    pull(controller) { controller.error(new Error("synthetic read failure")); },
+  }, { highWaterMark: 0 });
+  const readFailure = new Request("https://eu.example.test", {
+    method: "POST", body: readFailureBody, duplex: "half",
+  } as RequestInit & { duplex: "half" });
+  await assert.rejects(() => readBoundedRequestBody(readFailure, 10), /synthetic read failure/);
+  assert.equal(readFailure.body?.locked, false);
+});
+
+test("BKFC ingress rejects declared and undeclared oversized bodies without materialization", async () => {
+  let earlyPulls = 0;
+  const declaredOversized = streamingRequest({
+    chunks: [new Uint8Array([1])],
+    headers: ingressHeaders("multipart/form-data; boundary=test", 4_718_593),
+    onPull: () => { earlyPulls += 1; },
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(declaredOversized, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE");
+  assert.equal(earlyPulls, 0);
+
+  const missingLengthHeaders = ingressHeaders("multipart/form-data; boundary=test", 1);
+  delete (missingLengthHeaders as { "content-length"?: string })["content-length"];
+  const missingLength = streamingRequest({
+    chunks: [new Uint8Array(4_718_593)], headers: missingLengthHeaders,
+    onPull: () => { earlyPulls += 1; },
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(missingLength, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "LENGTH_REQUIRED" && error.status === 411);
+  assert.equal(earlyPulls, 0);
+
+  let cancelled = 0;
+  const deceptive = streamingRequest({
+    chunks: [new Uint8Array(2_400_000), new Uint8Array(2_400_000)],
+    headers: ingressHeaders("multipart/form-data; boundary=test", 1),
+    onCancel: () => { cancelled += 1; },
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(deceptive, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    rateLimiter: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }) },
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE" && error.status === 413);
+  assert.equal(cancelled, 1);
+});
+
+test("bounded BKFC multipart parsing preserves a legitimate submission form", async () => {
+  const form = new FormData();
+  form.set("gymName", "Example Gym");
+  const encoded = new Request("https://encoder.invalid", { method: "POST", body: form });
+  const body = new Uint8Array(await encoded.arrayBuffer());
+  const contentType = encoded.headers.get("content-type");
+  assert.ok(contentType);
+  const request = new Request("https://eu.example.test/api/v1/integrations/bkfc/affiliate-applications", {
+    method: "POST", headers: ingressHeaders(contentType, body.byteLength), body,
+  });
+  const parsed = await parseBkfcSubmissionIngress(request, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    rateLimiter: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }) },
+  });
+  assert.equal(parsed.form.get("gymName"), "Example Gym");
+  assert.equal(parsed.authentication.authorized, true);
+
+  const malformed = new Request("https://eu.example.test/api/v1/integrations/bkfc/affiliate-applications", {
+    method: "POST",
+    headers: ingressHeaders("multipart/form-data; boundary=test", 9),
+    body: "malformed",
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(malformed, {
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    rateLimiter: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }) },
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "VALIDATION_FAILED" && error.status === 400);
+});
+
+test("credential pre-parser limiter is fingerprint scoped, bounded and refills", () => {
+  const limiter = createCredentialRateLimiter("submission", 2);
+  for (let index = 0; index < 10; index += 1) assert.equal(limiter.consume("a".repeat(64), 0).allowed, true);
+  assert.deepEqual(limiter.consume("a".repeat(64), 0), { allowed: false, retryAfterSeconds: 1 });
+  assert.equal(limiter.consume("b".repeat(64), 0).allowed, true);
+  assert.equal(limiter.consume("c".repeat(64), 0).allowed, true);
+  assert.equal(limiter.consume("a".repeat(64), 0).allowed, true);
+  assert.equal(JSON.stringify(limiter).includes(currentSecret), false);
 });
 
 test("rate-limit 429 response is exact", () => {
@@ -198,6 +383,8 @@ test("source configuration schedules delivery and routes reserve before expensiv
 
   const submissionRoute = await readFile("app/api/v1/integrations/bkfc/affiliate-applications/route.ts", "utf8");
   const submissionReserve = submissionRoute.indexOf("await reserveIngress");
+  assert.ok(submissionRoute.indexOf("await parseBkfcSubmissionIngress") <
+    submissionRoute.indexOf("await validateBkfcSubmission"));
   assert.ok(submissionReserve > submissionRoute.indexOf("validateBkfcSubmission"));
   assert.ok(submissionReserve < submissionRoute.indexOf("normalized_gym_name"));
   assert.ok(submissionReserve < submissionRoute.indexOf(".upload("));

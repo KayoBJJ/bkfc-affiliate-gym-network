@@ -27,3 +27,30 @@ export function consumeTokenBucket(
     state: { tokens: available, lastRefillMs: nowMs },
   };
 }
+
+export type CredentialRateLimiter = {
+  consume: (credentialFingerprint: string, nowMs?: number) => {
+    allowed: boolean;
+    retryAfterSeconds: number;
+  };
+};
+
+export function createCredentialRateLimiter(
+  direction: IntegrationRateLimitDirection,
+  maximumTrackedCredentials = 4,
+): CredentialRateLimiter {
+  const states = new Map<string, TokenBucketState>();
+  return {
+    consume(credentialFingerprint, nowMs = Date.now()) {
+      const result = consumeTokenBucket(direction, states.get(credentialFingerprint), nowMs);
+      states.delete(credentialFingerprint);
+      states.set(credentialFingerprint, result.state);
+      while (states.size > maximumTrackedCredentials) {
+        const oldest = states.keys().next().value;
+        if (oldest === undefined) break;
+        states.delete(oldest);
+      }
+      return { allowed: result.allowed, retryAfterSeconds: result.retryAfterSeconds };
+    },
+  };
+}

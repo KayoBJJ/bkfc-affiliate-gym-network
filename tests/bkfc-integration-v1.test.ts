@@ -377,7 +377,8 @@ test("submission responses expose no checkout redirect and approval communicatio
   assert.doesNotMatch(route, /checkoutUrl|["']Location["']\s*:/);
   assert.match(route, /upsert: false/);
   assert.match(route, /storage\.from\(STORAGE_BUCKET\)\.remove/);
-  assert.ok(route.indexOf("bearerAuthorized") < route.indexOf("request.formData()"));
+  assert.ok(route.indexOf("await parseBkfcSubmissionIngress") < route.indexOf("await validateBkfcSubmission"));
+  assert.equal(route.includes("request.formData()"), false);
   assert.match(communication, /Official payment instructions will be sent separately by BKFC/);
   assert.doesNotMatch(communication, /stripe/i);
 });
