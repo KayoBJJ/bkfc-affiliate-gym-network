@@ -5,7 +5,7 @@ import test from "node:test";
 import { bearerAuthorized } from "../lib/integrations/bkfc/auth.ts";
 import { canonicalJson, canonicalSha256 } from "../lib/integrations/bkfc/canonical-json.ts";
 import {
-  deliverPaymentCommand, paymentCommandUrl, type PaymentCommand,
+  BKFC_PAYMENT_RESPONSE_MAX_BYTES, deliverPaymentCommand, paymentCommandUrl, type PaymentCommand,
 } from "../lib/integrations/bkfc/payment-command-transport.ts";
 import { validatePaymentStatusEvent } from "../lib/integrations/bkfc/payment-status.ts";
 import {
@@ -307,6 +307,153 @@ test("payment delivery never follows same-origin or cross-origin redirects", asy
   assert.equal(sourceRequests, 11);
   assert.equal(redirectDestinationRequests, 0);
   assert.equal(redirectDestinationBytes, 0);
+});
+
+function streamingResponse(input: {
+  chunks: Uint8Array[];
+  status: number;
+  headers?: HeadersInit;
+  onPull?: () => void;
+  onCancel?: () => void;
+  cancelResult?: Promise<void>;
+}) {
+  let index = 0;
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      input.onPull?.();
+      if (index >= input.chunks.length) controller.close();
+      else controller.enqueue(input.chunks[index++]);
+    },
+    cancel() { input.onCancel?.(); return input.cancelResult; },
+  }, { highWaterMark: 0 });
+  return new Response(body, { status: input.status, headers: input.headers });
+}
+
+test("payment responses are bounded before JSON parsing without changing status semantics", async () => {
+  const encoder = new TextEncoder();
+  const valid = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret },
+    async () => new Response(JSON.stringify({ data: { outcome: "requested" } }), { status: 202 }));
+  assert.equal(valid.disposition, "accepted");
+  assert.equal(valid.outcome, "requested");
+
+  let declaredPulls = 0;
+  let declaredCancels = 0;
+  const declaredOversized = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => streamingResponse({
+      chunks: [encoder.encode("private partner response")], status: 202,
+      headers: { "content-length": String(BKFC_PAYMENT_RESPONSE_MAX_BYTES + 1) },
+      onPull: () => { declaredPulls += 1; }, onCancel: () => { declaredCancels += 1; },
+    }));
+  assert.deepEqual({ disposition: declaredOversized.disposition, code: declaredOversized.errorCode },
+    { disposition: "intervention", code: "RESPONSE_TOO_LARGE" });
+  assert.equal(declaredPulls, 0);
+  assert.equal(declaredCancels, 1);
+
+  const neverSettles = new Promise<void>(() => {});
+  const declaredWithStalledCancel = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => streamingResponse({
+      chunks: [encoder.encode("not retained")], status: 202,
+      headers: { "content-length": String(BKFC_PAYMENT_RESPONSE_MAX_BYTES + 1) },
+      cancelResult: neverSettles,
+    }));
+  assert.equal(declaredWithStalledCancel.errorCode, "RESPONSE_TOO_LARGE");
+
+  let streamedPulls = 0;
+  let streamedCancels = 0;
+  const largeChunk = new Uint8Array(4_096);
+  let streamedResponse: Response | undefined;
+  const streamedOversized = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => {
+      streamedResponse = streamingResponse({
+        chunks: Array.from({ length: 2_048 }, () => largeChunk), status: 202,
+        headers: { "content-length": "1" },
+        onPull: () => { streamedPulls += 1; }, onCancel: () => { streamedCancels += 1; },
+      });
+      return streamedResponse;
+    });
+  assert.equal(streamedOversized.disposition, "intervention");
+  assert.equal(streamedOversized.errorCode, "RESPONSE_TOO_LARGE");
+  assert.equal(streamedPulls, 5);
+  assert.equal(streamedCancels, 1);
+  assert.equal(streamedResponse?.body?.locked, false);
+  assert.equal(JSON.stringify(streamedOversized).includes("private partner response"), false);
+
+  let stalledStreamResponse: Response | undefined;
+  const streamedWithStalledCancel = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => {
+      stalledStreamResponse = streamingResponse({
+        chunks: [new Uint8Array(BKFC_PAYMENT_RESPONSE_MAX_BYTES + 1)], status: 202,
+        cancelResult: neverSettles,
+      });
+      return stalledStreamResponse;
+    });
+  assert.equal(streamedWithStalledCancel.errorCode, "RESPONSE_TOO_LARGE");
+  assert.equal(stalledStreamResponse?.body?.locked, false);
+
+  const rejectingCancel = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => streamingResponse({
+      chunks: [new Uint8Array(BKFC_PAYMENT_RESPONSE_MAX_BYTES + 1)], status: 202,
+      cancelResult: Promise.reject(new Error("synthetic response cancellation failure")),
+    }));
+  assert.equal(rejectingCancel.errorCode, "RESPONSE_TOO_LARGE");
+
+  let absentLengthPulls = 0;
+  const absentLength = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => streamingResponse({
+      chunks: Array.from({ length: 2_048 }, () => largeChunk), status: 202,
+      onPull: () => { absentLengthPulls += 1; },
+    }));
+  assert.equal(absentLength.errorCode, "RESPONSE_TOO_LARGE");
+  assert.equal(absentLengthPulls, 5);
+
+  const emptyObjectLength = encoder.encode(JSON.stringify({ padding: "" })).byteLength;
+  const exactBody = encoder.encode(JSON.stringify({
+    padding: "x".repeat(BKFC_PAYMENT_RESPONSE_MAX_BYTES - emptyObjectLength),
+  }));
+  assert.equal(exactBody.byteLength, BKFC_PAYMENT_RESPONSE_MAX_BYTES);
+  const exact = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => streamingResponse({
+      chunks: [exactBody], status: 202,
+    }));
+  assert.equal(exact.disposition, "accepted");
+
+  const retry = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret }, async () => streamingResponse({
+      chunks: [new Uint8Array(BKFC_PAYMENT_RESPONSE_MAX_BYTES + 1)], status: 503,
+      headers: { "retry-after": "120" },
+    }), new Date("2026-08-25T10:00:00.000Z"));
+  assert.equal(retry.disposition, "retry");
+  assert.equal(retry.nextAttemptAt, "2026-08-25T10:02:00.000Z");
+
+  const malformed = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret },
+    async () => new Response("not-json private response", { status: 202 }));
+  assert.equal(malformed.disposition, "intervention");
+  assert.equal(malformed.errorCode, "INVALID_RESPONSE");
+  assert.equal(JSON.stringify(malformed).includes("private response"), false);
+
+  const contractInvalid = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret },
+    async () => new Response(JSON.stringify(["not", "an", "acknowledgment"]), { status: 202 }));
+  assert.equal(contractInvalid.disposition, "intervention");
+  assert.equal(contractInvalid.errorCode, "INVALID_RESPONSE");
+
+  const failedBody = new ReadableStream<Uint8Array>({
+    pull(controller) { controller.error(new Error("private response read failure")); },
+  }, { highWaterMark: 0 });
+  const readFailure = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret },
+    async () => new Response(failedBody, { status: 202 }));
+  assert.equal(readFailure.disposition, "intervention");
+  assert.equal(readFailure.errorCode, "INVALID_RESPONSE");
+  assert.equal(JSON.stringify(readFailure).includes("private response"), false);
+
+  const empty = await deliverPaymentCommand(command(),
+    { baseUrl: "https://bkfc.example.test", bearerSecret: outgoingSecret },
+    async () => new Response(null, { status: 202 }));
+  assert.equal(empty.disposition, "accepted");
+  assert.equal(empty.outcome, null);
 });
 
 test("cancellation URL, tombstone race and already-paid outcomes are classified terminally", async () => {
