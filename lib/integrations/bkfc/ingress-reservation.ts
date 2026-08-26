@@ -1,6 +1,8 @@
 import { IntegrationError } from "./contracts.ts";
 
 export const INGRESS_RESERVATION_LEASE_SECONDS = 120;
+export const SUBMISSION_PREPARSE_ENFORCEMENT_RETRY_SECONDS = 5;
+const MAX_SUBMISSION_PREPARSE_RETRY_SECONDS = 60;
 
 export type IngressReservationDisposition =
   | "acquired"
@@ -28,6 +30,40 @@ type RpcClient = {
     error: { message?: string; details?: string } | null;
   }>;
 };
+
+export async function consumeSubmissionPreparseQuota(
+  supabase: RpcClient,
+  credentialFingerprint: string,
+) {
+  const { data, error } = await supabase.rpc(
+    "consume_bkfc_submission_preparse_rate_limit_v1",
+    { p_credential_fingerprint: credentialFingerprint },
+  );
+  const rows = Array.isArray(data) ? data : data && typeof data === "object" ? [data] : [];
+  const result = rows[0] as Record<string, unknown> | undefined;
+  const validShape = rows.length === 1 && result !== undefined &&
+    Object.keys(result).sort().join(",") === "allowed,retry_after_seconds" &&
+    typeof result.allowed === "boolean" &&
+    Number.isInteger(result.retry_after_seconds) &&
+    (result.allowed === true
+      ? result.retry_after_seconds === 0
+      : typeof result.retry_after_seconds === "number" &&
+        result.retry_after_seconds >= 1 &&
+        result.retry_after_seconds <= MAX_SUBMISSION_PREPARSE_RETRY_SECONDS);
+  if (error || !validShape) {
+    throw new IntegrationError(
+      "PERSISTENCE_UNAVAILABLE",
+      503,
+      undefined,
+      true,
+      SUBMISSION_PREPARSE_ENFORCEMENT_RETRY_SECONDS,
+    );
+  }
+  return {
+    allowed: result.allowed as boolean,
+    retryAfterSeconds: result.retry_after_seconds as number,
+  };
+}
 
 export async function reserveIngress(
   supabase: RpcClient,

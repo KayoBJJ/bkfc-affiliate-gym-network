@@ -2,10 +2,12 @@ import { authenticateBearer, type BearerAuthentication } from "./auth.ts";
 import {
   IntegrationError, parseRequiredContentLength, UUID_V4_PATTERN,
 } from "./contracts.ts";
-import { createCredentialRateLimiter, type CredentialRateLimiter } from "./rate-limit.ts";
 import { BKFC_SUBMISSION_MAX_BYTES } from "./submission.ts";
 
-const submissionPreparserRateLimiter = createCredentialRateLimiter("submission");
+export type SubmissionPreparseQuotaDecision = {
+  allowed: boolean;
+  retryAfterSeconds: number;
+};
 
 function cancelReader(reader: ReadableStreamDefaultReader<Uint8Array>) {
   try { void reader.cancel().catch(() => {}); } catch { /* cancellation is best-effort after a terminal rejection */ }
@@ -54,7 +56,9 @@ export async function parseBkfcSubmissionIngress(
   input: {
     requestId: string;
     bearerSecrets: readonly string[];
-    rateLimiter?: CredentialRateLimiter;
+    consumePreparseQuota: (
+      credentialFingerprint: string,
+    ) => Promise<SubmissionPreparseQuotaDecision>;
   },
 ): Promise<{
   authentication: BearerAuthentication & { authorized: true };
@@ -73,8 +77,7 @@ export async function parseBkfcSubmissionIngress(
   if (!/^multipart\/form-data\s*;[^\r\n]*boundary=[^;\r\n]+$/i.test(contentType)) {
     throw new IntegrationError("UNSUPPORTED_MEDIA_TYPE", 415, "Content-Type");
   }
-  const rateLimit = (input.rateLimiter ?? submissionPreparserRateLimiter)
-    .consume(authentication.credentialFingerprint);
+  const rateLimit = await input.consumePreparseQuota(authentication.credentialFingerprint);
   if (!rateLimit.allowed) {
     throw new IntegrationError("RATE_LIMITED", 429, undefined, true, rateLimit.retryAfterSeconds);
   }

@@ -13,7 +13,8 @@ import { STORAGE_BUCKET } from "@/lib/application/policy";
 import { getApplicationRegion } from "@/lib/application/region";
 import { removeUploadedLogo } from "@/lib/integrations/bkfc/logo-compensation";
 import {
-  finalizeIngressReservation, requireAcquiredReservation, reserveIngress,
+  consumeSubmissionPreparseQuota, finalizeIngressReservation,
+  requireAcquiredReservation, reserveIngress,
 } from "@/lib/integrations/bkfc/ingress-reservation";
 import { parseBkfcSubmissionIngress } from "@/lib/integrations/bkfc/submission-ingress";
 
@@ -86,12 +87,16 @@ export async function POST(request: Request) {
     const { authentication, idempotencyKey, bkfcApplicationId, form } = await parseBkfcSubmissionIngress(request, {
       requestId: headerRequestId,
       bearerSecrets: config.bkfcToEuSecrets,
+      consumePreparseQuota: async (credentialFingerprint) => {
+        supabase = client();
+        return consumeSubmissionPreparseQuota(supabase, credentialFingerprint);
+      },
     });
     const submission = await validateBkfcSubmission({
       form, bkfcApplicationId, idempotencyKey, requestId,
       consentNoticeVersionAllowlist: config.consentNoticeVersionAllowlist,
     });
-    supabase = client();
+    supabase ??= client();
     const selection = "id,application_reference,source_application_id,submitted_at,review_stage,status,payload_hash,affiliate_application_payment_coordination(payment_status)";
     const reservation = await reserveIngress(supabase, {
       direction: "submission",

@@ -7,12 +7,14 @@ import { removeUploadedLogo } from "../lib/integrations/bkfc/logo-compensation.t
 import {
   reconcileBkfcIntegrationOrphans, type OrphanReconcilerDependencies,
 } from "../lib/integrations/bkfc/orphan-reconciler.ts";
-import { consumeTokenBucket, createCredentialRateLimiter } from "../lib/integrations/bkfc/rate-limit.ts";
+import { consumeTokenBucket } from "../lib/integrations/bkfc/rate-limit.ts";
 import {
   parseBkfcSubmissionIngress, readBoundedRequestBody,
 } from "../lib/integrations/bkfc/submission-ingress.ts";
 import {
-  finalizeIngressReservation, requireAcquiredReservation, reserveIngress,
+  consumeSubmissionPreparseQuota, finalizeIngressReservation,
+  requireAcquiredReservation, reserveIngress,
+  SUBMISSION_PREPARSE_ENFORCEMENT_RETRY_SECONDS,
   type IngressReservation,
 } from "../lib/integrations/bkfc/ingress-reservation.ts";
 import { paymentDecisionForReviewTransition } from "../lib/integrations/bkfc/review-transition-policy.ts";
@@ -27,6 +29,7 @@ const bkfcIdentity = { sourceSystem: "bkfc", sourceApplicationId: "BKFC-APP-123"
 const approved = { reviewStage: "approved", status: "approved" };
 const submitted = { reviewStage: "submitted", status: "new" };
 const activated = { reviewStage: "activated_affiliate", status: "active" };
+const allowPreparseQuota = async () => ({ allowed: true, retryAfterSeconds: 0 });
 
 test("disciplines split the raw value on every frozen delimiter before item normalization", () => {
   assert.deepEqual(parseDisciplinesOffered("Boxing\nMMA"), ["Boxing", "MMA"]);
@@ -90,6 +93,18 @@ test("orphan reconciliation configuration fails closed and defaults to disabled 
 });
 
 test("durable rate policy permits bursts, exhausts, refills and resets independently", () => {
+  let preparseState;
+  for (let index = 0; index < 10; index += 1) {
+    const result = consumeTokenBucket("submission_preparse", preparseState, 0);
+    assert.equal(result.allowed, true);
+    preparseState = result.state;
+  }
+  assert.deepEqual(consumeTokenBucket("submission_preparse", preparseState, 0), {
+    allowed: false,
+    retryAfterSeconds: 1,
+    state: { tokens: 0, lastRefillMs: 0 },
+  });
+
   let submissionState;
   for (let index = 0; index < 10; index += 1) {
     const result = consumeTokenBucket("submission", submissionState, 0);
@@ -143,6 +158,7 @@ function ingressHeaders(contentType: string, contentLength: number) {
 
 test("BKFC multipart ingress authenticates and throttles before consuming body bytes", async () => {
   let pulls = 0;
+  let quotaCalls = 0;
   const unauthorized = streamingRequest({
     chunks: [new Uint8Array([1])],
     headers: { ...ingressHeaders("multipart/form-data; boundary=test", 1), authorization: "Bearer invalid" },
@@ -150,19 +166,41 @@ test("BKFC multipart ingress authenticates and throttles before consuming body b
   });
   await assert.rejects(() => parseBkfcSubmissionIngress(unauthorized, {
     requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    consumePreparseQuota: async () => { quotaCalls += 1; return { allowed: true, retryAfterSeconds: 0 }; },
   }), (error: unknown) => error instanceof IntegrationError && error.code === "UNAUTHORIZED");
   assert.equal(pulls, 0);
+  assert.equal(quotaCalls, 0);
 
-  const deniedLimiter = { consume: () => ({ allowed: false, retryAfterSeconds: 3 }) };
   const throttled = streamingRequest({
     chunks: [new Uint8Array([1])], headers: ingressHeaders("multipart/form-data; boundary=test", 1),
     onPull: () => { pulls += 1; },
   });
   await assert.rejects(() => parseBkfcSubmissionIngress(throttled, {
-    requestId: ingressRequestId, bearerSecrets: [currentSecret], rateLimiter: deniedLimiter,
+    requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    consumePreparseQuota: async () => {
+      quotaCalls += 1;
+      return { allowed: false, retryAfterSeconds: 3 };
+    },
   }), (error: unknown) => error instanceof IntegrationError && error.code === "RATE_LIMITED" &&
     error.retryAfterSeconds === 3);
   assert.equal(pulls, 0);
+  assert.equal(quotaCalls, 1);
+
+  const invalidHeaders = streamingRequest({
+    chunks: [new Uint8Array([1])],
+    headers: { ...ingressHeaders("multipart/form-data; boundary=test", 1), accept: "*/*" },
+    onPull: () => { pulls += 1; },
+  });
+  await assert.rejects(() => parseBkfcSubmissionIngress(invalidHeaders, {
+    requestId: ingressRequestId,
+    bearerSecrets: [currentSecret],
+    consumePreparseQuota: async () => {
+      quotaCalls += 1;
+      return { allowed: true, retryAfterSeconds: 0 };
+    },
+  }), (error: unknown) => error instanceof IntegrationError && error.code === "UNSUPPORTED_MEDIA_TYPE");
+  assert.equal(pulls, 0);
+  assert.equal(quotaCalls, 1);
 });
 
 test("actual BKFC request bytes are bounded and the stream is cancelled on overflow", async () => {
@@ -224,6 +262,7 @@ test("BKFC ingress rejects declared and undeclared oversized bodies without mate
   });
   await assert.rejects(() => parseBkfcSubmissionIngress(declaredOversized, {
     requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    consumePreparseQuota: allowPreparseQuota,
   }), (error: unknown) => error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE");
   assert.equal(earlyPulls, 0);
 
@@ -235,6 +274,7 @@ test("BKFC ingress rejects declared and undeclared oversized bodies without mate
   });
   await assert.rejects(() => parseBkfcSubmissionIngress(missingLength, {
     requestId: ingressRequestId, bearerSecrets: [currentSecret],
+    consumePreparseQuota: allowPreparseQuota,
   }), (error: unknown) => error instanceof IntegrationError && error.code === "LENGTH_REQUIRED" && error.status === 411);
   assert.equal(earlyPulls, 0);
 
@@ -246,7 +286,7 @@ test("BKFC ingress rejects declared and undeclared oversized bodies without mate
   });
   await assert.rejects(() => parseBkfcSubmissionIngress(deceptive, {
     requestId: ingressRequestId, bearerSecrets: [currentSecret],
-    rateLimiter: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }) },
+    consumePreparseQuota: allowPreparseQuota,
   }), (error: unknown) => error instanceof IntegrationError && error.code === "REQUEST_TOO_LARGE" && error.status === 413);
   assert.equal(cancelled, 1);
 });
@@ -263,7 +303,7 @@ test("bounded BKFC multipart parsing preserves a legitimate submission form", as
   });
   const parsed = await parseBkfcSubmissionIngress(request, {
     requestId: ingressRequestId, bearerSecrets: [currentSecret],
-    rateLimiter: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }) },
+    consumePreparseQuota: allowPreparseQuota,
   });
   assert.equal(parsed.form.get("gymName"), "Example Gym");
   assert.equal(parsed.authentication.authorized, true);
@@ -275,18 +315,71 @@ test("bounded BKFC multipart parsing preserves a legitimate submission form", as
   });
   await assert.rejects(() => parseBkfcSubmissionIngress(malformed, {
     requestId: ingressRequestId, bearerSecrets: [currentSecret],
-    rateLimiter: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }) },
+    consumePreparseQuota: allowPreparseQuota,
   }), (error: unknown) => error instanceof IntegrationError && error.code === "VALIDATION_FAILED" && error.status === 400);
 });
 
-test("credential pre-parser limiter is fingerprint scoped, bounded and refills", () => {
-  const limiter = createCredentialRateLimiter("submission", 2);
-  for (let index = 0; index < 10; index += 1) assert.equal(limiter.consume("a".repeat(64), 0).allowed, true);
-  assert.deepEqual(limiter.consume("a".repeat(64), 0), { allowed: false, retryAfterSeconds: 1 });
-  assert.equal(limiter.consume("b".repeat(64), 0).allowed, true);
-  assert.equal(limiter.consume("c".repeat(64), 0).allowed, true);
-  assert.equal(limiter.consume("a".repeat(64), 0).allowed, true);
-  assert.equal(JSON.stringify(limiter).includes(currentSecret), false);
+test("durable pre-parser RPC is shared across independently created clients", async () => {
+  let state: ReturnType<typeof consumeTokenBucket>["state"] | undefined;
+  const databaseRpc = async () => {
+    const result = consumeTokenBucket("submission_preparse", state, 0);
+    state = result.state;
+    return { data: [{ allowed: result.allowed, retry_after_seconds: result.retryAfterSeconds }], error: null };
+  };
+  const firstClient = { rpc: databaseRpc };
+  const secondClient = { rpc: databaseRpc };
+  const decisions = [];
+  for (let index = 0; index < 11; index += 1) {
+    decisions.push(await consumeSubmissionPreparseQuota(
+      index % 2 === 0 ? firstClient : secondClient,
+      "a".repeat(64),
+    ));
+  }
+  assert.equal(decisions.filter((decision) => decision.allowed).length, 10);
+  assert.deepEqual(decisions[10], { allowed: false, retryAfterSeconds: 1 });
+});
+
+test("durable pre-parser RPC fails closed on database and result-shape errors", async () => {
+  const fingerprint = "a".repeat(64);
+  const unavailable = { rpc: async () => ({ data: null, error: { message: "unavailable" } }) };
+  await assert.rejects(() => consumeSubmissionPreparseQuota(unavailable, fingerprint), (error: unknown) =>
+    error instanceof IntegrationError && error.code === "PERSISTENCE_UNAVAILABLE" &&
+    error.status === 503 && error.retryAfterSeconds === SUBMISSION_PREPARSE_ENFORCEMENT_RETRY_SECONDS);
+
+  for (const data of [null, [], [{ allowed: true }], [{ allowed: "yes", retry_after_seconds: 0 }],
+    [{ allowed: true, retry_after_seconds: 1 }], [{ allowed: false, retry_after_seconds: 0 }],
+    [{ allowed: false, retry_after_seconds: 61 }],
+    [{ allowed: true, retry_after_seconds: 0, extra: true }],
+    [{ allowed: true, retry_after_seconds: 0 }, { allowed: true, retry_after_seconds: 0 }]]) {
+    await assert.rejects(() => consumeSubmissionPreparseQuota(
+      { rpc: async () => ({ data, error: null }) }, fingerprint,
+    ), (error: unknown) => error instanceof IntegrationError &&
+      error.code === "PERSISTENCE_UNAVAILABLE" && error.retryAfterSeconds === 5);
+  }
+});
+
+test("pre-parser enforcement failures read zero request-body bytes", async () => {
+  for (const rpcResult of [
+    { data: null, error: { message: "unavailable" } },
+    { data: [{ allowed: true }], error: null },
+  ]) {
+    let pulls = 0;
+    const request = streamingRequest({
+      chunks: [new Uint8Array([1])],
+      headers: ingressHeaders("multipart/form-data; boundary=test", 1),
+      onPull: () => { pulls += 1; },
+    });
+    await assert.rejects(() => parseBkfcSubmissionIngress(request, {
+      requestId: ingressRequestId,
+      bearerSecrets: [currentSecret],
+      consumePreparseQuota: (fingerprint) => consumeSubmissionPreparseQuota({
+        rpc: async () => rpcResult,
+      }, fingerprint),
+    }), (error: unknown) => error instanceof IntegrationError &&
+      error.code === "PERSISTENCE_UNAVAILABLE" && error.status === 503 &&
+      error.retryAfterSeconds === 5);
+    assert.equal(pulls, 0);
+  }
 });
 
 test("rate-limit 429 response is exact", () => {
@@ -399,6 +492,42 @@ test("source configuration schedules delivery and routes reserve before expensiv
   assert.ok(callbackRoute.indexOf(".maybeSingle()") < callbackRoute.indexOf("await reserveIngress"));
   assert.ok(callbackRoute.indexOf("await reserveIngress") <
     callbackRoute.indexOf("record_bkfc_payment_status_event_v1"));
+});
+
+test("pre-parser quota migration and route expose only the narrow durable boundary", async () => {
+  const sql = await readFile(
+    "supabase/migrations/20260826000000_bkfc_submission_preparse_quota.sql",
+    "utf8",
+  );
+  assert.match(sql, /direction in \('submission_preparse', 'submission', 'callback'\)/);
+  assert.match(sql, /if p_direction in \('submission_preparse', 'submission'\)[\s\S]*v_capacity := 10;[\s\S]*v_refill_per_second := 1;/);
+  assert.match(sql, /for update;[\s\S]*v_now := pg_catalog\.clock_timestamp\(\);[\s\S]*v_available := least/);
+  const wrapperStart = sql.indexOf(
+    "create or replace function public.consume_bkfc_submission_preparse_rate_limit_v1",
+  );
+  const wrapperEnd = sql.indexOf("revoke all on function", wrapperStart);
+  const wrapper = sql.slice(wrapperStart, wrapperEnd);
+  assert.match(wrapper, /returns table\(allowed boolean, retry_after_seconds integer\)/);
+  assert.match(wrapper, /security definer[\s\S]*set search_path = pg_catalog/);
+  assert.match(wrapper, /consume_bkfc_integration_rate_limit_v1\(\s*'submission_preparse'/);
+  assert.doesNotMatch(wrapper, /p_direction/);
+  assert.match(sql, /revoke all on function public\.consume_bkfc_integration_rate_limit_v1\(text, text\)[\s\S]*service_role/);
+  assert.match(sql, /revoke all on table public\.bkfc_integration_rate_limit_buckets[\s\S]*service_role/);
+  assert.match(sql, /grant execute on function public\.consume_bkfc_submission_preparse_rate_limit_v1\(text\)[\s\S]*to service_role/);
+  assert.doesNotMatch(sql, /grant execute on function public\.consume_bkfc_integration_rate_limit_v1/);
+
+  const ingress = await readFile("lib/integrations/bkfc/submission-ingress.ts", "utf8");
+  assert.doesNotMatch(ingress, /new Map|createCredentialRateLimiter/);
+  assert.ok(ingress.indexOf("const authentication = authenticateBearer") <
+    ingress.indexOf("consumePreparseQuota(authentication.credentialFingerprint)"));
+  assert.ok(ingress.indexOf("consumePreparseQuota(authentication.credentialFingerprint)") <
+    ingress.indexOf("parseBoundedMultipart(request, contentType)"));
+
+  const route = await readFile("app/api/v1/integrations/bkfc/affiliate-applications/route.ts", "utf8");
+  const post = route.slice(route.indexOf("export async function POST"));
+  assert.ok(post.indexOf("getBkfcIntegrationConfig") < post.indexOf("parseBkfcSubmissionIngress"));
+  assert.ok(post.indexOf("consumeSubmissionPreparseQuota") < post.indexOf("validateBkfcSubmission"));
+  assert.ok(post.indexOf("validateBkfcSubmission") < post.indexOf("reserveIngress"));
 });
 
 function reservation(disposition: IngressReservation["disposition"], overrides: Partial<IngressReservation> = {}): IngressReservation {
