@@ -166,14 +166,7 @@ export function resolveBkfcIntegrationConfig(env: EnvironmentSource): BkfcIntegr
   let paymentRequestBaseUrl: string | undefined;
   const configuredBaseUrl = clean(env.BKFC_PAYMENT_REQUEST_BASE_URL);
   if (configuredBaseUrl) {
-    try {
-      const url = new URL(configuredBaseUrl);
-      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
-        (url.pathname !== "/" && url.pathname !== "")) throw new Error();
-      paymentRequestBaseUrl = url.origin;
-    } catch {
-      throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
-    }
+    paymentRequestBaseUrl = normalizeBkfcPaymentRequestBaseUrl(configuredBaseUrl);
   }
 
   if ((submissionEnabled || paymentCallbackEnabled) && !bkfcCurrent) {
@@ -201,6 +194,30 @@ export function resolveBkfcIntegrationConfig(env: EnvironmentSource): BkfcIntegr
       env.BKFC_INTEGRATION_ORPHAN_CLEANUP_BATCH_SIZE, 50, 1, 500, "CONFIG_BKFC_INTEGRATION_INVALID",
     ),
   };
+}
+
+function unsafePaymentRequestHostname(hostname: string) {
+  const normalized = hostname.toLowerCase().replace(/\.$/, "");
+  if (normalized === "localhost" || normalized.endsWith(".localhost")) return true;
+  if (normalized.startsWith("[") && normalized.endsWith("]")) return true;
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(normalized)) return false;
+  const [first, second] = normalized.split(".").map(Number);
+  return first === 0 || first === 10 || first === 127 || first >= 224 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168);
+}
+
+export function normalizeBkfcPaymentRequestBaseUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
+      (url.pathname !== "/" && url.pathname !== "") || unsafePaymentRequestHostname(url.hostname)) throw new Error();
+    return url.origin;
+  } catch {
+    throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
+  }
 }
 
 function positiveInteger(

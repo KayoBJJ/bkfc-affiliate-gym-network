@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createServer, type Server } from "node:http";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { bearerAuthorized } from "../lib/integrations/bkfc/auth.ts";
@@ -88,6 +89,22 @@ test("all BKFC integration feature flags fail closed and enabled directions vali
     EU_TO_BKFC_BEARER_SECRET_CURRENT: outgoingSecret,
     BKFC_PAYMENT_REQUEST_BASE_URL: "https://user:pass@bkfc.example.test/path",
   }), ConfigurationError);
+  for (const unsafeBaseUrl of [
+    "https://localhost", "https://localhost.", "https://api.localhost", "https://api.localhost.",
+    "https://127.0.0.1", "https://0x7f000001",
+    "https://10.0.0.1", "https://169.254.169.254", "https://192.168.1.1", "https://[::1]", "https://[fc00::1]",
+  ]) {
+    assert.throws(() => resolveBkfcIntegrationConfig({
+      BKFC_PAYMENT_REQUEST_DELIVERY_ENABLED: "true",
+      EU_TO_BKFC_BEARER_SECRET_CURRENT: outgoingSecret,
+      BKFC_PAYMENT_REQUEST_BASE_URL: unsafeBaseUrl,
+    }), ConfigurationError);
+  }
+  assert.equal(resolveBkfcIntegrationConfig({
+    BKFC_PAYMENT_REQUEST_DELIVERY_ENABLED: "true",
+    EU_TO_BKFC_BEARER_SECRET_CURRENT: outgoingSecret,
+    BKFC_PAYMENT_REQUEST_BASE_URL: "https://203.0.113.10",
+  }).paymentRequestBaseUrl, "https://203.0.113.10");
 });
 
 test("directional bearer authentication accepts current/previous slots and rejects malformed values", () => {
@@ -206,10 +223,90 @@ test("worker uses fixed safe targets and retries retain command identity/body wh
   assert.equal(first.nextAttemptAt, "2026-08-25T10:02:00.000Z");
   assert.equal(calls[0].url, `https://bkfc.example.test/api/v1/integrations/eu/affiliate-applications/${applicationId}/payment-requests`);
   assert.equal(calls[0].init.body, calls[1].init.body);
+  assert.equal(calls[0].init.redirect, "manual");
   assert.equal(new Headers(calls[0].init.headers).get("idempotency-key"), idempotencyKey);
   assert.notEqual(new Headers(calls[0].init.headers).get("x-request-id"), new Headers(calls[1].init.headers).get("x-request-id"));
   assert.equal(String(calls[0].init.body).includes(outgoingSecret), false);
   assert.notEqual(first.requestId, second.requestId);
+});
+
+test("payment transport rejects unsafe direct destinations before invoking fetch", async () => {
+  let invoked = false;
+  const result = await deliverPaymentCommand(command(),
+    { baseUrl: "https://localhost./", bearerSecret: outgoingSecret },
+    async () => { invoked = true; return new Response(null, { status: 202 }); });
+  assert.equal(invoked, false);
+  assert.equal(result.disposition, "retry");
+  assert.equal(result.errorCode, "NETWORK_ERROR");
+});
+
+async function listen(server: Server) {
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  return `http://127.0.0.1:${address.port}`;
+}
+
+test("payment delivery never follows same-origin or cross-origin redirects", async (t) => {
+  let redirectDestinationRequests = 0;
+  let redirectDestinationBytes = 0;
+  const destination = createServer((request, response) => {
+    redirectDestinationRequests += 1;
+    request.on("data", (chunk: Buffer) => { redirectDestinationBytes += chunk.length; });
+    request.on("end", () => { response.writeHead(202).end(); });
+  });
+  const destinationOrigin = await listen(destination);
+  t.after(() => destination.close());
+
+  let sourceRequests = 0;
+  const receivedBodies: string[] = [];
+  const source = createServer((request, response) => {
+    sourceRequests += 1;
+    const chunks: Buffer[] = [];
+    request.on("data", (chunk: Buffer) => chunks.push(chunk));
+    request.on("end", () => {
+      receivedBodies.push(Buffer.concat(chunks).toString("utf8"));
+      const requestUrl = new URL(request.url ?? "/", "http://source.test");
+      if (requestUrl.pathname === "/accepted") {
+        response.writeHead(202, { "content-type": "application/json" }).end(JSON.stringify({ data: { outcome: "requested" } }));
+        return;
+      }
+      const status = Number(requestUrl.searchParams.get("status"));
+      const location = requestUrl.searchParams.get("target") === "same" ? "/redirect-destination" : `${destinationOrigin}/redirect-destination`;
+      response.writeHead(status, { location }).end();
+    });
+  });
+  const sourceOrigin = await listen(source);
+  t.after(() => source.close());
+
+  const sensitiveCommand = command();
+  sensitiveCommand.payload = {
+    contractVersion: 1,
+    paymentRequestId,
+    euApplicationId: applicationId,
+    applicantEmail: "applicant-sensitive@example.test",
+  };
+  const transport = (path: string): typeof fetch => async (_input, init) => fetch(`${sourceOrigin}${path}`, init);
+  const accepted = await deliverPaymentCommand(sensitiveCommand,
+    { baseUrl: "https://approved-bkfc.example.test", bearerSecret: outgoingSecret }, transport("/accepted"));
+  assert.equal(accepted.disposition, "accepted");
+  assert.equal(sourceRequests, 1);
+  assert.equal(receivedBodies[0], canonicalJson(sensitiveCommand.payload));
+
+  for (const target of ["same", "cross"] as const) {
+    for (const status of [301, 302, 303, 307, 308]) {
+      const result = await deliverPaymentCommand(sensitiveCommand,
+        { baseUrl: "https://approved-bkfc.example.test", bearerSecret: outgoingSecret },
+        transport(`/redirect?status=${status}&target=${target}`));
+      assert.deepEqual({ disposition: result.disposition, status: result.httpStatus, code: result.errorCode },
+        { disposition: "intervention", status, code: `HTTP_${status}` });
+      assert.equal(JSON.stringify(result).includes(outgoingSecret), false);
+      assert.equal(JSON.stringify(result).includes("applicant-sensitive@example.test"), false);
+    }
+  }
+  assert.equal(sourceRequests, 11);
+  assert.equal(redirectDestinationRequests, 0);
+  assert.equal(redirectDestinationBytes, 0);
 });
 
 test("cancellation URL, tombstone race and already-paid outcomes are classified terminally", async () => {

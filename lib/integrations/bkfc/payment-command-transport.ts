@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { normalizeBkfcPaymentRequestBaseUrl } from "../../config/policy.ts";
 import { canonicalJson, type CanonicalJson } from "./canonical-json.ts";
 
 export type PaymentCommand = {
@@ -23,6 +24,7 @@ export type PaymentDeliveryResult = {
 };
 
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+const REDIRECT_STATUS = new Set([301, 302, 303, 307, 308]);
 const RETRY_DELAYS_SECONDS = [0, 60, 300, 1_800, 7_200, 21_600];
 
 function machineCode(value: unknown) {
@@ -66,11 +68,13 @@ function retryResult(command: PaymentCommand, requestId: string, now: Date, resp
 }
 
 export function paymentCommandUrl(baseUrl: string, command: PaymentCommand) {
-  const base = new URL(baseUrl);
+  const approvedOrigin = normalizeBkfcPaymentRequestBaseUrl(baseUrl);
+  const base = new URL(approvedOrigin);
   const application = encodeURIComponent(command.application_id);
   base.pathname = command.command_type === "payment_initiation"
     ? `/api/v1/integrations/eu/affiliate-applications/${application}/payment-requests`
     : `/api/v1/integrations/eu/affiliate-applications/${application}/payment-requests/${encodeURIComponent(command.payment_request_id)}/cancellations`;
+  if (base.origin !== approvedOrigin) throw new Error("PAYMENT_COMMAND_DESTINATION_INVALID");
   return base.toString();
 }
 
@@ -94,9 +98,14 @@ export async function deliverPaymentCommand(
       },
       body: canonicalJson(command.payload),
       signal: AbortSignal.timeout(10_000),
+      redirect: "manual",
     });
   } catch {
     return retryResult(command, requestId, now);
+  }
+  if (REDIRECT_STATUS.has(response.status)) {
+    return { disposition: "intervention", requestId, httpStatus: response.status,
+      errorCode: `HTTP_${response.status}`, nextAttemptAt: null, outcome: null };
   }
   let body: unknown = null;
   try { body = await response.json(); } catch { /* do not retain provider prose */ }
