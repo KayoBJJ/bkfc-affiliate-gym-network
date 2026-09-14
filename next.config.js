@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     typedRoutes: true,
-    serverActions: { bodySizeLimit: "15mb" }
+    serverActions: { bodySizeLimit: "1mb" }
   },
   async headers() {
     return [

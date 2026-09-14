@@ -1,3 +1,4 @@
+import { GymLogoUploadForm } from "./GymLogoUploadForm";
 import styles from "./GymControls.module.css";
 import { randomUUID } from "node:crypto";
 import type { getGymControlStatus } from "@/lib/admin/supabase";
@@ -37,10 +38,7 @@ export function ApplicationGymControls({ applicationId, controls, enabled }: {
         <input type="hidden" name="version" value={remote?.listing_version ?? ""} />
         <div className="admin-detail-grid">{LISTING_FIELDS.map(field => <label key={`${remote?.listing_version}-${field}`}>{field.replace(/([A-Z])/g," $1")}<input name={field} maxLength={1000} defaultValue={String(state?.listing[field] ?? "")} /></label>)}</div>
       </GymControlForm>
-      <GymControlForm {...base} disabled={mutationDisabled || !remote?.listing_version} commandId={randomUUID()} kind="logo" label="Replace logo">
-        <input type="hidden" name="version" value={remote?.listing_version ?? ""} />
-        <label>Logo image (up to 10 MiB)<input type="file" name="logoUpload" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" required /></label>
-      </GymControlForm>
+      <GymLogoUploadForm applicationId={applicationId} version={remote?.listing_version ?? null} disabled={mutationDisabled || !remote?.listing_version} />
     </details>
     <GymControlForm {...base} commandId={randomUUID()} kind="visibility" label="Set visibility">
       <label>Public listing<select name="visible"><option value="false">Hidden</option><option value="true">Visible (requires approved and paid)</option></select></label>

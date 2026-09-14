@@ -1,4 +1,6 @@
 "use server";
+import { createHash } from "node:crypto";
+import { GYM_LOGO_BUCKET, logoUploadMatches } from "@/lib/integrations/bkfc/logo-upload-policy";
 import { revalidatePath } from "next/cache";
 import { requireAdminUser } from "@/lib/admin/auth";
 import { createAdminSupabaseClient } from "@/lib/admin/supabase";
@@ -39,10 +41,23 @@ export async function submitGymControlAction(_previous: GymControlFormState, for
           if (form.has(field) && String(form.get(field) ?? "") !== String(listing[field] ?? "")) payload[field] = String(form.get(field) ?? "");
         }
       } else if (kind === "logo") {
-        const file = form.get("logoUpload");
-        if (!(file instanceof File) || file.size === 0 || file.size > 10 * 1024 * 1024) throw new Error("INVALID_FILE");
-        const bytes = Buffer.from(await file.arrayBuffer());
-        payload = { base64: bytes.toString("base64"), contentType: logoContentType(bytes) };
+        const prior = await db.from("bkfc_gym_control_commands").select("payload,expected_version,created_by_user_id")
+          .eq("command_id", commandId).eq("application_id", applicationId).eq("command_type", "logo").maybeSingle();
+        if (prior.error) throw new Error("LOGO_UPLOAD_UNAVAILABLE");
+        if (prior.data) {
+          if (prior.data.created_by_user_id !== actor.id || prior.data.expected_version !== version) throw new Error("IDEMPOTENCY_CONFLICT");
+          payload = prior.data.payload;
+        } else {
+          const intent = await db.from("bkfc_control_logo_uploads").select("object_path,expected_version,content_type,size_bytes,sha256,expires_at")
+            .eq("command_id", commandId).eq("application_id", applicationId).eq("created_by_user_id", actor.id).maybeSingle();
+          if (intent.error || !intent.data || intent.data.expected_version !== version || Date.parse(intent.data.expires_at) <= Date.now()) throw new Error("INVALID_FILE");
+          const object = await db.storage.from(GYM_LOGO_BUCKET).download(intent.data.object_path);
+          if (object.error || !object.data || object.data.size !== intent.data.size_bytes) throw new Error("INVALID_FILE");
+          const bytes = Buffer.from(await object.data.arrayBuffer());
+          const contentType = logoContentType(bytes);
+          if (!logoUploadMatches(bytes.length, createHash("sha256").update(bytes).digest("hex"), contentType, intent.data)) throw new Error("INVALID_FILE");
+          payload = { base64: bytes.toString("base64"), contentType };
+        }
       } else if (kind === "visibility") payload = { visible: form.get("visible") === "true", reasonCode: "eu_requested" };
       else if (kind === "cancel_subscription") payload = { cancellationId: commandId, mode: String(form.get("mode")), reasonCode: "eu_requested" };
       else if (kind === "delist") {

@@ -2,6 +2,23 @@
 
 Target: joint staging readiness September 18, 2026, end of day Europe/Sofia. This is not production approval.
 
+
+## Continuation: UI integration and large logo uploads
+
+The six existing UI files were copied exactly into the isolated integration checkout and committed as `4decf3f`. They still match the original source byte for byte; all five original screenshots remain in the original checkout.
+
+The Vercel dashboard showed the existing v1 preview. Read-only Supabase inspection confirmed that `wvhkcauubklyzbhmfkrh` is “BKFC Affiliate Gym Program - Staging”, is healthy, and reports `bkfc_payment_cycle_isolation` as its latest migration. The user's originally open project `qspxmkanopohzsvrnktv` is production and was left untouched.
+
+Vercel documents a 4.5 MB function request limit: https://vercel.com/docs/functions/limitations. The logo implementation now uses a dedicated private Storage bucket and upload-only signed tokens. The browser sends image bytes directly to Storage, then sends a small finalization request. The server verifies operator/application ownership, expiry, listing version, size, SHA-256 and image signature before putting immutable bytes into the existing durable command queue. No BKFC bearer is exposed to the browser. The server-action limit is back to 1 MB; frozen O1 behavior is unchanged.
+
+New forward migration: `20260914020000_bkfc_control_logo_uploads.sql`. It creates the private bucket and rate-limited, operator-bound upload intents. No remote migration or upload was performed. Temporary objects remain private; a reviewed retention/cleanup policy is still needed before sustained use. Existing cleanup remains unchanged.
+
+Current verification: combined type check and production build passed. 188 offline tests passed, including five new metadata and actual upload-preparation action tests with mocked authentication/Storage dependencies. The suite now contains 189 tests; the pre-existing local-network redirect test was excluded after its listener was denied by the current sandbox. It passed in the previous session, but that is not a fresh combined-suite result.
+
+The first two migrations passed PostgreSQL rehearsals in the earlier session. The NEW upload migration and its added database assertions have NOT been executed: Docker socket access is denied in this session. Authenticated desktop/mobile browser testing also remains pending. Opening a static local layout fixture was rejected by the browser URL security policy; no alternate browser route was used to circumvent it. The fixture is not browser QA evidence.
+
+Next executable checks: rerun `npm run test:db` with Docker access; run the complete `npm test` with local networking available; exercise actual authenticated desktop/mobile controls and direct uploads (including 10 MiB, interrupted upload, mismatched hash, version change and non-admin requests). Then proceed to the existing AJ/staging checklist below. No deployment or enablement is authorized by this continuation.
+
 ## Scope and isolation
 
 Implemented in an isolated local clone, branch `feat/bkfc-eu-v1-1`, based on `f59892f9e2982a70e78efb744ee3d89c475659ea`. The original checkout's six modified UI files and five untracked screenshots were preserved. No environment files or credentials were copied. No callbacks, payment delivery, live migrations, deployment, or outbound messages were enabled or performed.
@@ -18,7 +35,7 @@ Implemented in an isolated local clone, branch `feat/bkfc-eu-v1-1`, based on `f5
 - Admin panel controls: refresh, changed-field edits, logo replacement, explicit visibility, both cancellation modes, confirmed delisting, parked-delivery recovery, retry reconciliation and recent command outcomes.
 - Separate `BKFC_GYM_CONTROL_DELIVERY_ENABLED=false` default and protected cron route. Payment callback and payment delivery switches retain their existing disabled defaults.
 
-## Verification
+## Verification from the first implementation session
 
 - 184 Node tests pass (174 existing plus 10 v1.1 tests).
 - Type checking and production build pass.
@@ -38,7 +55,7 @@ Implemented in an isolated local clone, branch `feat/bkfc-eu-v1-1`, based on `f5
 
 1. Review both forward migrations and rehearse against a sanitized copy of the actual staging schema/data. Inspect existing payment evidence and the deployed role grants.
 2. Combine/review the integration branch with the preserved admin UI work; perform authenticated desktop/mobile operator testing. Confirm disabled controls, admin-only actions, stale field re-review, slow/failed requests, logo replacement and uncertain command messaging.
-3. Verify deployed upload/body limits before claiming 10 MiB logo support end to end. The transport and local server-action limit support C3's 10 MiB image; the hosting path may require direct upload to support the full size. O1 remains limited to its frozen formats and 3 MiB.
+3. Rehearse the new private Storage upload migration, then verify direct 10 MiB logo uploads on the actual hosting path. O1 remains limited to its frozen formats and 3 MiB.
 4. Obtain AJ's contract cleanup, queued-event inventory and ordered recovery evidence. Capture C1–C7 fixtures including request IDs, versions, response codes, lost-response replays and delisted reads.
 5. Only with coordinated staging authorization: apply the reviewed staging migrations, deploy the application, and enable the explicitly agreed switches/window. C7 must not be used to guess around an unresolved ordering issue.
 6. Prove O1 → I1 → payment_paid callback → guarded activation → C4 confirmed visibility, plus reversal, cancellation, overdue/recovery, subscription termination, stale edits, timeout replay and C7 order. Record sanitized evidence and remaining owners.
@@ -47,8 +64,8 @@ Production deployment, live migration and live payments remain separate approval
 
 ## 🧾 Agent Session Log
 
-Completed: isolated implementation, forward migrations, C1–C7 queue/transport/panel, local behavioral verification and reviewable patch preparation.
+Completed: isolated lifecycle/control implementation; preserved admin UI integrated; direct-to-Storage logo code implemented; combined type check/build and 188 offline tests passed.
 
-Pending: actual staging-schema rehearsal, authenticated panel verification, AJ clarifications, upload-limit verification and joint staging evidence.
+Pending: new upload migration rehearsal (Docker access blocked), complete networking test, authenticated panel/direct-upload verification, actual staging-schema rehearsal, AJ clarifications and joint staging evidence.
 
 Next: review the patch with the existing admin work and resolve the listed staging dependencies before any enablement.

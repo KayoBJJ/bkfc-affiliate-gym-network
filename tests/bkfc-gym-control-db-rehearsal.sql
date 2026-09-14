@@ -109,6 +109,24 @@ begin
  exception when sqlstate '55000' then null; end;
  perform public.complete_bkfc_gym_control(c,token,'accepted',gen_random_uuid(),200,'GYM_STATE',null,remote);
  perform pg_temp.check_true((select count(*)=2 from public.bkfc_gym_control_attempts where command_id=c),'attempt history persisted');
+ -- Private direct-upload intents bind an operator, version and immutable object.
+ next_id:=gen_random_uuid();
+ perform pg_temp.check_true(public.prepare_bkfc_control_logo_upload(next_id,app,'3','image/png',10485760,repeat('a',64),actor)=app::text||'/'||next_id::text,'full-size logo intent');
+ perform pg_temp.check_true(public.prepare_bkfc_control_logo_upload(next_id,app,'3','image/png',10485760,repeat('a',64),actor)=app::text||'/'||next_id::text,'upload intent replay');
+ begin
+  perform public.prepare_bkfc_control_logo_upload(next_id,app,'3','image/png',100,repeat('a',64),actor);
+  raise exception 'metadata conflict accepted';
+ exception when raise_exception then if sqlerrm<>'IDEMPOTENCY_CONFLICT' then raise; end if; end;
+ begin
+  perform public.prepare_bkfc_control_logo_upload(next_id,app,'3','image/png',10485760,repeat('a',64),gen_random_uuid());
+  raise exception 'another operator reused upload';
+ exception when raise_exception then if sqlerrm<>'IDEMPOTENCY_CONFLICT' then raise; end if; end;
+ begin
+  perform public.prepare_bkfc_control_logo_upload(gen_random_uuid(),app,'2','image/png',100,repeat('a',64),actor);
+  raise exception 'stale upload prepared';
+ exception when raise_exception then if sqlerrm<>'REFRESH_LISTING_REQUIRED' then raise; end if; end;
+ perform pg_temp.check_true((select not public and file_size_limit=10485760 from storage.buckets where id='bkfc-control-logos'),'dedicated private bucket limits');
+ perform pg_temp.check_true(not has_function_privilege('authenticated','public.prepare_bkfc_control_logo_upload(uuid,uuid,text,text,integer,text,uuid)','execute'),'browser cannot mint upload intents');
  c:=public.enqueue_bkfc_gym_control(gen_random_uuid(),app,'edit','{"city":"Sofia"}','3',actor,'admin@example.test');
  token:=gen_random_uuid(); perform public.claim_bkfc_gym_control(token,app);
  perform public.complete_bkfc_gym_control(c,token,'failed',gen_random_uuid(),409,'STALE_LISTING_VERSION',null,null);
