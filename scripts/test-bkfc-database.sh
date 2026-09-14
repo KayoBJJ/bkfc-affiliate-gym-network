@@ -5,12 +5,20 @@ cd "$(dirname "$0")/.."
 image="${BKFC_TEST_POSTGRES_IMAGE:-public.ecr.aws/supabase/postgres:17.6.1.165}"
 container="bkfc-v11-test-${RANDOM}-${RANDOM}"
 docker image inspect "$image" >/dev/null
-cleanup() { docker stop "$container" >/dev/null 2>&1 || true; }
+cleanup() {
+ local result=$?
+ if [ "$result" -ne 0 ]; then docker logs --tail 80 "$container" >&2 || true; fi
+ docker stop "$container" >/dev/null 2>&1 || true
+ return "$result"
+}
 trap cleanup EXIT
 docker run -d --rm --name "$container" --network none -e POSTGRES_PASSWORD=local-test-only "$image" >/dev/null
 ready=false
-for attempt in {1..60}; do
- if docker exec "$container" pg_isready -U supabase_admin >/dev/null 2>&1; then ready=true; break; fi
+# The image starts a temporary socket-only server during initialization, then
+# shuts it down. TCP readiness waits for the final server, inside the container;
+# no port is published and --network none remains in effect.
+for attempt in {1..120}; do
+ if docker exec "$container" pg_isready -h 127.0.0.1 -p 5432 -U supabase_admin >/dev/null 2>&1; then ready=true; break; fi
  sleep 1
 done
 if [ "$ready" != true ]; then echo 'Local PostgreSQL did not start.' >&2; exit 1; fi

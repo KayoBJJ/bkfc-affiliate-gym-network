@@ -3,6 +3,10 @@
 Target: joint staging readiness September 18, 2026, end of day Europe/Sofia. This is not production approval.
 
 
+## Verification follow-up: database launcher startup race
+
+The user-run full suite passed all 189 tests. The database rehearsal stopped after bootstrap with “the database system is shutting down”, before migration verification completed. The launcher previously checked the local socket, which can accept connections on the image's temporary initialization server. It now waits for TCP readiness inside the same offline container and captures container logs on failure. A mocked startup-sequence regression test passed; this is launcher evidence, not a real database rehearsal. The suite now contains 190 tests. Rerun the saved verification launcher to finish database verification.
+
 ## Continuation: UI integration and large logo uploads
 
 The six existing UI files were copied exactly into the isolated integration checkout and committed as `4decf3f`. They still match the original source byte for byte; all five original screenshots remain in the original checkout.
