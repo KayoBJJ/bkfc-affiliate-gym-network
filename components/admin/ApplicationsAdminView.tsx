@@ -316,6 +316,16 @@ const stageFriction = useMemo(() => {
 
   return (
     <>
+      <PipelineOverview
+        counts={reviewStageCounts}
+        conversionRates={conversionRates}
+        stageFriction={stageFriction}
+        weeklyNew={weeklyNewApplications}
+        weeklyGrowth={weeklyGrowth}
+        activeStage={filters.reviewStage}
+        onStageSelect={handleStageSelect}
+      />
+
       <section className="panel admin-region-section">
         <div className="section-heading">
           <p className="eyebrow">Regional Distribution</p>
@@ -336,16 +346,6 @@ const stageFriction = useMemo(() => {
         </div>
       </section>
 
-      <PipelineOverview
-        counts={reviewStageCounts}
-        conversionRates={conversionRates}
-        stageFriction={stageFriction}
-        weeklyNew={weeklyNewApplications}
-        weeklyGrowth={weeklyGrowth}
-        activeStage={filters.reviewStage}
-        onStageSelect={handleStageSelect}
-      />
-
       <ApplicationsFilters
         filters={filters}
         countries={countries}
@@ -354,7 +354,7 @@ const stageFriction = useMemo(() => {
         onChange={setFilters}
       />
 
-            <div ref={applicationsListRef}>
+      <div ref={applicationsListRef}>
         <ApplicationsTable
           applications={filteredApplications}
           intelligence={filteredApplicationIntelligence}

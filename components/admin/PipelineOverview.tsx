@@ -21,14 +21,16 @@ type StageFriction = {
 const pipelineGroups = [
   {
     label: "New Applications",
+    className: "stage-group-new",
     cards: [
       { label: "New Submission", value: "submitted" },
       { label: "Internal Review", value: "under_review" },
-      { label: "Needs Follow-Up", value: "follow_up_required" },
+      { label: "Needs Follow-Up", value: "follow_up_required", wide: true },
     ],
   },
   {
     label: "Under Review",
+    className: "stage-group-review",
     cards: [
       { label: "Interview Scheduled", value: "interview" },
       { label: "Trial Candidate Pool", value: "trial_candidate" },
@@ -36,13 +38,15 @@ const pipelineGroups = [
   },
   {
     label: "Approved",
+    className: "stage-group-approved",
     cards: [
-      { label: "Approved Pending Activation", value: "approved" },
+      { label: "Approval Pending Activation", value: "approved" },
       { label: "Active Affiliate", value: "activated_affiliate" },
     ],
   },
   {
     label: "Archived",
+    className: "stage-group-archived",
     cards: [{ label: "Rejected / Archived", value: "rejected" }],
   },
 ] as const;
@@ -81,7 +85,7 @@ export function PipelineOverview({
       <div className="admin-panel-header">
         <div>
           <p className="eyebrow">Pipeline Overview</p>
-          <h2>Affiliate Pipeline Status</h2>
+          <h2>AFFILIATE PIPELINE STATUS</h2>
           <p className="admin-overview-copy">
             Scan the funnel instantly, then click a stage to focus the table.
           </p>
@@ -91,9 +95,10 @@ export function PipelineOverview({
       <div className="admin-pipeline-command-grid">
         <button
           type="button"
-          className={`admin-pipeline-kpi-card stage-default admin-pipeline-total-card${
+          className={`admin-pipeline-summary-card admin-pipeline-total-card${
             activeStage === "" ? " active" : ""
           }`}
+          aria-pressed={activeStage === ""}
           onClick={() => onStageSelect("")}
         >
           <span className="admin-pipeline-kpi-label">Total Applications</span>
@@ -118,17 +123,17 @@ export function PipelineOverview({
         </button>
 
         <div className="admin-pipeline-command-metrics">
-          <div className="admin-pipeline-kpi-mini">
+          <div className="admin-pipeline-summary-card admin-pipeline-kpi-mini">
             <span>Conversion Rate</span>
             <strong>{conversionRate}%</strong>
           </div>
 
-          <div className="admin-pipeline-kpi-mini">
+          <div className="admin-pipeline-summary-card admin-pipeline-kpi-mini">
             <span>Activation Rate</span>
             <strong>{activationRate}</strong>
           </div>
 
-          <div className="admin-pipeline-kpi-mini">
+          <div className="admin-pipeline-summary-card admin-pipeline-kpi-mini">
             <span>Active Affiliates</span>
             <strong>{counts.activated_affiliate ?? 0}</strong>
           </div>
@@ -141,7 +146,7 @@ export function PipelineOverview({
 
       <div className="admin-pipeline-flow">
         {pipelineGroups.map((group, groupIndex) => (
-          <section key={group.label} className="admin-pipeline-flow-group">
+          <section key={group.label} className={`admin-pipeline-flow-group ${group.className}`}>
             <div className="admin-pipeline-flow-header">
               <p className="admin-pipeline-flow-label">{group.label}</p>
               {groupIndex < pipelineGroups.length - 1 ? (
@@ -165,28 +170,35 @@ export function PipelineOverview({
                     type="button"
                     className={`admin-pipeline-kpi-card ${stageClass}${
                       isActive ? " active" : ""
-                    }${isBottleneck ? " bottleneck" : ""}`}
+                    }${isBottleneck ? " bottleneck" : ""}${
+                      "wide" in card && card.wide ? " card-wide" : ""
+                    }`}
+                    aria-pressed={isActive}
                     onClick={() => onStageSelect(card.value)}
                   >
-                    {friction && (
-                      <span
-                        className={`admin-pipeline-bottleneck-label friction-${friction.frictionLevel}`}
-                      >
-                        {getFrictionLabel(friction.frictionLevel)}
-                      </span>
-                    )}
-
-                    <span className="admin-pipeline-kpi-label">{card.label}</span>
+                    <span className="admin-pipeline-kpi-label admin-pipeline-stage-title">
+                      {card.label}
+                    </span>
+                    <span className="admin-pipeline-risk-slot">
+                      {friction ? (
+                        <span
+                          className={`admin-pipeline-bottleneck-label friction-${friction.frictionLevel}`}
+                        >
+                          {getFrictionLabel(friction.frictionLevel)}
+                        </span>
+                      ) : (
+                        <span className="admin-pipeline-risk-placeholder" aria-hidden="true" />
+                      )}
+                    </span>
                     <span className="admin-pipeline-kpi-value">{count}</span>
                     <span className="admin-pipeline-kpi-conversion">
                       {conversionRates[card.value] ?? 0}% of total
                     </span>
-
-                    {friction && (
-                      <span className="admin-pipeline-stage-duration">
-                        Avg {friction.averageDaysInStage}d in stage
-                      </span>
-                    )}
+                    <span className="admin-pipeline-stage-duration">
+                      {friction
+                        ? `Avg ${friction.averageDaysInStage}d in stage`
+                        : "No stage activity"}
+                    </span>
                   </button>
                 );
               })}

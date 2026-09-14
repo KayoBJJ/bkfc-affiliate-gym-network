@@ -46,8 +46,9 @@ export function LoginForm({ initialError }: LoginFormProps) {
   return (
     <section className="panel admin-login-panel">
       <div className="section-heading">
-        <p className="eyebrow">Admin Access</p>
-        <h2>Sign in to the BKFC dashboard</h2>
+        <p className="eyebrow">Admin Access / 01</p>
+        <h2>Sign in</h2>
+        <p className="admin-login-copy">Use your approved operator credentials to continue.</p>
       </div>
 
       <form className="admin-login-form" onSubmit={handleSubmit}>
@@ -76,7 +77,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
         </label>
 
         <button type="submit" className="cta-button admin-submit-button" disabled={pending}>
-          {pending ? "Signing in..." : "Sign in"}
+          {pending ? "Signing in..." : "Enter control centre"}
         </button>
 
         {error ? <p className="admin-form-message error">{error}</p> : null}
