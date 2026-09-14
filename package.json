@@ -10,7 +10,8 @@
     "build": "next build",
     "type-check": "tsc --noEmit",
     "test": "node --test --experimental-strip-types tests/*.test.ts",
-    "start": "next start"
+    "start": "next start",
+    "test:db": "bash scripts/test-bkfc-database.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

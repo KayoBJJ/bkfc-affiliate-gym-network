@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/bkfc-payment-commands",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/bkfc-gym-controls",
+      "schedule": "* * * * *"
     }
   ]
 }

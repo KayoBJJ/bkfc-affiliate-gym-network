@@ -152,12 +152,16 @@ export type ApplicationCommunicationStatus = {
 
 export type ApplicationPaymentStatus = {
   plan_code: "monthly" | "quarterly";
-  payment_status: "not_requested" | "pending" | "paid" | "cancelled" | "refunded";
+  payment_status: "not_requested" | "pending" | "paid" | "past_due" | "cancelled" | "refunded";
   payment_operation_state: string;
   current_payment_request_id: string | null;
   payment_requested_at: string | null;
   payment_link_sent_at: string | null;
   paid_at: string | null;
+  subscription_status: "unknown" | "active" | "past_due" | "cancelled";
+  last_renewal_paid_at: string | null;
+  past_due_at: string | null;
+  subscription_cancelled_at: string | null;
   cancelled_at: string | null;
   refunded_at: string | null;
   last_operational_error_code: string | null;

@@ -47,7 +47,7 @@ export async function getApplicationPaymentStatus(applicationId: string) {
   const supabase = createAdminSupabaseClient();
   const { data: coordination, error } = await supabase
     .from("affiliate_application_payment_coordination")
-    .select("plan_code,payment_status,payment_operation_state,current_payment_request_id,payment_requested_at,payment_link_sent_at,paid_at,cancelled_at,refunded_at,last_operational_error_code")
+    .select("plan_code,payment_status,payment_operation_state,current_payment_request_id,payment_requested_at,payment_link_sent_at,paid_at,cancelled_at,refunded_at,subscription_status,last_renewal_paid_at,past_due_at,subscription_cancelled_at,last_operational_error_code")
     .eq("application_id", applicationId).maybeSingle();
   if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error?.code ?? "")) return null;
   if (error) throw new Error("Failed to load application payment status.");
@@ -282,4 +282,19 @@ export async function getAllApplicationStageHistory() {
   }
 
   return (data ?? []) as ApplicationStageHistoryEntry[];
+}
+
+export async function getGymControlStatus(applicationId: string) {
+  const db = createAdminSupabaseClient();
+  const [identity, remote, commands] = await Promise.all([
+    db.from("affiliate_applications").select("source_system").eq("id", applicationId).maybeSingle(),
+    db.from("bkfc_gym_remote_state").select("state,listing_version,confirmed_visible,delisted,cancellation_requested_mode,observed_at,visibility_confirmed_at").eq("application_id", applicationId).maybeSingle(),
+    db.from("bkfc_gym_control_commands").select("command_id,command_type,delivery_status,attempt_count,total_attempt_count,last_code,created_at,next_attempt_at").eq("application_id", applicationId).order("sequence_id", { ascending: false }).limit(10),
+  ]);
+  if (identity.error) throw new Error("Failed to load BKFC source identity.");
+  if (identity.data?.source_system !== "bkfc") return null;
+  const missing = ["42P01", "42703", "PGRST204", "PGRST205"];
+  if (missing.includes(remote.error?.code ?? "") || missing.includes(commands.error?.code ?? "")) return { available: false as const, remote: null, commands: [] };
+  if (remote.error || commands.error) throw new Error("Failed to load BKFC control state.");
+  return { available: true as const, remote: remote.data, commands: commands.data ?? [] };
 }

@@ -4,7 +4,7 @@ import { BKFC_APPLICATION_ID_PATTERN, IntegrationError, UUID_V4_PATTERN } from "
 export const PAYMENT_STATUS_BODY_MAX_BYTES = 32_768;
 export const PAYMENT_EVENT_TYPES = [
   "payment_link_sent", "payment_paid", "payment_cancelled", "payment_refunded",
-  "payment_initiation_failed",
+  "payment_initiation_failed", "renewal_paid", "renewal_past_due", "subscription_cancelled",
 ] as const;
 export type PaymentEventType = typeof PAYMENT_EVENT_TYPES[number];
 

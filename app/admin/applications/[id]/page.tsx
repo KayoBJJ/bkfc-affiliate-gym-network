@@ -1,3 +1,5 @@
+import { ApplicationGymControls } from "@/components/admin/ApplicationGymControls";
+import { getBkfcIntegrationConfig } from "@/lib/config/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -18,6 +20,7 @@ import {
   getApplicationInformationRequests,
   getApplicationStageHistory,
   getApplicationPaymentStatus,
+  getGymControlStatus,
 } from "@/lib/admin/supabase";
 import { isApplicantCommunicationsEnabled } from "@/lib/config/server";
 import {
@@ -41,13 +44,14 @@ export default async function AdminApplicationDetailPage({
   params,
 }: AdminApplicationDetailPageProps) {
   await requireAdminUser();
-  const [application, stageHistory, auditEvents, informationRequests, communicationStatus, paymentStatus] = await Promise.all([
+  const [application, stageHistory, auditEvents, informationRequests, communicationStatus, paymentStatus, gymControls] = await Promise.all([
     getAffiliateApplicationById(params.id),
     getApplicationStageHistory(params.id),
     getApplicationAuditEvents(params.id),
     getApplicationInformationRequests(params.id),
     getApplicationCommunicationStatus(params.id),
     getApplicationPaymentStatus(params.id),
+    getGymControlStatus(params.id),
   ]);
 
   if (!application) {
@@ -87,6 +91,7 @@ export default async function AdminApplicationDetailPage({
 
       <div className="admin-follow-up-layout">
         <ApplicationPaymentCard application={application} payment={paymentStatus} />
+        <ApplicationGymControls applicationId={application.id} controls={gymControls} enabled={getBkfcIntegrationConfig().gymControlDeliveryEnabled} />
         <InformationRequestForm
           applicationId={application.id}
           action={createInformationRequestAction}

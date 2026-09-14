@@ -123,6 +123,7 @@ export type BkfcIntegrationConfig = {
   submissionEnabled: boolean;
   paymentCallbackEnabled: boolean;
   paymentDeliveryEnabled: boolean;
+  gymControlDeliveryEnabled: boolean;
   bkfcToEuSecrets: readonly string[];
   euToBkfcCurrentSecret?: string;
   euToBkfcPreviousSecret?: string;
@@ -136,6 +137,7 @@ export type BkfcIntegrationConfig = {
 export function resolveBkfcIntegrationConfig(env: EnvironmentSource): BkfcIntegrationConfig {
   const submissionEnabled = integrationFlag(env.BKFC_SUBMISSION_INTEGRATION_ENABLED);
   const paymentCallbackEnabled = integrationFlag(env.BKFC_PAYMENT_CALLBACK_ENABLED);
+  const gymControlDeliveryEnabled = integrationFlag(env.BKFC_GYM_CONTROL_DELIVERY_ENABLED);
   const paymentDeliveryEnabled = integrationFlag(env.BKFC_PAYMENT_REQUEST_DELIVERY_ENABLED);
   const orphanCleanupEnabled = integrationFlag(env.BKFC_INTEGRATION_ORPHAN_CLEANUP_ENABLED);
   const orphanCleanupDryRunFlag = enabledFlag(env.BKFC_INTEGRATION_ORPHAN_CLEANUP_DRY_RUN ?? "true");
@@ -175,7 +177,7 @@ export function resolveBkfcIntegrationConfig(env: EnvironmentSource): BkfcIntegr
   if (submissionEnabled && consentNoticeVersionAllowlist.size === 0) {
     throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
   }
-  if (paymentDeliveryEnabled && (!euCurrent || !paymentRequestBaseUrl)) {
+  if ((paymentDeliveryEnabled || gymControlDeliveryEnabled) && (!euCurrent || !paymentRequestBaseUrl)) {
     throw new ConfigurationError("CONFIG_BKFC_INTEGRATION_INVALID");
   }
 
@@ -183,6 +185,7 @@ export function resolveBkfcIntegrationConfig(env: EnvironmentSource): BkfcIntegr
     submissionEnabled,
     paymentCallbackEnabled,
     paymentDeliveryEnabled,
+    gymControlDeliveryEnabled,
     bkfcToEuSecrets: [bkfcCurrent, bkfcPrevious].filter((value): value is string => Boolean(value)),
     euToBkfcCurrentSecret: euCurrent,
     euToBkfcPreviousSecret: euPrevious,

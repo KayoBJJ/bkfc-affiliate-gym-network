@@ -1,0 +1,14 @@
+.controls { min-width: 0; overflow-wrap: anywhere; }
+.controls form { display: grid; gap: 12px; min-width: 0; }
+.controls label { display: grid; gap: 8px; font-size: .9rem; }
+.controls input:not([type="hidden"]):not([type="checkbox"]),
+.controls select { width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.24); border-radius: 8px; background: #17191c; color: #f4f4f4; font: inherit; }
+.controls input[type="checkbox"] { width: 20px; height: 20px; }
+.controls input:focus-visible, .controls select:focus-visible, .controls summary:focus-visible { outline: 2px solid #e8ac54; outline-offset: 3px; }
+.controls summary { cursor: pointer; padding: 12px 0; font-weight: 700; }
+.controls details[open] { display: grid; gap: 16px; }
+.controls details > p, .controls details > form { margin-top: 16px; }
+.controls ul { padding-left: 20px; margin: 0; display: grid; gap: 12px; }
+.controls button { justify-self: start; max-width: 100%; white-space: normal; }
+.controls fieldset:disabled { opacity: .65; }
+@media (max-width: 480px) { .controls :global(.admin-detail-grid) { grid-template-columns: minmax(0, 1fr); } }

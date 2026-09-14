@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    typedRoutes: true
+    typedRoutes: true,
+    serverActions: { bodySizeLimit: "15mb" }
   },
   async headers() {
     return [
