@@ -3,6 +3,20 @@
 Target: joint staging readiness September 18, 2026, end of day Europe/Sofia. This is not production approval.
 
 
+## Current verification — successful user-run rehearsal
+
+Verified from the saved logs after the launcher fix at `ac4614b`:
+
+- Full application suite: **190 passed, 0 failed, 0 skipped**.
+- Disposable offline PostgreSQL rehearsal: **passed**, including the third forward migration for private logo-upload intents and its database assertions.
+- Both v1.1 lifecycle and C1–C7 control persistence assertions passed.
+- The combined application previously passed type checking and production build; the launcher fix changes no application runtime code.
+- This clears the local networking-test and database-rehearsal verification gaps. It does not establish authenticated browser, actual Storage service, staging-schema parity or joint BKFC/Stripe verification.
+
+Next: authenticated desktop/mobile operator checks and actual signed Storage uploads, followed by coordinated staging checks once AJ's contract/order clarifications are settled. Callback enablement, staging migration/deployment and production remain outside the actions performed here.
+
+The sections below retain earlier session history; this current verification supersedes their pending local database/test status.
+
 ## Verification follow-up: database launcher startup race
 
 The user-run full suite passed all 189 tests. The database rehearsal stopped after bootstrap with “the database system is shutting down”, before migration verification completed. The launcher previously checked the local socket, which can accept connections on the image's temporary initialization server. It now waits for TCP readiness inside the same offline container and captures container logs on failure. A mocked startup-sequence regression test passed; this is launcher evidence, not a real database rehearsal. The suite now contains 190 tests. Rerun the saved verification launcher to finish database verification.
@@ -68,8 +82,8 @@ Production deployment, live migration and live payments remain separate approval
 
 ## 🧾 Agent Session Log
 
-Completed: isolated lifecycle/control implementation; preserved admin UI integrated; direct-to-Storage logo code implemented; combined type check/build and 188 offline tests passed.
+Completed: isolated lifecycle/control implementation; preserved admin UI integrated; direct-to-Storage logo code implemented; type check/build, all 190 tests and the complete offline database rehearsal passed.
 
-Pending: new upload migration rehearsal (Docker access blocked), complete networking test, authenticated panel/direct-upload verification, actual staging-schema rehearsal, AJ clarifications and joint staging evidence.
+Pending: authenticated panel/direct-upload verification, actual staging-schema rehearsal, AJ clarifications and joint staging evidence. Local database rehearsal and all 190 tests now pass.
 
 Next: review the patch with the existing admin work and resolve the listed staging dependencies before any enablement.
