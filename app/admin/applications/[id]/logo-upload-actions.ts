@@ -14,6 +14,12 @@ export async function prepareGymLogoUpload(metadata: LogoUploadMetadata) {
   });
   if (error || typeof path !== "string") throw new Error("LOGO_UPLOAD_PREPARATION_FAILED");
   const signed = await db.storage.from(GYM_LOGO_BUCKET).createSignedUploadUrl(path, { upsert: false });
-  if (signed.error || !signed.data) throw new Error("LOGO_UPLOAD_PREPARATION_FAILED");
+  if (signed.error || !signed.data) {
+    // A previous upload may have completed before its confirmation was lost.
+    // Do not overwrite it. Finalization still verifies ownership, expiry and bytes.
+    const existing = await db.storage.from(GYM_LOGO_BUCKET).download(path);
+    if (existing.error || !existing.data) throw new Error("LOGO_UPLOAD_PREPARATION_FAILED");
+    return { path, token: null };
+  }
   return { path, token: signed.data.token };
 }

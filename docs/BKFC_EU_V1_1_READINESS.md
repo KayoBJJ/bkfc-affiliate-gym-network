@@ -3,19 +3,19 @@
 Target: joint staging readiness September 18, 2026, end of day Europe/Sofia. This is not production approval.
 
 
-## Current verification — successful user-run rehearsal
+## Current verification — 17 September 2026
 
-Verified from the saved logs after the launcher fix at `ac4614b`:
+The candidate passed a fresh complete 191-test suite, type checking and production build. The final runtime edits fix immutable-logo upload recovery and default visibility to the confirmed remote state, requiring an explicit choice when unknown.
 
-- Full application suite: **190 passed, 0 failed, 0 skipped**.
-- Disposable offline PostgreSQL rehearsal: **passed**, including the third forward migration for private logo-upload intents and its database assertions.
-- Both v1.1 lifecycle and C1–C7 control persistence assertions passed.
-- The combined application previously passed type checking and production build; the launcher fix changes no application runtime code.
-- This clears the local networking-test and database-rehearsal verification gaps. It does not establish authenticated browser, actual Storage service, staging-schema parity or joint BKFC/Stripe verification.
+Local migration/recovery rehearsals used staging's recorded schema and observed ACLs. A new exact-ID command-retirement rehearsal passed dry-run rollback, changed-record rejection, repeat-run idempotency, preservation of payment/command evidence, worker ineligibility and subsequent v1.1 migration/lifecycle/control checks. These are local synthetic tests, not hosted Auth/Storage or joint BKFC proof.
 
-Next: authenticated desktop/mobile operator checks and actual signed Storage uploads, followed by coordinated staging checks once AJ's contract/order clarifications are settled. Callback enablement, staging migration/deployment and production remain outside the actions performed here.
+The existing v1 shared Preview passed a hosted submission stop/redeploy/restore guard drill on September 16; callbacks stayed disabled. v1.1 remains undeployed. Paid hosted database recovery remains deferred; prefer forward repair with delivery off. The old v1 application is not a verified v1.1 operational rollback target.
 
-The sections below retain earlier session history; this current verification supersedes their pending local database/test status.
+AJ reports per-gym parked/C7 ordering and strictly increasing millisecond recording timestamps. Those guarantees fit the receiver without a sequence-field change; confirm actual ordering, immutable replay payloads and applied outcomes in joint tests. The three historical commands are confirmed never received according to AJ; retirement is an operational procedure separate from this application release. Unknown event types remain rejected rather than silently discarded; the three agreed additive types are supported.
+
+Before release: freeze this candidate, validate exact staging branch overrides/credentials, reconcile delivery inventory, coordinate writers and test fixtures, then apply the reviewed migrations and deploy with integration delivery off. No QA preloads or local fixture migrations may enter the hosted bundle. Hosted 10 MiB upload, admin access, actual BKFC calls and payment lifecycle remain joint validation gates.
+
+The following sections retain historical implementation notes; this current status supersedes outdated completion/pending claims below.
 
 ## Verification follow-up: database launcher startup race
 
@@ -71,7 +71,7 @@ Implemented in an isolated local clone, branch `feat/bkfc-eu-v1-1`, based on `f5
 
 ## Required staging work
 
-1. Review both forward migrations and rehearse against a sanitized copy of the actual staging schema/data. Inspect existing payment evidence and the deployed role grants.
+1. Review all three forward migrations and rehearse against a sanitized copy of the actual staging schema/data. Inspect existing payment evidence and the deployed role grants.
 2. Combine/review the integration branch with the preserved admin UI work; perform authenticated desktop/mobile operator testing. Confirm disabled controls, admin-only actions, stale field re-review, slow/failed requests, logo replacement and uncertain command messaging.
 3. Rehearse the new private Storage upload migration, then verify direct 10 MiB logo uploads on the actual hosting path. O1 remains limited to its frozen formats and 3 MiB.
 4. Obtain AJ's contract cleanup, queued-event inventory and ordered recovery evidence. Capture C1–C7 fixtures including request IDs, versions, response codes, lost-response replays and delisted reads.

@@ -58,7 +58,11 @@ export async function submitGymControlAction(_previous: GymControlFormState, for
           if (!logoUploadMatches(bytes.length, createHash("sha256").update(bytes).digest("hex"), contentType, intent.data)) throw new Error("INVALID_FILE");
           payload = { base64: bytes.toString("base64"), contentType };
         }
-      } else if (kind === "visibility") payload = { visible: form.get("visible") === "true", reasonCode: "eu_requested" };
+      } else if (kind === "visibility") {
+        const visible = form.get("visible");
+        if (visible !== "true" && visible !== "false") throw new Error("INVALID_VISIBILITY");
+        payload = { visible: visible === "true", reasonCode: "eu_requested" };
+      }
       else if (kind === "cancel_subscription") payload = { cancellationId: commandId, mode: String(form.get("mode")), reasonCode: "eu_requested" };
       else if (kind === "delist") {
         if (form.get("confirmDelist") !== "on") throw new Error("CONFIRM_DELIST_REQUIRED");

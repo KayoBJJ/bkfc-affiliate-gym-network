@@ -41,7 +41,7 @@ export function ApplicationGymControls({ applicationId, controls, enabled }: {
       <GymLogoUploadForm applicationId={applicationId} version={remote?.listing_version ?? null} disabled={mutationDisabled || !remote?.listing_version} />
     </details>
     <GymControlForm {...base} commandId={randomUUID()} kind="visibility" label="Set visibility">
-      <label>Public listing<select name="visible"><option value="false">Hidden</option><option value="true">Visible (requires approved and paid)</option></select></label>
+      <label>Public listing<select key={String(remote?.confirmed_visible)} name="visible" required defaultValue={typeof remote?.confirmed_visible === "boolean" ? String(remote.confirmed_visible) : ""}><option value="" disabled>Choose visibility</option><option value="false">Hidden</option><option value="true">Visible (requires approved and paid)</option></select></label>
     </GymControlForm>
     <details><summary>Subscription cancellation and delisting</summary>
       <p>Cancellation does not hide the listing. Use visibility separately. End-of-period cancellation retains the paid period; immediate cancellation ends the subscription now.</p>

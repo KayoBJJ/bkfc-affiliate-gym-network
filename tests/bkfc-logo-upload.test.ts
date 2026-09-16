@@ -5,12 +5,13 @@ import { randomUUID } from "node:crypto";
 import ts from "typescript";
 import * as policy from "../lib/integrations/bkfc/logo-upload-policy.ts";
 const metadata = () => ({ applicationId: randomUUID(), commandId: randomUUID(), version: "4", contentType: "image/png", size: 100, sha256: "a".repeat(64) });
-function harness(options: { allowed?: boolean; enabled?: boolean; rpcError?: boolean; signingError?: boolean } = {}) {
+function harness(options: { allowed?: boolean; enabled?: boolean; rpcError?: boolean; signingError?: boolean; existingObject?: boolean } = {}) {
   const calls: Array<{ name: string; args?: unknown }> = [];
   const actor = { id: randomUUID(), email: "operator@example.test" };
   const db = {
     rpc: async (name: string, args: Record<string,unknown>) => { calls.push({name,args}); return { data: `${args.p_application_id}/${args.p_command_id}`, error: options.rpcError ? {} : null }; },
     storage: { from: (bucket: string) => { calls.push({ name: "bucket", args: bucket }); return {
+      download: async (path: string) => { calls.push({name:"download",args:path}); return {data:options.existingObject ? new Blob(["stored bytes"]) : null,error:options.existingObject ? null : {}}; },
       createSignedUploadUrl: async (path: string, settings: unknown) => { calls.push({name:"sign",args:{path,settings}}); return { data: { token: "upload-only-fixture-token" }, error: options.signingError ? {} : null }; },
     }; } },
   };
@@ -22,7 +23,7 @@ function harness(options: { allowed?: boolean; enabled?: boolean; rpcError?: boo
   };
   const source=readFileSync("app/admin/applications/[id]/logo-upload-actions.ts","utf8");
   const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-  const mod={exports:{} as {prepareGymLogoUpload:(value:policy.LogoUploadMetadata)=>Promise<{path:string;token:string}>}};
+  const mod={exports:{} as {prepareGymLogoUpload:(value:policy.LogoUploadMetadata)=>Promise<{path:string;token:string|null}>}};
   new Function("require","module","exports",compiled)((name:string)=>{assert.ok(name in imports,`Unexpected dependency ${name}`);return imports[name];},mod,mod.exports);
   return {action:mod.exports.prepareGymLogoUpload,calls,actor};
 }
@@ -57,4 +58,11 @@ test("validation and persistence failures never issue upload permission",async()
   const invalid=harness();await assert.rejects(()=>invalid.action({...metadata(),size:0}));assert.equal(invalid.calls.length,1);
   const failed=harness({rpcError:true});await assert.rejects(()=>failed.action(metadata()));assert.equal(failed.calls.some(c=>c.name==="sign"),false);
   const signing=harness({signingError:true});await assert.rejects(()=>signing.action(metadata()));
+});
+
+test("existing immutable uploads can proceed to final verification without a new token",async()=>{
+ const h=harness({signingError:true,existingObject:true});const value=metadata();const result=await h.action(value);
+ assert.equal(result.token,null);assert.equal(result.path,`${value.applicationId}/${value.commandId}`);
+ assert.equal(h.calls.filter(c=>c.name==="download").length,1);
+ assert.equal(h.calls.at(-1)?.args,result.path);
 });

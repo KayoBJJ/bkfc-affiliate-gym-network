@@ -27,7 +27,7 @@ export function GymLogoUploadForm({ applicationId, version, disabled }: { applic
       // The image goes directly to private Storage, not through a Vercel Function.
       // A retry may find the same immutable object already uploaded. Finalization
       // checks the server-held path, byte length, digest and image signature.
-      try { await createSupabaseBrowserClient().storage.from(GYM_LOGO_BUCKET).uploadToSignedUrl(upload.path, upload.token, file, { contentType: file.type }); } catch { /* reconcile a potentially completed upload below */ }
+      try { if (upload.token) await createSupabaseBrowserClient().storage.from(GYM_LOGO_BUCKET).uploadToSignedUrl(upload.path, upload.token, file, { contentType: file.type }); } catch { /* reconcile a potentially completed upload below */ }
       setMessage("Verifying and recording the logo replacement…");
       const form = new FormData();
       form.set("applicationId", applicationId); form.set("commandId", commandId); form.set("kind", "logo"); form.set("version", version);
