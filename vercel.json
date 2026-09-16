@@ -13,5 +13,10 @@
       "path": "/api/cron/bkfc-gym-controls",
       "schedule": "* * * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "feat/bkfc-eu-v1-1": false
+    }
+  }
 }
