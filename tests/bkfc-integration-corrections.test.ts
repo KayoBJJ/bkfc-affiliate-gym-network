@@ -39,9 +39,8 @@ test("disciplines split the raw value on every frozen delimiter before item norm
   assert.deepEqual(parseDisciplinesOffered(",,Boxing;;;\n\nMMA,;"), ["Boxing", "MMA"]);
   assert.deepEqual(parseDisciplinesOffered("x".repeat(100)), ["x".repeat(100)]);
   assert.equal(parseDisciplinesOffered("x,".repeat(19) + "x").length, 20);
-  assert.throws(() => parseDisciplinesOffered("x".repeat(101)), (error: unknown) =>
-    error instanceof IntegrationError && error.code === "FIELD_TOO_LONG");
-  assert.throws(() => parseDisciplinesOffered("x,".repeat(20) + "x"), IntegrationError);
+  assert.deepEqual(parseDisciplinesOffered("x".repeat(2000)), ["x".repeat(2000)]);
+  assert.equal(parseDisciplinesOffered("x,".repeat(999) + "x").length, 1000);
   assert.throws(() => parseDisciplinesOffered("x".repeat(2001)), IntegrationError);
   assert.throws(() => parseDisciplinesOffered(" , ;\n "), (error: unknown) =>
     error instanceof IntegrationError && error.code === "REQUIRED_FIELD_MISSING");

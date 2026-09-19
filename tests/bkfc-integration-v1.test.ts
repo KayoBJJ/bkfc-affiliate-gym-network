@@ -529,3 +529,32 @@ test("submission responses expose no checkout redirect and approval communicatio
   assert.match(communication, /Official payment instructions will be sent separately by BKFC/);
   assert.doesNotMatch(communication, /stripe/i);
 });
+
+
+test("BKFC form text boundaries accept the advertised maximum and reject overflow", async () => {
+  for (const [field, length, character] of [["gymName", 200, "G"], ["phone", 50, "1"], ["disciplinesOffered", 2000, "D"]] as const) {
+    const form = validSubmissionForm();
+    form.set(field, character.repeat(length));
+    await submission(form);
+    form.set(field, character.repeat(length + 1));
+    await rejectsCode(() => submission(form), "FIELD_TOO_LONG", field);
+  }
+});
+
+test("BKFC website and Instagram accept form-style values while rejecting unsafe URLs", async () => {
+  const form = validSubmissionForm();
+  form.set("website", "example.com/gym");
+  form.set("instagram", "example.gym");
+  const result = await submission(form);
+  assert.equal(result.website, "https://example.com/gym");
+  assert.equal(result.instagram, "https://www.instagram.com/example.gym/");
+  form.set("instagram", "instagram.com/example.gym");
+  assert.equal((await submission(form)).instagram, "https://instagram.com/example.gym");
+  for (const url of ["javascript:alert(1)", "https://user:password@example.com"]) {
+    form.set("website", url);
+    await rejectsCode(() => submission(form), "INVALID_URL", "website");
+  }
+  form.set("website", "example.com");
+  form.set("instagram", "https://example.com/profile");
+  await rejectsCode(() => submission(form), "INVALID_URL", "instagram");
+});

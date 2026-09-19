@@ -6,7 +6,7 @@ export const BKFC_SUBMISSION_MAX_BYTES = 4_718_592;
 export const BKFC_LOGO_MAX_BYTES = 3_145_728;
 
 const TEXT_FIELDS = {
-  gymName: { required: true, max: 160 },
+  gymName: { required: true, max: 200 },
   contactPerson: { required: true, max: 150 },
   address: { required: false, max: 200 },
   city: { required: true, max: 100 },
@@ -14,7 +14,7 @@ const TEXT_FIELDS = {
   postalCode: { required: false, max: 20 },
   country: { required: true, max: 100 },
   email: { required: true, max: 200 },
-  phone: { required: true, max: 40 },
+  phone: { required: true, max: 50 },
   website: { required: false, max: 300 },
   instagram: { required: false, max: 300 },
   disciplinesOffered: { required: true, max: 2_000 },
@@ -101,9 +101,7 @@ export function parseDisciplinesOffered(raw: string) {
   }
   const disciplines = raw.split(/[,;\n]/).map(normalizedText).filter(Boolean);
   if (disciplines.length === 0) throw new IntegrationError("REQUIRED_FIELD_MISSING", 400, "disciplinesOffered");
-  if (disciplines.length > 20 || disciplines.some((item) => item.length > 100)) {
-    throw new IntegrationError("FIELD_TOO_LONG", 400, "disciplinesOffered");
-  }
+  // The BKFC form limits the complete field to 2,000 characters, without per-item limits.
   return disciplines;
 }
 
@@ -119,11 +117,14 @@ function checkbox(form: FormData, name: string, required = false) {
 
 function normalizedUrl(value: string, name: string, instagram = false) {
   if (!value) return null;
-  if (instagram && /^@[A-Za-z0-9._]{1,30}$/.test(value)) {
-    return `https://www.instagram.com/${value.slice(1)}/`;
+  if (instagram && /^@?[A-Za-z0-9._]{1,30}$/.test(value) && !/instagram\.com$/i.test(value)) {
+    return `https://www.instagram.com/${value.replace(/^@/, "")}/`;
   }
   try {
-    const url = new URL(value);
+    const acceptsBareHost = name === "website" || instagram;
+    const candidate = acceptsBareHost && !/^[A-Za-z][A-Za-z0-9+.-]*:/.test(value)
+      ? `https://${value}` : value;
+    const url = new URL(candidate);
     if (!["http:", "https:"].includes(url.protocol) || !url.hostname.includes(".") || url.username || url.password) throw new Error();
     if (instagram && !/(^|\.)instagram\.com$/i.test(url.hostname)) throw new Error();
     return url.toString();
@@ -208,7 +209,7 @@ export async function validateBkfcSubmission(input: {
   const plan = field(input.form, "plan");
   const consentNoticeVersion = field(input.form, "consentNoticeVersion");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new IntegrationError("INVALID_EMAIL", 400, "email");
-  if (!/^\+?[0-9][0-9\s()./-]{6,38}$/.test(phone) || (phone.match(/\d/g)?.length ?? 0) < 7) {
+  if (!/^\+?[0-9][0-9\s()./-]{6,49}$/.test(phone) || (phone.match(/\d/g)?.length ?? 0) < 7) {
     throw new IntegrationError("INVALID_PHONE", 400, "phone");
   }
   if (plan !== "monthly" && plan !== "quarterly") throw new IntegrationError("INVALID_PLAN", 400, "plan");
