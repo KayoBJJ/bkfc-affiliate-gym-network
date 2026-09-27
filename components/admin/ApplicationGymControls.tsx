@@ -23,9 +23,9 @@ export function ApplicationGymControls({ applicationId, controls, enabled }: {
     <div className="admin-detail-grid">
       <div><p className="admin-detail-label">Public visibility</p><p>{remote?.confirmed_visible === true ? "Visible — confirmed by BKFC" : remote?.confirmed_visible === false ? "Hidden — confirmed by BKFC" : "Unknown — refresh BKFC state"}</p></div>
       <div><p className="admin-detail-label">Visibility confirmed at</p><p>{timestamp(remote?.visibility_confirmed_at)}</p></div>
-      <div><p className="admin-detail-label">BKFC subscription snapshot</p><p>{state?.subscription.status ?? "Unknown"}</p></div>
-      <div><p className="admin-detail-label">Paid period ends</p><p>{timestamp(state?.subscription.currentPeriodEnd)}</p></div>
-      <div><p className="admin-detail-label">Cancellation requested</p><p>{remote?.cancellation_requested_mode ? formatLabel(remote.cancellation_requested_mode) + " — wait for subscription-ended callback" : state?.subscription.cancelAtPeriodEnd ? "At period end" : "None confirmed"}</p></div>
+      <div><p className="admin-detail-label">BKFC subscription snapshot</p><p>{state?.subscription?.status ?? "Unknown"}</p></div>
+      <div><p className="admin-detail-label">Paid period ends</p><p>{timestamp(state?.subscription?.currentPeriodEnd)}</p></div>
+      <div><p className="admin-detail-label">Cancellation requested</p><p>{remote?.cancellation_requested_mode ? formatLabel(remote.cancellation_requested_mode) + " — wait for subscription-ended callback" : state?.subscription?.cancelAtPeriodEnd ? "At period end" : "None confirmed"}</p></div>
       <div><p className="admin-detail-label">BKFC delivery to EU</p><p>{state ? `${state.euDelivery.acknowledged ? "Acknowledged" : "Not acknowledged"} · ${state.euDelivery.attempts} attempts · ${state.euDelivery.lastError ?? "No error reported"}` : "Unknown"}</p></div>
       <div><p className="admin-detail-label">BKFC state read at</p><p>{timestamp(remote?.observed_at)}</p></div>
     </div>

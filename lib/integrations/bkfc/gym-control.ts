@@ -8,7 +8,7 @@ const requiredFields = new Set(["gymName", "city", "country", "contactPerson", "
 export type GymControlKind = "read" | "edit" | "logo" | "visibility" | "cancel_subscription" | "delist" | "retry_deliveries";
 export type GymState = {
   status: string; version: string; euApplicationId: string; paymentRequestId: string | null;
-  subscription: { status: string; currentPeriodEnd: string | null; cancelAtPeriodEnd: boolean };
+  subscription: { status: string; currentPeriodEnd: string | null; cancelAtPeriodEnd: boolean } | null;
   listing: Record<string, string | boolean | null> & { displayOnSite: boolean };
   euDelivery: { acknowledged: boolean; attempts: number; failedAt: string | null; lastError: string | null };
 };
@@ -66,11 +66,11 @@ export function parseGymState(value: unknown, applicationId: string): GymState |
   if (!object(value) || value.euApplicationId !== applicationId || typeof value.version !== "string" || !/^[0-9]{1,20}$/.test(value.version) ||
     !["submitted", "eu_received", "awaiting_payment", "initiation_failed", "paid", "past_due", "cancelled", "delisted"].includes(String(value.status)) ||
     !(value.paymentRequestId === null || (typeof value.paymentRequestId === "string" && UUID_V4_PATTERN.test(value.paymentRequestId))) ||
-    !object(value.subscription) || !object(value.listing) || !object(value.euDelivery)) return null;
+    (value.subscription !== null && !object(value.subscription)) || !object(value.listing) || !object(value.euDelivery)) return null;
   const s = value.subscription, l = value.listing, d = value.euDelivery;
   const timestamp = (v: unknown) => v === null || (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && Number.isFinite(Date.parse(v)));
   const nullableText = (v: unknown) => v === null || (typeof v === "string" && v.length <= 1000);
-  if (typeof s.status !== "string" || s.status.length > 64 || !timestamp(s.currentPeriodEnd) || typeof s.cancelAtPeriodEnd !== "boolean" || typeof l.displayOnSite !== "boolean" ||
+  if ((s !== null && (typeof s.status !== "string" || s.status.length > 64 || !timestamp(s.currentPeriodEnd) || typeof s.cancelAtPeriodEnd !== "boolean")) || typeof l.displayOnSite !== "boolean" ||
     typeof d.acknowledged !== "boolean" || !Number.isInteger(d.attempts) || Number(d.attempts) < 0 || !timestamp(d.failedAt) || !nullableText(d.lastError)) return null;
   const listing: GymState["listing"] = { displayOnSite: l.displayOnSite };
   for (const key of [...LISTING_FIELDS, "logoUrl"]) {
@@ -78,7 +78,7 @@ export function parseGymState(value: unknown, applicationId: string): GymState |
     listing[key] = l[key] as string | null;
   }
   return { status: String(value.status), version: value.version, euApplicationId: applicationId, paymentRequestId: value.paymentRequestId as string | null,
-    listing, subscription: { status: s.status, currentPeriodEnd: s.currentPeriodEnd as string | null, cancelAtPeriodEnd: s.cancelAtPeriodEnd },
+    listing, subscription: s === null ? null : { status: s.status as string, currentPeriodEnd: s.currentPeriodEnd as string | null, cancelAtPeriodEnd: s.cancelAtPeriodEnd as boolean },
     euDelivery: { acknowledged: d.acknowledged, attempts: Number(d.attempts), failedAt: d.failedAt as string | null, lastError: d.lastError as string | null } };
 }
 // Only fixed field names and expected types are returned; never include remote values.
@@ -92,7 +92,8 @@ export function diagnoseGymState(value: unknown, applicationId: string): string[
   check(typeof value.version === "string" && /^[0-9]{1,20}$/.test(value.version), "version", "expected numeric string (1–20 digits)");
   check(["submitted", "eu_received", "awaiting_payment", "initiation_failed", "paid", "past_due", "cancelled", "delisted"].includes(String(value.status)), "status", "expected supported status");
   check(value.paymentRequestId === null || (typeof value.paymentRequestId === "string" && UUID_V4_PATTERN.test(value.paymentRequestId)), "paymentRequestId", "expected UUIDv4 or null");
-  for (const field of ["subscription", "listing", "euDelivery"] as const) {
+  check(value.subscription === null || object(value.subscription), "subscription", "expected object or null");
+  for (const field of ["listing", "euDelivery"] as const) {
     check(object(value[field]), field, value[field] === null ? "received null; current validator requires object" : "expected object");
   }
   if (object(value.subscription)) {

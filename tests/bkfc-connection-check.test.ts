@@ -58,10 +58,23 @@ test("diagnostics identify null subscription and multiple schema failures withou
   assert.deepEqual(result.body.validationIssues, [
     "euApplicationId: must match requested EU application",
     "version: expected numeric string (1–20 digits)",
-    "subscription: received null; current validator requires object",
     "listing.latitude: expected string up to 1000 characters or null",
     "listing.email: expected string up to 1000 characters or null",
   ]);
   assert.equal(JSON.stringify(result).includes("sensitive"), false);
   assert.equal(JSON.stringify(result).includes("42.7"), false);
+});
+
+test("unpaid application with null subscription passes without inventing a subscription", async () => {
+  const result = await checkBkfcConnection(applicationId, { ...deps, fetchImpl: async () => response({ ...state, subscription: null }) });
+  assert.equal(result.body.pass, true);
+  assert.deepEqual(result.body.validationIssues, []);
+});
+
+test("missing or malformed subscriptions still fail", async () => {
+  for (const subscription of [undefined, false, [], {}, { status: "active", currentPeriodEnd: null }]) {
+    const result = await checkBkfcConnection(applicationId, { ...deps, fetchImpl: async () => response({ ...state, subscription }) });
+    assert.equal(result.body.pass, false);
+    assert.ok(result.body.validationIssues?.some(issue => issue.startsWith("subscription")));
+  }
 });
