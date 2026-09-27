@@ -28,7 +28,7 @@ export async function checkBkfcConnection(applicationId: string, deps: Dependenc
   return { status: 200, body: {
     checkedAt: new Date().toISOString(), pass: result.disposition === "accepted",
     httpStatus: result.httpStatus, code: result.code.replaceAll(config.euToBkfcCurrentSecret, "[REDACTED]"), requestId: result.requestId,
-    applicationId, identityAndStateValidated: result.state !== null,
+    applicationId, identityAndStateValidated: result.state !== null, validationIssues: result.validationIssues ?? [],
     scope: "One read-only request from the deployed server using its configured outbound credential; no commands queued or state changed.",
   } };
 }

@@ -20,7 +20,7 @@ export type GymControlCommand = {
 export type GymControlResult = {
   disposition: "accepted" | "retry" | "failed" | "uncertain";
   requestId: string; httpStatus: number | null; code: string;
-  nextAttemptAt: string | null; state: GymState | null;
+  nextAttemptAt: string | null; state: GymState | null; validationIssues?: string[];
 };
 const endpoints: Record<GymControlKind, [string, string, number, string]> = {
   read: ["GET", "", 200, "GYM_STATE"], edit: ["PATCH", "", 200, "GYM_UPDATED"],
@@ -81,6 +81,39 @@ export function parseGymState(value: unknown, applicationId: string): GymState |
     listing, subscription: { status: s.status, currentPeriodEnd: s.currentPeriodEnd as string | null, cancelAtPeriodEnd: s.cancelAtPeriodEnd },
     euDelivery: { acknowledged: d.acknowledged, attempts: Number(d.attempts), failedAt: d.failedAt as string | null, lastError: d.lastError as string | null } };
 }
+// Only fixed field names and expected types are returned; never include remote values.
+export function diagnoseGymState(value: unknown, applicationId: string): string[] {
+  if (!object(value)) return ["data: expected object"];
+  const issues: string[] = [];
+  const check = (ok: boolean, field: string, expectation: string) => { if (!ok) issues.push(`${field}: ${expectation}`); };
+  const timestamp = (v: unknown) => v === null || (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && Number.isFinite(Date.parse(v)));
+  const text = (v: unknown) => v === null || (typeof v === "string" && v.length <= 1000);
+  check(value.euApplicationId === applicationId, "euApplicationId", "must match requested EU application");
+  check(typeof value.version === "string" && /^[0-9]{1,20}$/.test(value.version), "version", "expected numeric string (1–20 digits)");
+  check(["submitted", "eu_received", "awaiting_payment", "initiation_failed", "paid", "past_due", "cancelled", "delisted"].includes(String(value.status)), "status", "expected supported status");
+  check(value.paymentRequestId === null || (typeof value.paymentRequestId === "string" && UUID_V4_PATTERN.test(value.paymentRequestId)), "paymentRequestId", "expected UUIDv4 or null");
+  for (const field of ["subscription", "listing", "euDelivery"] as const) {
+    check(object(value[field]), field, value[field] === null ? "received null; current validator requires object" : "expected object");
+  }
+  if (object(value.subscription)) {
+    const s = value.subscription;
+    check(typeof s.status === "string" && s.status.length <= 64, "subscription.status", "expected string up to 64 characters");
+    check(timestamp(s.currentPeriodEnd), "subscription.currentPeriodEnd", "expected timestamp or null");
+    check(typeof s.cancelAtPeriodEnd === "boolean", "subscription.cancelAtPeriodEnd", "expected boolean");
+  }
+  if (object(value.listing)) {
+    check(typeof value.listing.displayOnSite === "boolean", "listing.displayOnSite", "expected boolean");
+    for (const key of [...LISTING_FIELDS, "logoUrl"]) check(text(value.listing[key]), `listing.${key}`, "expected string up to 1000 characters or null");
+  }
+  if (object(value.euDelivery)) {
+    const d = value.euDelivery;
+    check(typeof d.acknowledged === "boolean", "euDelivery.acknowledged", "expected boolean");
+    check(Number.isInteger(d.attempts) && Number(d.attempts) >= 0, "euDelivery.attempts", "expected nonnegative integer");
+    check(timestamp(d.failedAt), "euDelivery.failedAt", "expected timestamp or null");
+    check(text(d.lastError), "euDelivery.lastError", "expected string up to 1000 characters or null");
+  }
+  return issues;
+}
 async function boundedJson(response: Response): Promise<unknown> {
   if (!response.body) throw new Error("INVALID_RESPONSE");
   const reader = response.body.getReader(); const chunks: Uint8Array[] = []; let size = 0;
@@ -131,7 +164,7 @@ export async function deliverGymControl(command: GymControlCommand, config: { ba
   }
   if (["read", "edit", "logo"].includes(command.command_type)) {
     const state = parseGymState(envelope.data, command.application_id);
-    return state ? result("accepted", expectedCode, response.status, state) : retry("INVALID_GYM_STATE", response);
+    return state ? result("accepted", expectedCode, response.status, state) : { ...retry("INVALID_GYM_STATE", response), validationIssues: diagnoseGymState(envelope.data, command.application_id) };
   }
   if (command.command_type === "cancel_subscription" && (!object(envelope.data) || envelope.data.outcome !== command.payload.mode)) return retry("INVALID_CANCELLATION_OUTCOME", response);
   if (command.command_type === "delist" && (!object(envelope.data) || envelope.data.outcome !== "delisted")) return retry("INVALID_DELIST_OUTCOME", response);

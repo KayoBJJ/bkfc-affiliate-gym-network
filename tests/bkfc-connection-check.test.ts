@@ -48,3 +48,20 @@ test("a rejected credential is reported without retrying", async () => {
   } });
   assert.equal(calls, 1); assert.equal(result.body.httpStatus, 401); assert.equal(result.body.pass, false);
 });
+
+test("diagnostics identify null subscription and multiple schema failures without disclosing values", async () => {
+  const result = await checkBkfcConnection(applicationId, { ...deps, fetchImpl: async () => response({
+    ...state, subscription: null, version: 1, euApplicationId: randomUUID(),
+    listing: { ...state.listing, latitude: 42.7, email: "sensitive".repeat(200) },
+  }) });
+  assert.equal(result.body.pass, false);
+  assert.deepEqual(result.body.validationIssues, [
+    "euApplicationId: must match requested EU application",
+    "version: expected numeric string (1–20 digits)",
+    "subscription: received null; current validator requires object",
+    "listing.latitude: expected string up to 1000 characters or null",
+    "listing.email: expected string up to 1000 characters or null",
+  ]);
+  assert.equal(JSON.stringify(result).includes("sensitive"), false);
+  assert.equal(JSON.stringify(result).includes("42.7"), false);
+});
