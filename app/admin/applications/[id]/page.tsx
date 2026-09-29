@@ -1,3 +1,4 @@
+import { confirmedTestReason } from "@/lib/admin/test-applications";
 import { ApplicationGymControls } from "@/components/admin/ApplicationGymControls";
 import { getBkfcIntegrationConfig } from "@/lib/config/server";
 import Link from "next/link";
@@ -58,6 +59,9 @@ export default async function AdminApplicationDetailPage({
     notFound();
   }
 
+  const delisted = gymControls?.remote?.delisted === true;
+  const testReason = confirmedTestReason(application.id);
+
   return (
     <AdminShell
       title="Application Review"
@@ -69,8 +73,10 @@ export default async function AdminApplicationDetailPage({
         </Link>
       </div>
 
+      {testReason && <section className="panel admin-detail-panel"><h2>Confirmed test application</h2><p>{testReason}. Excluded from business totals; retained for audit history.</p></section>}
+      {delisted && <section className="panel admin-detail-panel"><h2>Closed / Delisted</h2><p>BKFC has confirmed this listing is delisted. Earlier review and payment events remain visible as history. See the stored BKFC snapshot and internal closure notes below.</p></section>}
       <div className="admin-detail-layout">
-        <ApplicationDetailPanel application={application} />
+        <ApplicationDetailPanel application={application} delisted={delisted} />
 
         <aside className="admin-review-rail" aria-label="Application review controls">
           <PipelineActionsPanel applicationId={application.id} />
@@ -90,7 +96,7 @@ export default async function AdminApplicationDetailPage({
       </div>
 
       <div className="admin-follow-up-layout">
-        <ApplicationPaymentCard application={application} payment={paymentStatus} />
+        <ApplicationPaymentCard application={application} payment={paymentStatus} delisted={delisted} />
         <ApplicationGymControls applicationId={application.id} controls={gymControls} enabled={getBkfcIntegrationConfig().gymControlDeliveryEnabled} />
         <InformationRequestForm
           applicationId={application.id}

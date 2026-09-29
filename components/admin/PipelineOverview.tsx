@@ -103,7 +103,7 @@ export function PipelineOverview({
         >
           <span className="admin-pipeline-kpi-label">Total Applications</span>
           <span className="admin-pipeline-kpi-value">{counts.all ?? 0}</span>
-          <span className="admin-pipeline-kpi-rate">100% of visible pipeline</span>
+          <span className="admin-pipeline-kpi-rate">{counts.all ? "100% of visible pipeline" : "No real applications yet"}</span>
           <span className="admin-pipeline-kpi-support">
             +{weeklyNew} this week{" "}
             <span
