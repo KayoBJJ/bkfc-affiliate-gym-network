@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { confirmedTestReason, partitionApplications } from "@/lib/admin/test-applications";
 import { useMemo, useRef, useState } from "react";
 import { AdminKpiCard } from "@/components/admin/AdminKpiCard";
 import { ApplicationsFilters } from "@/components/admin/ApplicationsFilters";
@@ -18,9 +20,12 @@ type ApplicationsAdminViewProps = {
 };
 
 export function ApplicationsAdminView({
-  applications,
+  applications: allApplications,
   stageHistory,
 }: ApplicationsAdminViewProps) {
+  const { live: applications, tests: testApplications } = useMemo(
+    () => partitionApplications(allApplications), [allApplications],
+  );
   const applicationsListRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState({
     region: "",
@@ -316,6 +321,7 @@ const stageFriction = useMemo(() => {
 
   return (
     <>
+      <p className="admin-overview-copy">Business totals include real applications only. Confirmed tests are kept separately below.</p>
       <PipelineOverview
         counts={reviewStageCounts}
         conversionRates={conversionRates}
@@ -361,6 +367,20 @@ const stageFriction = useMemo(() => {
           totalApplications={applications.length}
         />
       </div>
+      {testApplications.length > 0 && (
+        <details className="panel admin-detail-panel">
+          <summary>Test history ({testApplications.length}) — excluded from business totals</summary>
+          <p className="admin-overview-copy">Preserved for troubleshooting and audit history. These records are not customer applications.</p>
+          <ul>
+            {testApplications.map(application => (
+              <li key={application.id}>
+                <Link className="admin-inline-link" href={`/admin/applications/${application.id}`}>{application.gym_name}</Link>
+                {" — "}{confirmedTestReason(application.id)}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </>
   );
 }

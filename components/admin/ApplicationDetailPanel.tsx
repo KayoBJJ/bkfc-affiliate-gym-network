@@ -4,6 +4,7 @@ import type { AffiliateApplication } from "@/lib/admin/types";
 
 type ApplicationDetailPanelProps = {
   application: AffiliateApplication;
+  delisted?: boolean;
 };
 
 function Field({
@@ -37,7 +38,7 @@ function formatLocationValue(value: string | null) {
   return value?.trim() ? value : "Not set";
 }
 
-export function ApplicationDetailPanel({ application }: ApplicationDetailPanelProps) {
+export function ApplicationDetailPanel({ application, delisted = false }: ApplicationDetailPanelProps) {
   const logoAccessUrl = application.logo_access_url || application.logo_url;
   const photoAccessUrls = application.gym_photo_access_urls || application.gym_photo_urls;
   const fighterListAccessUrl = application.fighter_list_access_url || application.fighter_list_url;
@@ -50,10 +51,10 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
           <h2>{application.gym_name}</h2>
           <span
             className={`admin-stage-pill admin-stage-pill-strong ${getStageClass(
-              application.review_stage
+              delisted ? "rejected" : application.review_stage
             )}`}
           >
-            {formatLabel(application.review_stage)}
+            {delisted ? "Closed / Delisted" : formatLabel(application.review_stage)}
           </span>
         </div>
       </div>
@@ -87,8 +88,8 @@ export function ApplicationDetailPanel({ application }: ApplicationDetailPanelPr
         <Field label="BKFC App access interest">
           {application.bkfc_app_access_interest ? "Yes" : "No"}
         </Field>
-        <Field label="Status">{formatLabel(application.status)}</Field>
-        <Field label="Review stage">{formatLabel(application.review_stage)}</Field>
+        <Field label={delisted ? "Recorded status before closure" : "Status"}>{formatLabel(application.status)}</Field>
+        <Field label={delisted ? "Recorded review stage before closure" : "Review stage"}>{formatLabel(application.review_stage)}</Field>
       </div>
 
       <div className="admin-media-grid">
