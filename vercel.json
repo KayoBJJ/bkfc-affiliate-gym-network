@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/bkfc-gym-controls",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/application-receipts",
+      "schedule": "* * * * *"
     }
   ],
   "git": {

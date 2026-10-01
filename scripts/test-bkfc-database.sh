@@ -31,4 +31,6 @@ apply_sql tests/bkfc-integration-db-rehearsal.sql
 for migration in supabase/migrations/20260914*.sql; do apply_sql "$migration"; done
 apply_sql tests/bkfc-subscription-db-rehearsal.sql
 apply_sql tests/bkfc-gym-control-db-rehearsal.sql
+apply_sql supabase/migrations/20261001000000_bkfc_application_receipts.sql
+apply_sql tests/bkfc-receipt-db-rehearsal.sql
 echo 'All BKFC PostgreSQL migration and behavior rehearsals passed.'

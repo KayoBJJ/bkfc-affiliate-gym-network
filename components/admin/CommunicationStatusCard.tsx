@@ -32,7 +32,7 @@ export function CommunicationStatusCard({
                   <div className="admin-communication-state">
                     <strong>{formatLabel(row.delivery_status)}</strong>
                     <p>
-                      {row.template ? `Copy v${row.template.version} · ${row.template.locale}` : "Copy not assigned"}
+                      {row.notification_type === "application_received" ? "Approved receipt design" : row.template ? `Copy v${row.template.version} · ${row.template.locale}` : "Copy not assigned"}
                       {` · Attempts ${row.attempt_count}/3`}
                     </p>
                     {row.last_error_code ? <p>Error: {row.last_error_code}</p> : null}
