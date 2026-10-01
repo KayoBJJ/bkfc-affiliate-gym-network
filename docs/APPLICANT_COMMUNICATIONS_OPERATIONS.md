@@ -57,13 +57,13 @@ Deployment sequence:
    owns this receipt; no new API fields or endpoint are needed on AJ's side.
 3. Set mode to `dry-run` to inspect the receipt queue without claiming or sending.
 4. For a controlled test use mode `test`, set `BKFC_APPLICATION_RECEIPTS_TEST_REFERENCE`
-   to one new official-intake test application, and use the existing test recipient.
+   to one new official-intake test application, and set `BKFC_APPLICATION_RECEIPTS_TEST_RECIPIENT` to the authorized test inbox.
    Inspection and claiming filter to that application before taking attempts. Verify
    one receipt and a recorded provider ID, then replay the submission to check deduplication.
 5. Set mode to `live` to deliver new queued receipts to their applicants. This setting
    is independent of the older communication, portal and applicant-delivery flags;
    do not change those flags to activate receipts. Reuses the existing Resend key,
-   sender, reply-to, test recipient and cron bearer secret.
+   sender, reply-to and cron bearer secret.
 
 The receipt cron runs every minute, requires the existing cron bearer secret, and
 only processes receipt rows. At most three attempts are made, with 5-minute and

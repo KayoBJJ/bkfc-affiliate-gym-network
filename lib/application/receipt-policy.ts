@@ -13,6 +13,7 @@ export function resolveReceiptRouting(email: string, env: EnvironmentSource) {
   // Receipt activation must not enable the older direct-email or portal flows.
   return resolveEmailRouting(email, {
     ...env,
+    APPLICANT_EMAIL_TEST_RECIPIENT: env.BKFC_APPLICATION_RECEIPTS_TEST_RECIPIENT,
     APPLICANT_EMAIL_DELIVERY_ENABLED: config.mode === "live" ? "true" : "false",
   });
 }
