@@ -462,6 +462,7 @@ test("source configuration schedules delivery and routes reserve before expensiv
     { path: "/api/cron/application-cleanup", schedule: "17 3 * * *" },
     { path: "/api/cron/bkfc-payment-commands", schedule: "* * * * *" },
     { path: "/api/cron/bkfc-gym-controls", schedule: "* * * * *" },
+    { path: "/api/cron/application-receipts", schedule: "* * * * *" },
   ]);
   const sql = await readFile("supabase/migrations/20260825000000_bkfc_eu_affiliate_integration_v1.sql", "utf8");
   const reserveStart = sql.indexOf("create or replace function public.reserve_bkfc_integration_ingress_v1");
