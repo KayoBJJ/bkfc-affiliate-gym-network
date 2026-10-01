@@ -176,7 +176,10 @@ test("initial application email can carry the prepared portal CTA", async () => 
     readFile("app/api/affiliate-registration/finalize/route.ts", "utf8"),
   ]);
   assert.match(email, /reason: "application_received"/);
-  assert.match(email, /Open secure application portal/);
+  const { buildApplicantReceivedEmail } = await import("../lib/application/received-email.ts");
+  const html = buildApplicantReceivedEmail({ contactPerson: "Alex", gymName: "Gym", cityCountry: "Sofia", submissionId: "GYM-1", portalUrl: "https://example.com/portal" });
+  assert.match(html, /href="https:\/\/example.com\/portal"/);
+  assert.match(html, /Open application portal/);
   assert.match(email, /completeApplicantPortalDelivery/);
   assert.match(directRoute, /applicationId,/);
   assert.match(finalizeRoute, /applicationId: sessionId!/);
